@@ -1,0 +1,63 @@
+/* AppCard */
+.app-card {
+  border-radius: 16px !important;
+  font-family: 'Inter', sans-serif;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.app-card .ant-card-head {
+  border-bottom: 1px solid rgba(26, 46, 94, 0.07) !important;
+  padding: 0 24px !important;
+  min-height: 52px !important;
+}
+
+.app-card .ant-card-head-title {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #1a2e5e !important;
+  padding: 14px 0 !important;
+}
+
+.app-card .ant-card-body {
+  padding: 20px 24px !important;
+}
+
+/* Variant: default */
+.app-card--default {
+  border: 1px solid rgba(26, 46, 94, 0.07) !important;
+  box-shadow: 0 2px 12px rgba(26, 46, 94, 0.07) !important;
+  background: #ffffff !important;
+}
+
+/* Variant: glass */
+.app-card--glass {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+.app-card--glass .ant-card-head-title {
+  color: white !important;
+}
+
+/* Variant: outlined */
+.app-card--outlined {
+  border: 1.5px solid rgba(26, 46, 94, 0.15) !important;
+  box-shadow: none !important;
+  background: #ffffff !important;
+}
+
+/* Variant: flat */
+.app-card--flat {
+  border: none !important;
+  box-shadow: none !important;
+  background: #f7f9fc !important;
+}
+
+/* Hover lift */
+.app-card--hover:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 12px 36px rgba(26, 46, 94, 0.14) !important;
+}

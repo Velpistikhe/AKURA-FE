@@ -1,0 +1,57 @@
+/* AppButton custom styles */
+.app-btn {
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+/* Primary */
+.app-btn--primary.ant-btn-primary {
+  background: linear-gradient(135deg, #1a2e5e, #2a4080) !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(26, 46, 94, 0.3) !important;
+}
+.app-btn--primary.ant-btn-primary:not(:disabled):hover {
+  background: linear-gradient(135deg, #0f1e3d, #1a2e5e) !important;
+  box-shadow: 0 6px 20px rgba(26, 46, 94, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+/* Danger */
+.app-btn--danger.ant-btn-primary.ant-btn-dangerous {
+  background: linear-gradient(135deg, #e02020, #ff4444) !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(224, 32, 32, 0.3) !important;
+}
+.app-btn--danger.ant-btn-primary.ant-btn-dangerous:not(:disabled):hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(224, 32, 32, 0.4) !important;
+}
+
+/* Outline */
+.app-btn--outline {
+  border: 1.5px solid #1a2e5e !important;
+  color: #1a2e5e !important;
+  background: transparent !important;
+}
+.app-btn--outline:not(:disabled):hover {
+  background: rgba(26, 46, 94, 0.06) !important;
+  border-color: #2a4080 !important;
+}
+
+/* XL size override */
+.app-btn--xl {
+  height: 52px !important;
+  padding: 0 36px !important;
+  font-size: 16px !important;
+}
+
+/* Disabled */
+.app-btn:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+}

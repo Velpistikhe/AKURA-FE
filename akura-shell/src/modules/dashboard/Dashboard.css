@@ -1,0 +1,73 @@
+.dashboard-page {
+  max-width: var(--content-max);
+  margin: 0 auto;
+}
+
+.welcome-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 190px;
+  padding: clamp(24px, 4vw, 44px);
+  margin-bottom: 28px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1a2e5e 0%, #2a4080 60%, #1e3464 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: clamp(16px, 2vw, 24px);
+  box-shadow: 0 20px 50px rgba(15, 30, 61, 0.2);
+  animation: akura-enter 480ms var(--ease-standard) both;
+}
+
+.welcome-text { position: relative; z-index: 1; }
+
+.welcome-greeting {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.welcome-icon { color: #faad14; font-size: 14px; }
+.welcome-name { margin-bottom: 8px; color: white; font-size: clamp(25px, 3vw, 36px); font-weight: 800; line-height: 1.2; }
+.welcome-desc { color: rgba(255, 255, 255, 0.6); font-size: 13px; font-weight: 400; }
+.welcome-shapes { position: absolute; inset: 0; pointer-events: none; }
+
+.ws-1,
+.ws-2 {
+  position: absolute;
+  border-radius: 50%;
+  animation: akura-float 7s ease-in-out infinite;
+}
+
+.ws-1 {
+  top: -80px;
+  right: -60px;
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(224, 32, 32, 0.2), transparent);
+}
+
+.ws-2 {
+  right: 200px;
+  bottom: -50px;
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.05), transparent);
+  animation-duration: 9s;
+  animation-direction: reverse;
+}
+
+@media (max-width: 768px) {
+  .welcome-banner { min-height: 160px; padding: 24px 20px; border-radius: 16px; }
+  .welcome-name { font-size: 22px; }
+}
+
+@media (max-width: 480px) {
+  .welcome-desc { max-width: 28rem; line-height: 1.6; }
+}

@@ -1,0 +1,7 @@
+.item-page { display: grid; gap: 20px; }
+.item-page-heading { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; }
+.item-sizes { padding: 14px; border: 1px solid #e5eaf3; border-radius: 12px; background: #fafbfe; }
+.item-sizes-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+.item-size-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)) 40px; gap: 8px; align-items: start; }
+.item-size-row .ant-form-item { margin-bottom: 10px; }
+@media (max-width: 700px) { .item-page-heading { align-items: stretch; flex-direction: column; } .item-size-row { grid-template-columns: 1fr 1fr; } }

@@ -1,0 +1,419 @@
+/* =============================================
+   DASHBOARD LAYOUT STYLES
+   ============================================= */
+
+.dashboard-root {
+  height: 100vh;
+  overflow: hidden;
+  background: #eef3fb !important;
+}
+
+/* ---- SIDEBAR ---- */
+.dashboard-sider {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #172957 0%, #102044 100%) !important;
+  box-shadow: 8px 0 32px rgba(15, 30, 61, 0.16);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  overflow: hidden;
+}
+
+/* Logo */
+.sider-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: default;
+  flex-shrink: 0;
+  min-height: 72px;
+  transition: var(--transition);
+}
+
+.sider-logo-collapsed {
+  justify-content: center;
+  padding: 20px 16px 16px;
+}
+
+.sider-logo-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #e02020, #ff4444);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(224, 32, 32, 0.4);
+}
+
+.sider-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  overflow: hidden;
+}
+
+.sider-logo-name {
+  font-size: 16px;
+  font-weight: 900;
+  color: white;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+.sider-logo-sub {
+  font-size: 8px;
+  font-weight: 600;
+  color: rgba(224, 32, 32, 0.9);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* Menu */
+.sider-menu-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 12px 0;
+}
+
+.sider-menu-wrapper::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sider-menu-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sider-menu-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
+.sider-menu.ant-menu {
+  background: transparent !important;
+  border-right: none !important;
+}
+
+.sider-menu .ant-menu-item,
+.sider-menu .ant-menu-submenu-title {
+  margin: 2px 8px !important;
+  border-radius: 10px !important;
+  width: calc(100% - 16px) !important;
+  font-weight: 500 !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  height: 44px !important;
+  line-height: 44px !important;
+  transition: var(--transition) !important;
+}
+
+.sider-menu .ant-menu-item:hover,
+.sider-menu .ant-menu-submenu-title:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: white !important;
+}
+
+.sider-menu .ant-menu-item-selected {
+  background: linear-gradient(135deg, #e02020, #ff4444) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(224, 32, 32, 0.4) !important;
+}
+
+.sider-menu .ant-menu-item-selected .ant-menu-item-icon,
+.sider-menu .ant-menu-item-selected span {
+  color: white !important;
+}
+
+.sider-menu .ant-menu-sub {
+  background: rgba(0, 0, 0, 0.15) !important;
+}
+
+.sider-menu .ant-menu-sub .ant-menu-item {
+  padding-left: 36px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+}
+
+/* Bottom user info */
+.sider-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  transition: var(--transition);
+}
+
+.sider-user-collapsed {
+  justify-content: center;
+  padding: 16px;
+}
+
+.sider-user-avatar {
+  background: linear-gradient(135deg, #2a4080, #1a2e5e) !important;
+  border: 2px solid rgba(255, 255, 255, 0.2) !important;
+  flex-shrink: 0;
+}
+
+.sider-user-info {
+  overflow: hidden;
+}
+
+.sider-user-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sider-user-role {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+/* ---- MAIN AREA ---- */
+.dashboard-main {
+  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dynamic margin based on sidebar state — handled in JS via Ant Design Layout */
+
+/* ---- HEADER ---- */
+.dashboard-header {
+  background: rgba(255, 255, 255, 0.9) !important;
+  height: 64px !important;
+  line-height: 64px !important;
+  padding: 0 24px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  box-shadow: 0 8px 30px rgba(26, 46, 94, 0.06) !important;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 100 !important;
+  flex-shrink: 0 !important;
+  border-bottom: 1px solid rgba(26, 46, 94, 0.06) !important;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-toggle-btn {
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 10px !important;
+  font-size: 18px !important;
+  color: #1a2e5e !important;
+  transition: var(--transition) !important;
+}
+
+.header-toggle-btn:hover {
+  background: rgba(26, 46, 94, 0.06) !important;
+}
+
+.header-breadcrumb {
+  font-size: 14px;
+}
+
+.header-breadcrumb .ant-breadcrumb-link {
+  color: #5a6a8a;
+  font-weight: 500;
+}
+
+.header-breadcrumb .ant-breadcrumb-link:last-child {
+  color: #1a2e5e;
+  font-weight: 700;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-icon-btn {
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 10px !important;
+  font-size: 17px !important;
+  color: #1a2e5e !important;
+  transition: var(--transition) !important;
+}
+
+.header-icon-btn:hover {
+  background: rgba(26, 46, 94, 0.06) !important;
+}
+
+.header-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(26, 46, 94, 0.1);
+  margin: 0 4px;
+}
+
+.header-user-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.header-user-btn:hover {
+  background: rgba(26, 46, 94, 0.06);
+}
+
+.header-user-btn:focus-visible {
+  outline: 3px solid rgba(42, 64, 128, 0.2);
+  outline-offset: 2px;
+}
+
+.header-user-avatar {
+  background: linear-gradient(135deg, #1a2e5e, #2a4080) !important;
+}
+
+.header-user-info {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.header-user-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a2e5e;
+}
+
+.header-user-role {
+  font-size: 11px;
+  color: #8a9ab8;
+  font-weight: 400;
+}
+
+.notif-badge .ant-badge-count {
+  background: #e02020 !important;
+}
+
+/* ---- CONTENT ---- */
+.dashboard-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 100% 0, rgba(61, 90, 158, 0.08), transparent 34%),
+    #f2f5fb;
+  padding: clamp(18px, 2.4vw, 34px);
+}
+
+.dashboard-content > * {
+  animation: akura-enter var(--motion-base) var(--ease-standard) both;
+}
+
+/* ---- MOBILE OVERLAY ---- */
+.mobile-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 199;
+  backdrop-filter: blur(3px);
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* =============================================
+   RESPONSIVE SIDEBAR
+   ============================================= */
+
+@media (max-width: 768px) {
+  .dashboard-sider {
+    transform: translateX(-100%) !important;
+    width: 240px !important;
+    max-width: 240px !important;
+    min-width: 240px !important;
+  }
+
+  .mobile-sider-open {
+    transform: translateX(0) !important;
+  }
+
+  .dashboard-main {
+    margin-left: 0 !important;
+  }
+
+  .dashboard-content {
+    padding: 18px 14px 28px;
+  }
+
+  .dashboard-header {
+    height: 60px !important;
+    line-height: 60px !important;
+    padding: 0 14px !important;
+  }
+
+  .header-left { gap: 8px; }
+
+  .header-divider { display: none; }
+
+  .header-user-info {
+    display: none;
+  }
+
+  .header-breadcrumb {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .dashboard-content { padding-inline: 10px; }
+  .header-right { gap: 2px; }
+  .header-user-btn { padding-right: 4px; }
+  .header-toggle-btn,
+  .header-icon-btn { width: 38px !important; height: 38px !important; }
+}
+
+/* Ant design layout sider override for proper spacing */
+.ant-layout-sider {
+  position: fixed !important;
+}
+
+.ant-layout-has-sider > .ant-layout {
+  overflow: hidden;
+}

@@ -1,0 +1,44 @@
+.sider-menu-loading {
+  padding: 12px 22px;
+}
+
+.sider-menu-loading .ant-skeleton-paragraph > li {
+  height: 36px !important;
+  margin-block-start: 12px !important;
+  background: rgba(255, 255, 255, 0.09) !important;
+}
+
+.sider-menu-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 16px;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+  text-align: center;
+}
+
+.sider-menu-state .ant-btn {
+  height: 30px;
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sider-menu-empty {
+  margin: 28px 12px;
+}
+
+.sider-menu-empty .ant-empty-description {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 12px;
+}
+
+.sider-logo .akura-logo {
+  max-width: 100%;
+}
+
+.sider-logo-collapsed .akura-logo {
+  justify-content: center;
+}

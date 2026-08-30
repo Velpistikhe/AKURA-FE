@@ -1,0 +1,42 @@
+/* AppModal */
+.app-modal .ant-modal-content {
+  border-radius: 20px !important;
+  overflow: hidden !important;
+  box-shadow: 0 20px 60px rgba(26, 46, 94, 0.2) !important;
+}
+
+.app-modal .ant-modal-header {
+  background: #f7f9fc !important;
+  border-bottom: 1px solid rgba(26, 46, 94, 0.07) !important;
+  padding: 18px 24px !important;
+  margin-bottom: 0 !important;
+}
+
+.app-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a2e5e;
+}
+
+.app-modal .ant-modal-body {
+  padding: 24px !important;
+}
+
+.app-modal .ant-modal-footer {
+  padding: 16px 24px !important;
+  border-top: 1px solid rgba(26, 46, 94, 0.07) !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+}
+
+.app-modal .ant-modal-close {
+  top: 16px !important;
+  right: 20px !important;
+  color: #8a9ab8 !important;
+}
+
+.app-modal .ant-modal-close:hover {
+  color: #1a2e5e !important;
+  background: rgba(26, 46, 94, 0.06) !important;
+}

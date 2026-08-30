@@ -1,0 +1,87 @@
+.akura-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: #202f8f;
+}
+
+.akura-logo-mark {
+  width: var(--akura-mark-size, 48px);
+  height: auto;
+  flex: 0 0 var(--akura-mark-size, 48px);
+  overflow: visible;
+}
+
+.akura-mark-upper,
+.akura-mark-lower {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 7;
+}
+
+.akura-mark-upper {
+  stroke: #3d46df;
+}
+
+.akura-mark-lower {
+  stroke: #e82c35;
+}
+
+.akura-mark-sclera {
+  fill: #f8f9ff;
+  stroke: #a8b7f5;
+  stroke-width: 1.5;
+}
+
+.akura-mark-iris {
+  fill: #3544ec;
+}
+
+.akura-mark-pupil {
+  fill: #050611;
+}
+
+.akura-mark-glint {
+  fill: #fff;
+}
+
+.akura-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+  white-space: nowrap;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.15px;
+}
+
+.akura-wordmark strong {
+  font-size: 1.12em;
+  font-weight: 900;
+  letter-spacing: -0.35px;
+}
+
+.akura-wordmark > span {
+  font-weight: 700;
+}
+
+.akura-wordmark > span::before {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 0.8em;
+  margin-right: 5px;
+  border-radius: 2px;
+  background: #e82c35;
+  vertical-align: -0.05em;
+}
+
+.akura-logo-inverse {
+  color: #fff;
+}
+
+.akura-logo-inverse .akura-wordmark > span {
+  color: #bfcaff;
+}
