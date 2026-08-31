@@ -18,13 +18,13 @@ import {
  */
 
 const STATUS_MAP = {
-  success:  { color: 'success',  icon: <CheckCircleOutlined />,  label: 'Berhasil' },
-  error:    { color: 'error',    icon: <CloseCircleOutlined />,   label: 'Gagal' },
-  warning:  { color: 'warning',  icon: <WarningOutlined />,       label: 'Peringatan' },
+  success:  { color: 'success',  icon: <CheckCircleOutlined />,  label: 'Successful' },
+  error:    { color: 'error',    icon: <CloseCircleOutlined />,   label: 'Failed' },
+  warning:  { color: 'warning',  icon: <WarningOutlined />,       label: 'Warning' },
   info:     { color: 'processing', icon: <InfoCircleOutlined />,  label: 'Info' },
-  pending:  { color: 'default',  icon: <ClockCircleOutlined />,   label: 'Menunggu' },
-  inactive: { color: 'default',  icon: <MinusCircleOutlined />,   label: 'Nonaktif' },
-  active:   { color: 'success',  icon: <CheckCircleOutlined />,   label: 'Aktif' },
+  pending:  { color: 'default',  icon: <ClockCircleOutlined />,   label: 'Pending' },
+  inactive: { color: 'default',  icon: <MinusCircleOutlined />,   label: 'Inactive' },
+  active:   { color: 'success',  icon: <CheckCircleOutlined />,   label: 'Active' },
 }
 
 function AppTag({ status, showIcon = true, children, color, ...rest }) {

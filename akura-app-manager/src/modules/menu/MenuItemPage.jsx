@@ -120,7 +120,7 @@ function MenuItemPage() {
       const response = await menuItemService.get(item.id)
       const detail = response.data?.menuItem || response.data?.item || response.data
 
-      if (!detail?.id) throw new Error('Data detail menu item tidak valid.')
+      if (!detail?.id) throw new Error('Invalid menu item detail data.')
 
       setEditingItem(detail)
       form.resetFields()
@@ -146,7 +146,7 @@ function MenuItemPage() {
     try {
       if (editingItem) {
         await menuItemService.update(editingItem.id, values)
-        message.success('Menu item berhasil diperbarui.')
+        message.success('Menu item updated successfully.')
       } else {
         await menuItemService.create({
           menuId: values.menuId,
@@ -155,7 +155,7 @@ function MenuItemPage() {
           path: values.path,
           order: values.order,
         })
-        message.success('Menu item berhasil dibuat.')
+        message.success('Menu item created successfully.')
       }
       setModalOpen(false)
       await loadItems()
@@ -169,7 +169,7 @@ function MenuItemPage() {
   const deleteItem = async (item) => {
     try {
       await menuItemService.remove(item.id)
-      message.success('Menu item berhasil dihapus.')
+      message.success('Menu item deleted successfully.')
       if (items.length === 1 && page > 1) setPage((current) => current - 1)
       else await loadItems()
     } catch (error) {
@@ -209,7 +209,7 @@ function MenuItemPage() {
       filterDropdown: (props) => (
         <TableSearchFilter
           {...props}
-          placeholder="Cari key, label, atau path"
+          placeholder="Search key, label, or path"
           onSearch={(value) => { setSearch(value); setPage(1) }}
         />
       ),
@@ -217,7 +217,7 @@ function MenuItemPage() {
     },
     { title: 'Label', dataIndex: 'label', key: 'label', sorter: true, sortOrder: getSortOrder('label', sortBy, sortOrder) },
     { title: 'Path', dataIndex: 'path', key: 'path', sorter: true, sortOrder: getSortOrder('path', sortBy, sortOrder), render: (value) => <Typography.Text code>{value}</Typography.Text> },
-    { title: 'Urutan', dataIndex: 'order', key: 'order', width: 90, sorter: true, sortOrder: getSortOrder('order', sortBy, sortOrder) },
+    { title: 'Order', dataIndex: 'order', key: 'order', width: 90, sorter: true, sortOrder: getSortOrder('order', sortBy, sortOrder) },
     {
       title: 'Status',
       dataIndex: 'isActive',
@@ -226,15 +226,15 @@ function MenuItemPage() {
       sorter: true,
       sortOrder: getSortOrder('isActive', sortBy, sortOrder),
       filters: [
-        { text: 'Aktif', value: 'true' },
-        { text: 'Nonaktif', value: 'false' },
+        { text: 'Active', value: 'true' },
+        { text: 'Inactive', value: 'false' },
       ],
       filterMultiple: false,
       filteredValue: activeFilter ? [activeFilter] : null,
-      render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Aktif' : 'Nonaktif'}</Tag>,
+      render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Tag>,
     },
     {
-      title: 'Aksi',
+      title: 'Actions',
       key: 'actions',
       width: 130,
       fixed: 'right',
@@ -247,8 +247,8 @@ function MenuItemPage() {
             onClick={() => openEdit(item)}
             aria-label={`Edit ${item.label}`}
           />
-          <Popconfirm title="Hapus menu item?" okText="Hapus" cancelText="Batal" okButtonProps={{ danger: true }} onConfirm={() => deleteItem(item)}>
-            <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Hapus ${item.label}`} />
+          <Popconfirm title="Delete menu item?" okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }} onConfirm={() => deleteItem(item)}>
+            <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Delete ${item.label}`} />
           </Popconfirm>
         </Space>
       ),
@@ -259,10 +259,10 @@ function MenuItemPage() {
     <section className="menu-page">
       <div className="menu-page-heading">
         <div>
-          <Typography.Title level={2}>Manajemen Menu Item</Typography.Title>
-          <Typography.Text tone="secondary">Kelola route aktif yang ditampilkan di dalam setiap menu.</Typography.Text>
+          <Typography.Title level={2}>Menu Item Management</Typography.Title>
+          <Typography.Text tone="secondary">Manage the active routes displayed within each menu.</Typography.Text>
         </div>
-        <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate} disabled={!parentMenus.length}>Tambah menu item</Button>
+        <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate} disabled={!parentMenus.length}>Add Menu Item</Button>
       </div>
 
       <Card>
@@ -284,24 +284,24 @@ function MenuItemPage() {
         />
       </Card>
 
-      <Modal title={editingItem ? 'Edit menu item' : 'Tambah menu item'} visible={modalOpen} busy={saving} okText={editingItem ? 'Simpan' : 'Tambah'} cancelText="Batal" onOk={saveItem} onCancel={() => setModalOpen(false)} preRender unmountOnClose>
+      <Modal title={editingItem ? 'Edit Menu Item' : 'Add Menu Item'} visible={modalOpen} busy={saving} okText={editingItem ? 'Save' : 'Add'} cancelText="Cancel" onOk={saveItem} onCancel={() => setModalOpen(false)} preRender unmountOnClose>
         <Form form={form} layout="vertical" preserve={false}>
-          <Form.Item name="menuId" label="Parent menu" rules={[{ required: true, message: 'Parent menu wajib dipilih.' }]}>
-            <Select showSearch optionFilterProp="label" options={menuOptions} placeholder="Pilih menu" />
+          <Form.Item name="menuId" label="Parent Menu" rules={[{ required: true, message: 'Parent menu is required.' }]}>
+            <Select showSearch optionFilterProp="label" options={menuOptions} placeholder="Select menu" />
           </Form.Item>
-          <Form.Item name="key" label="Key" rules={[{ required: true, message: 'Key wajib diisi.' }, { pattern: /^[a-z0-9_-]+$/, message: 'Gunakan huruf kecil, angka, underscore, atau tanda hubung.' }, { max: 100 }]}>
-            <Input placeholder="contoh: menu" />
+          <Form.Item name="key" label="Key" rules={[{ required: true, message: 'Key is required.' }, { pattern: /^[a-z0-9_-]+$/, message: 'Use lowercase letters, numbers, underscores, or hyphens.' }, { max: 100 }]}>
+            <Input placeholder="example: menu" />
           </Form.Item>
-          <Form.Item name="label" label="Label" rules={[{ required: true, message: 'Label wajib diisi.' }, { max: 200 }]}>
-            <Input placeholder="contoh: Menu" />
+          <Form.Item name="label" label="Label" rules={[{ required: true, message: 'Label is required.' }, { max: 200 }]}>
+            <Input placeholder="example: Menu" />
           </Form.Item>
-          <Form.Item name="path" label="Path" rules={[{ required: true, message: 'Path wajib diisi.' }, { max: 500 }]}>
-            <Input placeholder="contoh: appmanager/menu" />
+          <Form.Item name="path" label="Path" rules={[{ required: true, message: 'Path is required.' }, { max: 500 }]}>
+            <Input placeholder="example: appmanager/menu" />
           </Form.Item>
-          <Form.Item name="order" label="Urutan" rules={[{ required: true, message: 'Urutan wajib diisi.' }]}>
+          <Form.Item name="order" label="Order" rules={[{ required: true, message: 'Order is required.' }]}>
             <InputNumber min={0} precision={0} className="menu-order-input" />
           </Form.Item>
-          {editingItem && <Form.Item name="isActive" label="Status" valuePropName="checked"><Switch activeLabel="Aktif" inactiveLabel="Nonaktif" /></Form.Item>}
+          {editingItem && <Form.Item name="isActive" label="Status" valuePropName="checked"><Switch activeLabel="Active" inactiveLabel="Inactive" /></Form.Item>}
         </Form>
       </Modal>
     </section>

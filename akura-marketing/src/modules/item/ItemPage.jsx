@@ -186,11 +186,10 @@ function ItemPage() {
         name: values.name.trim(),
         sizes,
       };
-      const response = editingItem
-        ? await itemService.update(editingItem.id, payload)
-        : await itemService.create(payload);
+      if (editingItem) await itemService.update(editingItem.id, payload);
+      else await itemService.create(payload);
 
-      message.success(response.message || "Item berhasil disimpan.");
+      message.success("Item saved successfully.");
       setModalOpen(false);
       await loadItems();
     } catch (error) {
@@ -202,8 +201,8 @@ function ItemPage() {
 
   const remove = async (itemSize) => {
     try {
-      const response = await itemService.remove(itemSize.item.id);
-      message.success(response.message || "Item berhasil dihapus.");
+      await itemService.remove(itemSize.item.id);
+      message.success("Item deleted successfully.");
       if (items.length === 1 && page > 1) setPage((current) => current - 1);
       else await loadItems();
     } catch (error) {
@@ -241,7 +240,7 @@ function ItemPage() {
       render: (item) => item?.service?.name || "-",
     },
     {
-      title: "Nama Item",
+      title: "Item Name",
       dataIndex: "item",
       key: "itemName",
       width: 280,
@@ -251,7 +250,7 @@ function ItemPage() {
       filterDropdown: (props) => (
         <TableSearchFilter
           {...props}
-          placeholder="Cari nama item"
+          placeholder="Search item name"
           onSearch={(value) => {
             setItemName(value);
             setPage(1);
@@ -261,7 +260,7 @@ function ItemPage() {
       render: (item) => item?.name || "-",
     },
     {
-      title: "Ukuran",
+      title: "Size",
       dataIndex: "size",
       key: "size",
       width: 150,
@@ -271,7 +270,7 @@ function ItemPage() {
       filterDropdown: (props) => (
         <TableSearchFilter
           {...props}
-          placeholder="Cari ukuran"
+          placeholder="Search size"
           onSearch={(value) => {
             setSizeFilter(value);
             setPage(1);
@@ -281,35 +280,35 @@ function ItemPage() {
       render: (size) => <Tag>{size}</Tag>,
     },
     {
-      title: "Harga Service Utama",
+      title: "Primary Service Price",
       dataIndex: "priceServicePrimary",
       key: "priceServicePrimary",
       width: 220,
       render: formatPrice,
     },
     {
-      title: "Harga Service Sister",
+      title: "Sister Service Price",
       dataIndex: "priceServiceSisterCompany",
       key: "priceServiceSisterCompany",
       width: 220,
       render: formatPrice,
     },
     {
-      title: "Harga Maintenance Utama",
+      title: "Primary Maintenance Price",
       dataIndex: "priceMaintenancePrimary",
       key: "priceMaintenancePrimary",
       width: 230,
       render: formatPrice,
     },
     {
-      title: "Harga Maintenance Sister",
+      title: "Sister Maintenance Price",
       dataIndex: "priceMaintenanceSisterCompany",
       key: "priceMaintenanceSisterCompany",
       width: 230,
       render: formatPrice,
     },
     {
-      title: "Aksi",
+      title: "Actions",
       key: "actions",
       width: 150,
       fixed: "right",
@@ -322,9 +321,9 @@ function ItemPage() {
             aria-label={`Edit ${item.item?.name || "item"}`}
           />
           <Popconfirm
-            title="Hapus item?"
-            okText="Hapus"
-            cancelText="Batal"
+            title="Delete item?"
+            okText="Delete"
+            cancelText="Cancel"
             okButtonProps={{ danger: true }}
             onConfirm={() => remove(item)}
           >
@@ -332,7 +331,7 @@ function ItemPage() {
               isDanger
               variant="text"
               icon={<DeleteOutlined />}
-              aria-label={`Hapus ${item.item?.name || "item"}`}
+              aria-label={`Delete ${item.item?.name || "item"}`}
             />
           </Popconfirm>
         </Space>
@@ -346,11 +345,11 @@ function ItemPage() {
         <div>
           <Typography.Title level={2}>Item Service</Typography.Title>
           <Typography.Text tone="secondary">
-            Kelola item dan harga berdasarkan service.
+            Manage items and pricing by service.
           </Typography.Text>
         </div>
         <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          Tambah item
+          Add Item
         </Button>
       </div>
 
@@ -369,18 +368,18 @@ function ItemPage() {
             total: pagination.total,
             showSizeChanger: true,
             pageSizeOptions: [10, 20, 50, 100],
-            showTotal: (total) => `${total} ukuran item`,
+            showTotal: (total) => `${total} item sizes`,
           }}
         />
       </Card>
 
       <Modal
-        title={editingItem ? `Edit Item: ${editingItem.name}` : "Tambah Item"}
+        title={editingItem ? `Edit Item: ${editingItem.name}` : "Add Item"}
         visible={modalOpen}
         width={760}
         busy={saving}
-        okText="Simpan"
-        cancelText="Batal"
+        okText="Save"
+        cancelText="Cancel"
         onOk={save}
         onCancel={() => setModalOpen(false)}
         unmountOnClose
@@ -390,7 +389,7 @@ function ItemPage() {
               <Form.Item
                 name="serviceId"
                 label="Service"
-                rules={[{ required: true, message: "Service wajib dipilih." }]}
+                rules={[{ required: true, message: "Service is required." }]}
               >
                 <Select
                   options={services.map((service) => ({
@@ -401,12 +400,12 @@ function ItemPage() {
               </Form.Item>
               <Form.Item
                 name="name"
-                label="Nama"
+                label="Name"
                 rules={[
                   {
                     required: true,
                     whitespace: true,
-                    message: "Nama wajib diisi.",
+                    message: "Name is required.",
                   },
                   { max: 200 },
                 ]}
@@ -419,13 +418,13 @@ function ItemPage() {
             {(fields, { add, remove: removeSize }) => (
               <div className="item-sizes">
                 <div className="item-sizes-heading">
-                  <Typography.Text strong>Ukuran dan harga</Typography.Text>
+                  <Typography.Text strong>Sizes and Prices</Typography.Text>
                   <Button
                     variant="dashed"
                     icon={<PlusOutlined />}
                     onClick={() => add({ ...emptySize })}
                   >
-                    Tambah ukuran
+                    Add Size
                   </Button>
                 </div>
 
@@ -438,26 +437,26 @@ function ItemPage() {
                         {
                           required: true,
                           whitespace: true,
-                          message: "Ukuran wajib diisi.",
+                          message: "Size is required.",
                         },
                         { max: 100 },
                       ]}
                     >
-                      <Input placeholder="Ukuran" />
+                      <Input placeholder="Size" />
                     </Form.Item>
                     <Form.Item
                       {...field}
                       name={[field.name, "priceServicePrimary"]}
                       rules={[{ required: true }]}
                     >
-                      <Input type="number" min="0" placeholder="Harga utama" />
+                      <Input type="number" min="0" placeholder="Primary price" />
                     </Form.Item>
                     <Form.Item
                       {...field}
                       name={[field.name, "priceServiceSisterCompany"]}
                       rules={[{ required: true }]}
                     >
-                      <Input type="number" min="0" placeholder="Harga sister" />
+                      <Input type="number" min="0" placeholder="Sister price" />
                     </Form.Item>
                     {itemHasMaintenance && (
                       <>
@@ -469,7 +468,7 @@ function ItemPage() {
                           <Input
                             type="number"
                             min="0"
-                            placeholder="Harga maint. utama"
+                            placeholder="Primary maint. price"
                           />
                         </Form.Item>
                         <Form.Item
@@ -479,7 +478,7 @@ function ItemPage() {
                           <Input
                             type="number"
                             min="0"
-                            placeholder="Harga maint. sister"
+                            placeholder="Sister maint. price"
                           />
                         </Form.Item>
                       </>
@@ -489,7 +488,7 @@ function ItemPage() {
                       variant="text"
                       icon={<DeleteOutlined />}
                       onClick={() => removeSize(field.name)}
-                      aria-label="Hapus ukuran"
+                      aria-label="Delete size"
                     />
                   </div>
                 ))}

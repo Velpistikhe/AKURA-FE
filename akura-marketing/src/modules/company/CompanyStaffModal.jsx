@@ -96,7 +96,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
         name: values.name.trim(),
         title: values.title,
       })
-      message.success('Staff berhasil ditambahkan.')
+      message.success('Staff member added successfully.')
       setAddModalOpen(false)
       await loadStaffs()
       await onChanged?.()
@@ -110,7 +110,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
   const deleteStaff = async (staff) => {
     try {
       await companyStaffService.remove(staff.id)
-      message.success('Staff berhasil dihapus.')
+      message.success('Staff member deleted successfully.')
       if (staffs.length === 1 && page > 1) setPage((current) => current - 1)
       else await loadStaffs()
       await onChanged?.()
@@ -130,7 +130,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
 
   const columns = [
     {
-      title: 'Nama',
+      title: 'Name',
       dataIndex: 'name',
       key: 'name',
       sorter: true,
@@ -156,18 +156,18 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
       render: (value) => <Tag color="blue">{value === 'mrs' ? 'Mrs' : 'Mr'}</Tag>,
     },
     {
-      title: 'Aksi',
+      title: 'Actions',
       key: 'actions',
       width: 80,
       render: (_, staff) => (
         <Popconfirm
-          title="Hapus staff?"
-          okText="Hapus"
-          cancelText="Batal"
+          title="Delete staff member?"
+          okText="Delete"
+          cancelText="Cancel"
           okButtonProps={{ danger: true }}
           onConfirm={() => deleteStaff(staff)}
         >
-          <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Hapus ${staff.name}`} />
+          <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Delete ${staff.name}`} />
         </Popconfirm>
       ),
     },
@@ -176,7 +176,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
   return (
     <>
       <Modal
-        title={`Staff Company: ${company?.name || ''}`}
+        title={`Company Staff: ${company?.name || ''}`}
         visible={visible}
         width={900}
         footer={null}
@@ -185,7 +185,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
         unmountOnClose
       >
         <div className="staff-modal-action">
-          <Button variant="primary" icon={<PlusOutlined />} onClick={openAdd}>Tambah staff</Button>
+          <Button variant="primary" icon={<PlusOutlined />} onClick={openAdd}>Add Staff</Button>
         </div>
         <Table
           rowKey="id"
@@ -206,21 +206,21 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
       </Modal>
 
       <Modal
-        title={`Tambah staff: ${company?.name || ''}`}
+        title={`Add Staff: ${company?.name || ''}`}
         visible={addModalOpen}
         busy={saving}
-        okText="Tambah"
-        cancelText="Batal"
+        okText="Add"
+        cancelText="Cancel"
         onOk={addStaff}
         onCancel={() => setAddModalOpen(false)}
         preRender
         unmountOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
-          <Form.Item name="name" label="Nama" rules={[{ required: true, whitespace: true, message: 'Nama wajib diisi.' }, { max: 200 }]}>
-            <Input maxLength={200} placeholder="contoh: John Doe" />
+          <Form.Item name="name" label="Name" rules={[{ required: true, whitespace: true, message: 'Name is required.' }, { max: 200 }]}>
+            <Input maxLength={200} placeholder="example: John Doe" />
           </Form.Item>
-          <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Title wajib dipilih.' }]}>
+          <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Title is required.' }]}>
             <Select options={TITLES} />
           </Form.Item>
         </Form>

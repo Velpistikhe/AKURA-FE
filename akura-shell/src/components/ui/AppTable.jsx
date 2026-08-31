@@ -14,7 +14,7 @@ import './AppTable.css'
  */
 function AppTable({
   zebraRows = false,
-  emptyText = 'Belum ada data',
+  emptyText = 'No data available',
   className = '',
   locale,
   ...rest

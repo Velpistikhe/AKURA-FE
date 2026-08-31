@@ -86,7 +86,7 @@ function CompanyPage() {
     try {
       const response = await companyService.get(company.id)
       const detail = response.data?.company || response.data
-      if (!detail?.id) throw new Error('Data detail company tidak valid.')
+      if (!detail?.id) throw new Error('Invalid company detail data.')
 
       setEditingCompany(detail)
       form.resetFields()
@@ -115,10 +115,10 @@ function CompanyPage() {
 
       if (editingCompany) {
         await companyService.update(editingCompany.id, payload)
-        message.success('Company berhasil diperbarui.')
+        message.success('Company updated successfully.')
       } else {
         await companyService.create(payload)
-        message.success('Company berhasil dibuat.')
+        message.success('Company created successfully.')
       }
 
       setModalOpen(false)
@@ -133,7 +133,7 @@ function CompanyPage() {
   const deleteCompany = async (company) => {
     try {
       await companyService.remove(company.id)
-      message.success('Company berhasil dihapus.')
+      message.success('Company deleted successfully.')
       if (companies.length === 1 && page > 1) setPage((current) => current - 1)
       else await loadCompanies()
     } catch (error) {
@@ -152,7 +152,7 @@ function CompanyPage() {
 
   const columns = [
     {
-      title: 'Nama',
+      title: 'Name',
       dataIndex: 'name',
       key: 'name',
       sorter: true,
@@ -167,29 +167,29 @@ function CompanyPage() {
       render: (value) => <Typography.Text strong>{value}</Typography.Text>,
     },
     {
-      title: 'Alamat',
+      title: 'Address',
       dataIndex: 'address',
       key: 'address',
       sorter: true,
       sortOrder: getSortOrder('address', sortBy, sortOrder),
     },
     {
-      title: 'Kontrak',
+      title: 'Contract',
       dataIndex: 'hasContract',
       key: 'hasContract',
       width: 120,
       sorter: true,
       sortOrder: getSortOrder('hasContract', sortBy, sortOrder),
       filters: [
-        { text: 'Memiliki kontrak', value: 'true' },
-        { text: 'Tanpa kontrak', value: 'false' },
+        { text: 'Has contract', value: 'true' },
+        { text: 'No contract', value: 'false' },
       ],
       filterMultiple: false,
       filteredValue: contractFilter ? [contractFilter] : null,
-      render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Ada' : 'Tidak ada'}</Tag>,
+      render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Yes' : 'No'}</Tag>,
     },
     {
-      title: 'Jumlah Staff',
+      title: 'Staff Count',
       key: 'staffCount',
       width: 130,
       render: (_, company) => (
@@ -199,7 +199,7 @@ function CompanyPage() {
       ),
     },
     {
-      title: 'Aksi',
+      title: 'Actions',
       key: 'actions',
       width: 130,
       fixed: 'right',
@@ -213,14 +213,14 @@ function CompanyPage() {
             aria-label={`Edit ${company.name}`}
           />
           <Popconfirm
-            title="Hapus company?"
-            description="Data company yang dihapus tidak dapat dikembalikan."
-            okText="Hapus"
-            cancelText="Batal"
+            title="Delete company?"
+            description="Deleted company data cannot be restored."
+            okText="Delete"
+            cancelText="Cancel"
             okButtonProps={{ danger: true }}
             onConfirm={() => deleteCompany(company)}
           >
-            <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Hapus ${company.name}`} />
+            <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Delete ${company.name}`} />
           </Popconfirm>
         </Space>
       ),
@@ -231,10 +231,10 @@ function CompanyPage() {
     <section className="company-page">
       <div className="company-page-heading">
         <div>
-          <Typography.Title level={2}>Pengelolaan Company</Typography.Title>
-          <Typography.Text tone="secondary">Kelola company pada layanan Marketing Akura.</Typography.Text>
+          <Typography.Title level={2}>Company Management</Typography.Title>
+          <Typography.Text tone="secondary">Manage companies in the Akura Marketing service.</Typography.Text>
         </div>
-        <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate}>Tambah company</Button>
+        <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate}>Add Company</Button>
       </div>
 
       <Card>
@@ -257,25 +257,25 @@ function CompanyPage() {
       </Card>
 
       <Modal
-        title={editingCompany ? 'Edit company' : 'Tambah company'}
+        title={editingCompany ? 'Edit Company' : 'Add Company'}
         visible={modalOpen}
         busy={saving}
-        okText={editingCompany ? 'Simpan' : 'Tambah'}
-        cancelText="Batal"
+        okText={editingCompany ? 'Save' : 'Add'}
+        cancelText="Cancel"
         onOk={saveCompany}
         onCancel={() => setModalOpen(false)}
         preRender
         unmountOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
-          <Form.Item name="name" label="Nama" rules={[{ required: true, whitespace: true, message: 'Nama wajib diisi.' }, { max: 200 }]}>
-            <Input maxLength={200} placeholder="contoh: PT Akura Indonesia" />
+          <Form.Item name="name" label="Name" rules={[{ required: true, whitespace: true, message: 'Name is required.' }, { max: 200 }]}>
+            <Input maxLength={200} placeholder="example: PT Akura Indonesia" />
           </Form.Item>
-          <Form.Item name="address" label="Alamat" rules={[{ required: true, whitespace: true, message: 'Alamat wajib diisi.' }, { max: 500 }]}>
-            <Input.TextArea maxLength={500} rows={4} placeholder="contoh: Jakarta" showCount />
+          <Form.Item name="address" label="Address" rules={[{ required: true, whitespace: true, message: 'Address is required.' }, { max: 500 }]}>
+            <Input.TextArea maxLength={500} rows={4} placeholder="example: Jakarta" showCount />
           </Form.Item>
-          <Form.Item name="hasContract" label="Kontrak" valuePropName="checked">
-            <Switch activeLabel="Ada" inactiveLabel="Tidak ada" />
+          <Form.Item name="hasContract" label="Contract" valuePropName="checked">
+            <Switch activeLabel="Yes" inactiveLabel="No" />
           </Form.Item>
         </Form>
       </Modal>

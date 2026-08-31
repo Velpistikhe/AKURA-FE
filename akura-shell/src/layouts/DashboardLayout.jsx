@@ -95,6 +95,30 @@ function resolveMenuPath(path) {
   return `/dashboard/${normalized}`
 }
 
+function translateMenuLabel(label) {
+  const translations = {
+    'Beranda': 'Home',
+    'Profil Saya': 'My Profile',
+    'Pengaturan': 'Settings',
+    'Pengelolaan User': 'User Management',
+    'Kelola User': 'Manage Users',
+    'Pengguna': 'Users',
+    'Manajemen Menu': 'Menu Management',
+    'Manajemen Menu Item': 'Menu Item Management',
+    'Akses Menu': 'Menu Access',
+    'Access Menu': 'Menu Access',
+    'Kelola Company': 'Manage Companies',
+    'Pengelolaan Company': 'Company Management',
+    'Kelola Service': 'Manage Services',
+    'Pengelolaan Service': 'Service Management',
+    'Kelola Maintenance': 'Manage Maintenance',
+    'Pengelolaan Maintenance': 'Maintenance Management',
+    'Perusahaan': 'Companies',
+    'Layanan': 'Services',
+  }
+  return translations[label] || label
+}
+
 function mapMenus(menus) {
   if (!Array.isArray(menus)) return []
 
@@ -102,14 +126,14 @@ function mapMenus(menus) {
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     .map((menu) => ({
       key: menu.key,
-      label: menu.label,
+      label: translateMenuLabel(menu.label),
       icon: resolveMenuIcon(menu.icon),
       children: Array.isArray(menu.items)
         ? [...menu.items]
             .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
             .map((item) => ({
               key: resolveMenuPath(item.path),
-              label: item.label,
+              label: translateMenuLabel(item.label),
               icon: resolveMenuIcon(item.icon),
             }))
         : [],
@@ -151,9 +175,9 @@ function DashboardLayout() {
   const handleLogout = async () => {
     try {
       const responseMessage = await logout()
-      notify.success('Logout Berhasil', responseMessage || 'Logout berhasil.')
+      notify.success('Logout Successful', responseMessage || 'You have signed out successfully.')
     } catch (error) {
-      notify.error('Logout Gagal', error.response?.data?.message || error.message || 'Logout gagal.')
+      notify.error('Logout Failed', error.response?.data?.message || error.message || 'Unable to sign out.')
     } finally {
       navigate('/login')
     }
@@ -166,21 +190,21 @@ function DashboardLayout() {
   const siderWidth = collapsed ? 80 : 240
   const activeMenu = findActiveMenu(menuItems, location.pathname)
   const staticLabels = {
-    '/dashboard/profile': 'Profil Saya',
-    '/dashboard/settings': 'Pengaturan Akun',
+    '/dashboard/profile': 'My Profile',
+    '/dashboard/settings': 'Account Settings',
   }
   const currentLabel = activeMenu?.label
     || staticLabels[location.pathname]
-    || (location.pathname.startsWith('/dashboard/user/') ? 'Profil Saya' : 'Dashboard')
+    || (location.pathname.startsWith('/dashboard/user/') ? 'My Profile' : 'Dashboard')
   const visibleOpenMenuKeys = activeMenu && !openMenuKeys.includes(activeMenu.groupKey)
     ? [...openMenuKeys, activeMenu.groupKey]
     : openMenuKeys
 
   const userMenuItems = [
-    { key: 'profile', icon: <UserOutlined />, label: 'Profil Saya' },
-    { key: 'settings', icon: <SettingOutlined />, label: 'Pengaturan' },
+    { key: 'profile', icon: <UserOutlined />, label: 'My Profile' },
+    { key: 'settings', icon: <SettingOutlined />, label: 'Settings' },
     { type: 'divider' },
-    { key: 'logout', icon: <LogoutOutlined />, label: 'Keluar', danger: true },
+    { key: 'logout', icon: <LogoutOutlined />, label: 'Sign Out', danger: true },
   ]
 
   const handleUserMenu = ({ key }) => {
@@ -214,20 +238,20 @@ function DashboardLayout() {
         <div className="sider-menu-wrapper">
           {menuError ? (
             <div className="sider-menu-state">
-              <span>Menu gagal dimuat.</span>
+              <span>Unable to load the menu.</span>
               <AppButton
                 id="btn-reload-menu"
                 size="small"
                 onClick={() => loadMenus()}
               >
-                Coba lagi
+                Try Again
               </AppButton>
             </div>
           ) : menuItems.length === 0 ? (
             <Empty
               className="sider-menu-empty"
               image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description="Belum ada menu"
+              description="No menu available"
             />
           ) : (
             <Menu
@@ -285,7 +309,7 @@ function DashboardLayout() {
           </div>
 
           <div className="header-right">
-            <Tooltip title="Notifikasi">
+            <Tooltip title="Notifications">
               <AppBadge variant="danger" count={3} size="small" className="notif-badge">
                 <AppButton
                   id="btn-notifications"

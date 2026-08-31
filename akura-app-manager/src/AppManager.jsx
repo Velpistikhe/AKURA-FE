@@ -18,9 +18,9 @@ import UserPage from './modules/user/UserPage'
 import './AppManager.css'
 
 const applications = [
-  { key: 'core', name: 'Akura Core', owner: 'Platform Team', status: 'Aktif', version: '1.0.0' },
-  { key: 'identity', name: 'Identity Manager', owner: 'Security Team', status: 'Aktif', version: '1.0.0' },
-  { key: 'report', name: 'Report Center', owner: 'Data Team', status: 'Pengembangan', version: '0.8.0' },
+  { key: 'core', name: 'Akura Core', owner: 'Platform Team', status: 'Active', version: '1.0.0' },
+  { key: 'identity', name: 'Identity Manager', owner: 'Security Team', status: 'Active', version: '1.0.0' },
+  { key: 'report', name: 'Report Center', owner: 'Data Team', status: 'In Development', version: '0.8.0' },
 ]
 
 function AppManagerOverview({ currentUser }) {
@@ -32,25 +32,25 @@ function AppManagerOverview({ currentUser }) {
         <div>
           <Typography.Title level={2}>Akura App Manager</Typography.Title>
           <Typography.Text tone="secondary">
-            Kelola aplikasi dan modul Akura dari satu tempat, {displayName}.
+            Manage Akura applications and modules from one place, {displayName}.
           </Typography.Text>
         </div>
-        <Button variant="primary" icon={<AppstoreOutlined />}>Daftarkan aplikasi</Button>
+        <Button variant="primary" icon={<AppstoreOutlined />}>Register Application</Button>
       </div>
 
       <Row gutter={[16, 16]} className="app-manager-stats">
         <Col xs={24} md={8}>
-          <Card><Statistic title="Total aplikasi" value={applications.length} prefix={<AppstoreOutlined />} /></Card>
+          <Card><Statistic title="Total Applications" value={applications.length} prefix={<AppstoreOutlined />} /></Card>
         </Col>
         <Col xs={24} md={8}>
-          <Card><Statistic title="Aplikasi aktif" value={2} prefix={<CheckCircleOutlined />} /></Card>
+          <Card><Statistic title="Active Applications" value={2} prefix={<CheckCircleOutlined />} /></Card>
         </Col>
         <Col xs={24} md={8}>
           <Card><Statistic title="Environment" value="Production" prefix={<CloudServerOutlined />} /></Card>
         </Col>
       </Row>
 
-      <Card title="Daftar aplikasi" className="app-manager-list">
+      <Card title="Application List" className="app-manager-list">
         {applications.map((application) => (
           <div className="app-manager-item" key={application.key}>
             <Space size="middle">
@@ -61,8 +61,8 @@ function AppManagerOverview({ currentUser }) {
               </div>
             </Space>
             <Space>
-              <Tag color={application.status === 'Aktif' ? 'success' : 'processing'}>{application.status}</Tag>
-              <Button variant="text" icon={<SettingOutlined />} aria-label={`Atur ${application.name}`} />
+              <Tag color={application.status === 'Active' ? 'success' : 'processing'}>{application.status}</Tag>
+              <Button variant="text" icon={<SettingOutlined />} aria-label={`Configure ${application.name}`} />
             </Space>
           </div>
         ))}

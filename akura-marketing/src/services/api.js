@@ -26,7 +26,7 @@ async function executeRequest(path, options = {}) {
 }
 
 function createApiError(response, payload) {
-  const error = new Error(payload?.message || 'Permintaan ke server gagal.')
+  const error = new Error(payload?.message || 'The server request failed.')
   error.status = response.status
   error.details = payload?.errors
   return error

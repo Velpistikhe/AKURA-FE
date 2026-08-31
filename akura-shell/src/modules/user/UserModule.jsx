@@ -13,12 +13,12 @@ import { useNotification } from '../../context/NotificationContext'
 import './UserModule.css'
 
 function errorMessage(error) {
-  return error.response?.data?.message || error.message || 'Permintaan gagal diproses.'
+  return error.response?.data?.message || error.message || 'Unable to process the request.'
 }
 
 function formatDate(value) {
   if (!value) return '-'
-  return new Intl.DateTimeFormat('id-ID', {
+  return new Intl.DateTimeFormat('en-US', {
     dateStyle: 'long',
     timeStyle: 'short',
   }).format(new Date(value))
@@ -48,11 +48,11 @@ function UserModule() {
     const values = await profileForm.validateFields()
     setProfileSaving(true)
     try {
-      const response = await updateProfile(values)
+      await updateProfile(values)
       setProfileOpen(false)
-      notify.success('Profil Berhasil Diperbarui', response.message || 'Profil berhasil diperbarui.')
+      notify.success('Profile Updated', 'Your profile has been updated successfully.')
     } catch (error) {
-      notify.error('Pembaruan Profil Gagal', errorMessage(error))
+      notify.error('Profile Update Failed', errorMessage(error))
     } finally {
       setProfileSaving(false)
     }
@@ -62,12 +62,12 @@ function UserModule() {
     const values = await passwordForm.validateFields()
     setPasswordSaving(true)
     try {
-      const response = await changePassword(values)
+      await changePassword(values)
       passwordForm.resetFields()
       setPasswordOpen(false)
-      notify.success('Password Berhasil Diubah', response.message || 'Password berhasil diubah.')
+      notify.success('Password Changed', 'Your password has been changed successfully.')
     } catch (error) {
-      notify.error('Perubahan Password Gagal', errorMessage(error))
+      notify.error('Password Change Failed', errorMessage(error))
     } finally {
       setPasswordSaving(false)
     }
@@ -77,8 +77,8 @@ function UserModule() {
     <section className="user-module-page">
       <div className="user-module-heading">
         <div>
-          <h1>Profil Saya</h1>
-          <p>Lihat informasi akun dan kelola profil serta keamanan password Anda.</p>
+          <h1>My Profile</h1>
+          <p>View your account information and manage your profile and password security.</p>
         </div>
       </div>
 
@@ -90,7 +90,7 @@ function UserModule() {
             <span>@{user?.username}</span>
           </div>
           <Tag color={user?.isActive ? 'success' : 'default'}>
-            {user?.isActive ? 'Aktif' : 'Nonaktif'}
+            {user?.isActive ? 'Active' : 'Inactive'}
           </Tag>
         </div>
 
@@ -100,41 +100,41 @@ function UserModule() {
             <strong>{user?.username || '-'}</strong>
           </div>
           <div className="profile-detail">
-            <span>Nama depan</span>
+            <span>First name</span>
             <strong>{user?.firstName || '-'}</strong>
           </div>
           <div className="profile-detail">
-            <span>Nama belakang</span>
+            <span>Last name</span>
             <strong>{user?.lastName || '-'}</strong>
           </div>
           <div className="profile-detail">
             <span>Role</span>
             <strong>{user?.role || '-'}</strong>
-            <small>Dikelola melalui App Manager</small>
+            <small>Managed through App Manager</small>
           </div>
           <div className="profile-detail">
             <span>Section</span>
-            <strong>{user?.section || 'Tanpa section'}</strong>
-            <small>Dikelola melalui App Manager</small>
+            <strong>{user?.section || 'No section'}</strong>
+            <small>Managed through App Manager</small>
           </div>
           <div className="profile-detail">
-            <span>Terakhir diperbarui</span>
+            <span>Last updated</span>
             <strong>{formatDate(user?.updatedAt)}</strong>
           </div>
         </div>
 
         <div className="profile-actions">
-          <AppButton icon={<UserOutlined />} onClick={openProfile}>Ubah profil</AppButton>
-          <AppButton variant="outline" icon={<LockOutlined />} onClick={() => setPasswordOpen(true)}>Ubah password</AppButton>
+          <AppButton icon={<UserOutlined />} onClick={openProfile}>Edit Profile</AppButton>
+          <AppButton variant="outline" icon={<LockOutlined />} onClick={() => setPasswordOpen(true)}>Change Password</AppButton>
         </div>
       </AppCard>
 
       <Modal
-        title="Ubah profil"
+        title="Edit Profile"
         visible={profileOpen}
         busy={profileSaving}
-        okText="Simpan"
-        cancelText="Batal"
+        okText="Save"
+        cancelText="Cancel"
         onOk={saveProfile}
         onCancel={() => setProfileOpen(false)}
         preRender
@@ -143,61 +143,61 @@ function UserModule() {
         <Form form={profileForm} layout="vertical" preserve={false}>
           <Form.Item
             name="firstName"
-            label="Nama depan"
-            rules={[{ required: true, whitespace: true, message: 'Nama depan wajib diisi.' }]}
+            label="First Name"
+            rules={[{ required: true, whitespace: true, message: 'First name is required.' }]}
           >
-            <Input placeholder="Masukkan nama depan" />
+            <Input placeholder="Enter first name" />
           </Form.Item>
           <Form.Item
             name="lastName"
-            label="Nama belakang"
-            rules={[{ required: true, whitespace: true, message: 'Nama belakang wajib diisi.' }]}
+            label="Last Name"
+            rules={[{ required: true, whitespace: true, message: 'Last name is required.' }]}
           >
-            <Input placeholder="Masukkan nama belakang" />
+            <Input placeholder="Enter last name" />
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title="Ubah password"
+        title="Change Password"
         visible={passwordOpen}
         busy={passwordSaving}
-        okText="Ubah password"
-        cancelText="Batal"
+        okText="Change Password"
+        cancelText="Cancel"
         onOk={savePassword}
         onCancel={() => { passwordForm.resetFields(); setPasswordOpen(false) }}
         preRender
         unmountOnClose
       >
         <Form form={passwordForm} layout="vertical" preserve={false}>
-          <Form.Item name="oldPassword" label="Password saat ini" rules={[{ required: true, message: 'Password saat ini wajib diisi.' }]}>
-            <Input.Password placeholder="Masukkan password saat ini" />
+          <Form.Item name="oldPassword" label="Current Password" rules={[{ required: true, message: 'Current password is required.' }]}>
+            <Input.Password placeholder="Enter current password" />
           </Form.Item>
           <Form.Item
             name="newPassword"
-            label="Password baru"
+            label="New Password"
             rules={[
-              { required: true, message: 'Password baru wajib diisi.' },
-              { min: 6, message: 'Password baru minimal 6 karakter.' },
+              { required: true, message: 'New password is required.' },
+              { min: 6, message: 'New password must contain at least 6 characters.' },
             ]}
           >
-            <Input.Password placeholder="Minimal 6 karakter" />
+            <Input.Password placeholder="At least 6 characters" />
           </Form.Item>
           <Form.Item
             name="newPasswordConfirmation"
-            label="Konfirmasi password baru"
+            label="Confirm New Password"
             dependencies={['newPassword']}
             rules={[
-              { required: true, message: 'Konfirmasi password baru wajib diisi.' },
+              { required: true, message: 'New password confirmation is required.' },
               ({ getFieldValue }) => ({
                 validator(_, value) {
                   if (!value || getFieldValue('newPassword') === value) return Promise.resolve()
-                  return Promise.reject(new Error('Konfirmasi password baru tidak sama.'))
+                  return Promise.reject(new Error('New password confirmation does not match.'))
                 },
               }),
             ]}
           >
-            <Input.Password placeholder="Ulangi password baru" />
+            <Input.Password placeholder="Re-enter new password" />
           </Form.Item>
         </Form>
       </Modal>

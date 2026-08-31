@@ -1,7 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <circle cx="50" cy="50" r="45" fill="#1a2e5e"/>
-  <ellipse cx="50" cy="50" rx="30" ry="20" fill="white"/>
-  <circle cx="50" cy="50" r="12" fill="#1a2e5e"/>
-  <circle cx="47" cy="47" r="4" fill="white"/>
-  <path d="M15 50 Q30 20 50 50" stroke="#e02020" stroke-width="5" fill="none" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 68 56" role="img" aria-label="Akura Bina Citra">
+  <path d="M11 29C14.5 13.8 27.2 5.4 40.6 7.2C54 9 61.3 19.7 60.5 32.8" fill="none" stroke="#3d46df" stroke-linecap="round" stroke-width="7"/>
+  <path d="M8.7 28.8C10 43.5 22.2 51.2 35.2 50.2C46.9 49.2 55.6 41.9 59.8 33.1" fill="none" stroke="#e82c35" stroke-linecap="round" stroke-width="7"/>
+  <circle cx="36" cy="29" r="20" fill="#f8f9ff" stroke="#a8b7f5" stroke-width="1.5"/>
+  <circle cx="36" cy="29" r="13.2" fill="#3544ec"/>
+  <circle cx="36" cy="29" r="7.2" fill="#050611"/>
+  <circle cx="31.7" cy="24.5" r="2.7" fill="#fff"/>
 </svg>

@@ -1,5 +1,5 @@
 import { BrowserRouter } from "react-router-dom";
-import { ConfigProvider, idID } from "./components/global";
+import { ConfigProvider, enUS } from "./components/global";
 import { AuthProvider } from "./context/AuthContext";
 import { MenuProvider } from "./context/MenuContext";
 import { NotificationProvider } from "./context/NotificationContext";
@@ -7,10 +7,10 @@ import AppRoute from "./routes/AppRoute";
 
 const antdTheme = {
   token: {
-    colorPrimary: "#1a2e5e",
-    colorLink: "#1a2e5e",
+    colorPrimary: "#000048",
+    colorLink: "#000048",
     colorSuccess: "#52c41a",
-    colorWarning: "#faad14",
+    colorWarning: "#ffaa00",
     colorError: "#e02020",
     fontFamily:
       "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -31,15 +31,16 @@ const antdTheme = {
       borderRadius: 8,
     },
     Layout: {
-      siderBg: "#1a2e5e",
+      siderBg: "#000048",
       headerBg: "#ffffff",
-      triggerBg: "#0f1e3d",
+      triggerBg: "#080829",
     },
     Menu: {
-      darkItemBg: "#1a2e5e",
-      darkSubMenuItemBg: "#0f1e3d",
-      darkItemSelectedBg: "#e02020",
-      darkItemHoverBg: "#2a4080",
+      darkItemBg: "#000048",
+      darkSubMenuItemBg: "#080829",
+      darkItemSelectedBg: "#ffaa00",
+      darkItemSelectedColor: "#000048",
+      darkItemHoverBg: "#111162",
       itemHeight: 48,
     },
     Notification: {
@@ -53,7 +54,7 @@ const antdTheme = {
 
 function App() {
   return (
-    <ConfigProvider theme={antdTheme} locale={idID}>
+    <ConfigProvider theme={antdTheme} locale={enUS}>
       <NotificationProvider>
         <AuthProvider>
           <MenuProvider>

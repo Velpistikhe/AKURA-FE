@@ -18,7 +18,7 @@ function AppRoute() {
   const { menuLoading } = useMenu();
   const appLoading = profileLoading || menuLoading;
 
-  if (appLoading) return <AppLoading message="Memuat profil dan menu..." />;
+  if (appLoading) return <AppLoading message="Loading profile and menu..." />;
 
   return (
     <Routes>

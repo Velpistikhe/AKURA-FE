@@ -23,11 +23,11 @@ const DEFAULT_PAGE_SIZE = 20
 const ROLES = ['USER', 'ADMIN', 'APP_MANAGER']
 const SECTIONS = ['ACCOUNTING', 'FINANCE', 'HRD_MANAGEMENT', 'MARKETING', 'FIELD_SERVICE']
 const ROLE_OPTIONS = [
-  { value: 'ALL', label: 'ALL (semua role)' },
+  { value: 'ALL', label: 'ALL (all roles)' },
   ...ROLES.map((value) => ({ value, label: value })),
 ]
 const SECTION_OPTIONS = [
-  { value: 'ALL', label: 'ALL (semua section)' },
+  { value: 'ALL', label: 'ALL (all sections)' },
   ...SECTIONS.map((value) => ({ value, label: value })),
 ]
 
@@ -132,7 +132,7 @@ function MenuAccessPage() {
     try {
       const response = await menuAccessService.get(access.id)
       const detail = response.data?.menuAccess || response.data
-      if (!detail?.id) throw new Error('Data detail access menu tidak valid.')
+      if (!detail?.id) throw new Error('Invalid menu access detail data.')
 
       setEditingAccess(detail)
       form.resetFields()
@@ -161,10 +161,10 @@ function MenuAccessPage() {
     try {
       if (editingAccess) {
         await menuAccessService.update(editingAccess.id, payload)
-        message.success('Access menu berhasil diperbarui.')
+        message.success('Menu access updated successfully.')
       } else {
         await menuAccessService.create(payload)
-        message.success('Access menu berhasil dibuat.')
+        message.success('Menu access created successfully.')
       }
       setModalOpen(false)
       await loadAccesses()
@@ -178,7 +178,7 @@ function MenuAccessPage() {
   const deleteAccess = async (access) => {
     try {
       await menuAccessService.remove(access.id)
-      message.success('Access menu berhasil dihapus.')
+      message.success('Menu access deleted successfully.')
       if (accesses.length === 1 && page > 1) setPage((current) => current - 1)
       else await loadAccesses()
     } catch (error) {
@@ -237,7 +237,7 @@ function MenuAccessPage() {
       render: (value) => <Tag color="cyan">{value || 'ALL'}</Tag>,
     },
     {
-      title: 'Aksi',
+      title: 'Actions',
       key: 'actions',
       width: 130,
       fixed: 'right',
@@ -251,13 +251,13 @@ function MenuAccessPage() {
             aria-label={`Edit access ${access.menuItem?.label || menuItemLabels.get(access.menuItemId) || access.menuItemId}`}
           />
           <Popconfirm
-            title="Hapus access menu?"
-            okText="Hapus"
-            cancelText="Batal"
+            title="Delete menu access?"
+            okText="Delete"
+            cancelText="Cancel"
             okButtonProps={{ danger: true }}
             onConfirm={() => deleteAccess(access)}
           >
-            <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label="Hapus access menu" />
+            <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label="Delete menu access" />
           </Popconfirm>
         </Space>
       ),
@@ -268,10 +268,10 @@ function MenuAccessPage() {
     <section className="menu-page">
       <div className="menu-page-heading">
         <div>
-          <Typography.Title level={2}>Access Menu</Typography.Title>
-          <Typography.Text tone="secondary">Atur menu item yang tersedia berdasarkan kombinasi role dan section.</Typography.Text>
+          <Typography.Title level={2}>Menu Access</Typography.Title>
+          <Typography.Text tone="secondary">Configure available menu items by role and section combination.</Typography.Text>
         </div>
-        <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate} disabled={!menuItems.length}>Tambah access</Button>
+        <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate} disabled={!menuItems.length}>Add Access</Button>
       </div>
 
       <Card>
@@ -294,24 +294,24 @@ function MenuAccessPage() {
       </Card>
 
       <Modal
-        title={editingAccess ? 'Edit access menu' : 'Tambah access menu'}
+        title={editingAccess ? 'Edit Menu Access' : 'Add Menu Access'}
         visible={modalOpen}
         busy={saving}
-        okText={editingAccess ? 'Simpan' : 'Tambah'}
-        cancelText="Batal"
+        okText={editingAccess ? 'Save' : 'Add'}
+        cancelText="Cancel"
         onOk={saveAccess}
         onCancel={() => setModalOpen(false)}
         preRender
         unmountOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
-          <Form.Item name="menuItemId" label="Menu item" rules={[{ required: true, message: 'Menu item wajib dipilih.' }]}>
-            <Select showSearch optionFilterProp="label" options={menuItemOptions} placeholder="Pilih menu item" />
+          <Form.Item name="menuItemId" label="Menu Item" rules={[{ required: true, message: 'Menu item is required.' }]}>
+            <Select showSearch optionFilterProp="label" options={menuItemOptions} placeholder="Select menu item" />
           </Form.Item>
-          <Form.Item name="role" label="Role" rules={[{ required: true, message: 'Role wajib dipilih.' }]}>
+          <Form.Item name="role" label="Role" rules={[{ required: true, message: 'Role is required.' }]}>
             <Select options={ROLE_OPTIONS} />
           </Form.Item>
-          <Form.Item name="section" label="Section" rules={[{ required: true, message: 'Section wajib dipilih.' }]}>
+          <Form.Item name="section" label="Section" rules={[{ required: true, message: 'Section is required.' }]}>
             <Select options={SECTION_OPTIONS} />
           </Form.Item>
         </Form>

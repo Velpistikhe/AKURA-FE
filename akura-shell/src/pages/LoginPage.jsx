@@ -29,7 +29,7 @@ function LoginPage() {
   const handleLogin = async (values) => {
     setLoading(true);
     try {
-      const response = await login({
+      await login({
         username: values.username,
         password: values.password,
       });
@@ -39,14 +39,14 @@ function LoginPage() {
           ? requestedPath
           : "/dashboard";
       navigate(destination, { replace: true });
-      notify.success("Login Berhasil", response.message || "Login berhasil.");
+      notify.success("Login Successful", "You have signed in successfully.");
     } catch (err) {
       const errMsg =
         err.response?.data?.message ||
         err.response?.data?.error ||
         err.message ||
-        "Username atau password salah.";
-      notify.error("Login Gagal", errMsg);
+        "Incorrect username or password.";
+      notify.error("Login Failed", errMsg);
     } finally {
       setLoading(false);
     }
@@ -58,21 +58,21 @@ function LoginPage() {
       <div className="auth-left">
         <div className="auth-left-content">
           <button className="back-btn" onClick={() => navigate("/")}>
-            <ArrowLeftOutlined /> Kembali
+            <ArrowLeftOutlined /> Back
           </button>
           <div className="auth-brand">
             <AkuraLogo inverse size={60} />
           </div>
-          <h2 className="auth-left-title">Selamat Datang Kembali!</h2>
+          <h2 className="auth-left-title">Welcome Back!</h2>
           <p className="auth-left-desc">
-            Masuk ke akun Anda dan kelola bisnis dengan lebih efisien bersama
-            platform kami.
+            Sign in to your account and manage your business more efficiently
+            with our platform.
           </p>
           <div className="auth-features">
             {[
-              "✓  Dashboard analitik real-time",
-              "✓  Keamanan data terjamin",
-              "✓  Dukungan 24/7",
+              "✓  Real-time analytics dashboard",
+              "✓  Reliable data security",
+              "✓  24/7 support",
             ].map((f) => (
               <div key={f} className="auth-feature-item">
                 {f}
@@ -91,11 +91,11 @@ function LoginPage() {
       <div className="auth-right">
         <div className="auth-form-container">
           <div className="auth-form-header">
-            <h1 className="auth-form-title">Masuk ke Akun</h1>
+            <h1 className="auth-form-title">Sign In</h1>
             <p className="auth-form-subtitle">
-              Belum punya akun?{" "}
+              Don't have an account?{" "}
               <Link to="/register" className="auth-link">
-                Daftar sekarang
+                Register now
               </Link>
             </p>
           </div>
@@ -109,34 +109,34 @@ function LoginPage() {
             <AppForm.Item
               label="Username"
               name="username"
-              rules={[{ required: true, message: "Username wajib diisi." }]}
+              rules={[{ required: true, message: "Username is required." }]}
             >
               <AppInput
                 id="input-username"
                 prefixIcon={<UserOutlined />}
-                placeholder="Masukkan username Anda"
+                placeholder="Enter your username"
               />
             </AppForm.Item>
 
             <AppForm.Item
               label="Password"
               name="password"
-              rules={[{ required: true, message: "Password wajib diisi." }]}
+              rules={[{ required: true, message: "Password is required." }]}
             >
               <AppInput
                 id="input-password"
                 inputType="password"
                 prefixIcon={<LockOutlined />}
-                placeholder="Masukkan password Anda"
+                placeholder="Enter your password"
               />
             </AppForm.Item>
 
             <div className="form-options">
               <AppForm.Item name="remember" valuePropName="checked" noStyle>
-                <AppCheckbox id="checkbox-remember">Ingat saya</AppCheckbox>
+                <AppCheckbox id="checkbox-remember">Remember me</AppCheckbox>
               </AppForm.Item>
               <a href="#" className="forgot-link">
-                Lupa password?
+                Forgot password?
               </a>
             </div>
 
@@ -150,12 +150,12 @@ function LoginPage() {
                 icon={<LoginOutlined />}
                 className="auth-submit-btn"
               >
-                {loading ? "Memproses..." : "Masuk"}
+                {loading ? "Signing in..." : "Sign In"}
               </AppButton>
             </AppForm.Item>
 
             <AppDivider>
-              <span className="divider-text">atau</span>
+              <span className="divider-text">or</span>
             </AppDivider>
 
             <AppButton
@@ -164,20 +164,20 @@ function LoginPage() {
               block
               onClick={() => navigate("/register")}
             >
-              Buat Akun Baru
+              Create New Account
             </AppButton>
           </AppForm>
 
           <p className="auth-footer-note">
-            Dengan masuk, Anda menyetujui{" "}
+            By signing in, you agree to our{" "}
             <a href="#" className="auth-link">
-              Syarat &amp; Ketentuan
+              Terms &amp; Conditions
             </a>{" "}
-            dan{" "}
+            and{" "}
             <a href="#" className="auth-link">
-              Kebijakan Privasi
+              Privacy Policy
             </a>{" "}
-            kami.
+            .
           </p>
         </div>
       </div>

@@ -21,7 +21,7 @@ const DEFAULT_PAGE_SIZE = 20
 const ROLES = ['USER', 'ADMIN', 'APP_MANAGER']
 const SECTIONS = ['ACCOUNTING', 'HRD_MANAGEMENT', 'MARKETING', 'FIELD_SERVICE']
 const SECTION_OPTIONS = [
-  { value: 'ALL', label: 'Tanpa section' },
+  { value: 'ALL', label: 'No section' },
   ...SECTIONS.map((section) => ({ value: section, label: section })),
 ]
 
@@ -87,7 +87,7 @@ function UserPage() {
     setLoadingDetailId(user.id)
     try {
       const detail = responseUser(await userService.get(user.id))
-      if (!detail?.id) throw new Error('Data detail user tidak valid.')
+      if (!detail?.id) throw new Error('Invalid user detail data.')
 
       setEditingUser(detail)
       form.resetFields()
@@ -136,7 +136,7 @@ function UserPage() {
         changed = true
       }
 
-      message.success(changed ? 'User berhasil diperbarui.' : 'Tidak ada perubahan pada user.')
+      message.success(changed ? 'User updated successfully.' : 'No changes were made to the user.')
       setModalOpen(false)
       await loadUsers()
     } catch (error) {
@@ -168,14 +168,14 @@ function UserPage() {
       filterDropdown: (props) => (
         <TableSearchFilter
           {...props}
-          placeholder="Cari username atau nama"
+          placeholder="Search username or name"
           onSearch={(value) => { setSearch(value); setPage(1) }}
         />
       ),
       render: (value) => <Typography.Text code>{value}</Typography.Text>,
     },
     {
-      title: 'Nama',
+      title: 'Name',
       dataIndex: 'firstName',
       key: 'firstName',
       sorter: true,
@@ -202,7 +202,7 @@ function UserPage() {
       filters: SECTIONS.map((section) => ({ text: section, value: section })),
       filterMultiple: false,
       filteredValue: sectionFilter ? [sectionFilter] : null,
-      render: (value) => value || 'Tanpa section',
+      render: (value) => value || 'No section',
     },
     {
       title: 'Status',
@@ -212,15 +212,15 @@ function UserPage() {
       sorter: true,
       sortOrder: getSortOrder('isActive', sortBy, sortOrder),
       filters: [
-        { text: 'Aktif', value: 'true' },
-        { text: 'Nonaktif', value: 'false' },
+        { text: 'Active', value: 'true' },
+        { text: 'Inactive', value: 'false' },
       ],
       filterMultiple: false,
       filteredValue: activeFilter ? [activeFilter] : null,
-      render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Aktif' : 'Nonaktif'}</Tag>,
+      render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Tag>,
     },
     {
-      title: 'Aksi',
+      title: 'Actions',
       key: 'actions',
       width: 90,
       fixed: 'right',
@@ -242,8 +242,8 @@ function UserPage() {
     <section className="menu-page">
       <div className="menu-page-heading">
         <div>
-          <Typography.Title level={2}>Pengelolaan User</Typography.Title>
-          <Typography.Text tone="secondary">Kelola role, section, dan status user Akura.</Typography.Text>
+          <Typography.Title level={2}>User Management</Typography.Title>
+          <Typography.Text tone="secondary">Manage Akura user roles, sections, and statuses.</Typography.Text>
         </div>
       </div>
 
@@ -267,25 +267,25 @@ function UserPage() {
       </Card>
 
       <Modal
-        title={`Edit user${editingUser ? `: ${editingUser.username}` : ''}`}
+        title={`Edit User${editingUser ? `: ${editingUser.username}` : ''}`}
         visible={modalOpen}
         busy={saving}
-        okText="Simpan"
-        cancelText="Batal"
+        okText="Save"
+        cancelText="Cancel"
         onOk={saveUser}
         onCancel={() => setModalOpen(false)}
         preRender
         unmountOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
-          <Form.Item name="role" label="Role" rules={[{ required: true, message: 'Role wajib dipilih.' }]}>
+          <Form.Item name="role" label="Role" rules={[{ required: true, message: 'Role is required.' }]}>
             <Select options={ROLES.map((role) => ({ value: role, label: role }))} />
           </Form.Item>
           <Form.Item name="section" label="Section">
             <Select options={SECTION_OPTIONS} />
           </Form.Item>
           <Form.Item name="isActive" label="Status" valuePropName="checked">
-            <Switch activeLabel="Aktif" inactiveLabel="Nonaktif" />
+            <Switch activeLabel="Active" inactiveLabel="Inactive" />
           </Form.Item>
         </Form>
       </Modal>

@@ -19,9 +19,9 @@ class MarketingErrorBoundary extends Component {
         <Alert
           tone="error"
           showIcon
-          message="Akura Marketing tidak dapat dimuat"
-          description="Pastikan service microfrontend Marketing aktif dan alamat remote sudah benar."
-          action={<Button onClick={() => window.location.reload()}>Muat ulang</Button>}
+          message="Unable to load Akura Marketing"
+          description="Make sure the Marketing microfrontend is running and its remote address is correct."
+          action={<Button onClick={() => window.location.reload()}>Reload</Button>}
         />
       )
     }
@@ -36,7 +36,7 @@ function RemoteMarketing() {
 
   return (
     <MarketingErrorBoundary>
-      <Suspense fallback={<AppLoading message="Memuat Akura Marketing..." fullScreen={false} />}>
+      <Suspense fallback={<AppLoading message="Loading Akura Marketing..." fullScreen={false} />}>
         <FederatedMarketing currentUser={user} pathname={location.pathname} />
       </Suspense>
     </MarketingErrorBoundary>

@@ -19,9 +19,9 @@ class RemoteErrorBoundary extends Component {
         <Alert
           tone="error"
           showIcon
-          message="Akura App Manager tidak dapat dimuat"
-          description="Pastikan service microfrontend App Manager aktif dan alamat remote sudah benar."
-          action={<Button onClick={() => window.location.reload()}>Muat ulang</Button>}
+          message="Unable to load Akura App Manager"
+          description="Make sure the App Manager microfrontend is running and its remote address is correct."
+          action={<Button onClick={() => window.location.reload()}>Reload</Button>}
         />
       )
     }
@@ -36,7 +36,7 @@ function RemoteAppManager() {
 
   return (
     <RemoteErrorBoundary>
-      <Suspense fallback={<AppLoading message="Memuat Akura App Manager..." fullScreen={false} />}>
+      <Suspense fallback={<AppLoading message="Loading Akura App Manager..." fullScreen={false} />}>
         <FederatedAppManager currentUser={user} pathname={location.pathname} />
       </Suspense>
     </RemoteErrorBoundary>

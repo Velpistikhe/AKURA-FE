@@ -6,7 +6,7 @@ function TableSearchFilter({
   confirm,
   clearFilters,
   onSearch,
-  placeholder = 'Cari data',
+  placeholder = 'Search data',
 }) {
   const apply = () => {
     onSearch(selectedKeys[0] || '')
@@ -32,7 +32,7 @@ function TableSearchFilter({
         onPressEnter={apply}
       />
       <Space>
-        <Button size="small" variant="primary" onClick={apply}>Terapkan</Button>
+        <Button size="small" variant="primary" onClick={apply}>Apply</Button>
         <Button size="small" onClick={reset}>Reset</Button>
       </Space>
     </div>

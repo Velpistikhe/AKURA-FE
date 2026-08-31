@@ -3,7 +3,7 @@
 export * from './AntdComponents'
 export { message, notification } from 'antd'
 
-export { default as idID } from 'antd/locale/id_ID'
+export { default as enUS } from 'antd/locale/en_US'
 
 export {
   ApiOutlined,

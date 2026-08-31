@@ -1,7 +1,7 @@
 import { Spin } from '../global'
 import './AppLoading.css'
 
-function AppLoading({ message = 'Memuat...', fullScreen = true }) {
+function AppLoading({ message = 'Loading...', fullScreen = true }) {
   return (
     <div
       className={`app-loading${fullScreen ? ' app-loading-full-screen' : ''}`}

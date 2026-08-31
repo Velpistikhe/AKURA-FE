@@ -26,21 +26,21 @@ function RegisterPage() {
   const handleRegister = async (values) => {
     setLoading(true)
     try {
-      const response = await authAPI.register({
+      await authAPI.register({
         username:             values.username,
         password:             values.password,
         passwordConfirmation: values.passwordConfirmation,
         firstName:            values.firstName,
         lastName:             values.lastName,
       })
-      notify.success('Registrasi Berhasil', response.data?.message || 'Registrasi berhasil.')
+      notify.success('Registration Successful', 'Your account has been created successfully.')
       navigate('/login')
     } catch (err) {
       const errMsg =
         err.response?.data?.message ||
         err.response?.data?.error ||
-        'Gagal mendaftar. Coba lagi.'
-      notify.error('Registrasi Gagal', errMsg)
+        'Unable to register. Please try again.'
+      notify.error('Registration Failed', errMsg)
     } finally {
       setLoading(false)
     }
@@ -52,22 +52,22 @@ function RegisterPage() {
       <div className="auth-left auth-left-register">
         <div className="auth-left-content">
           <button className="back-btn" onClick={() => navigate('/')}>
-            <ArrowLeftOutlined /> Kembali
+            <ArrowLeftOutlined /> Back
           </button>
           <div className="auth-brand">
             <AkuraLogo inverse size={60} />
           </div>
-          <h2 className="auth-left-title">Bergabunglah Bersama Kami!</h2>
+          <h2 className="auth-left-title">Join Us Today!</h2>
           <p className="auth-left-desc">
-            Buat akun gratis dan mulai perjalanan digital Anda bersama Akura
-            Bina Citra hari ini.
+            Create your account and begin your digital journey with Akura Bina
+            Citra today.
           </p>
           <div className="auth-features">
             {[
-              '✓  Gratis 30 hari percobaan',
-              '✓  Tidak perlu kartu kredit',
-              '✓  Setup dalam 5 menit',
-              '✓  Dukungan penuh dari tim kami',
+              '✓  30-day free trial',
+              '✓  No credit card required',
+              '✓  Set up in five minutes',
+              '✓  Full support from our team',
             ].map((f) => (
               <div key={f} className="auth-feature-item">{f}</div>
             ))}
@@ -84,11 +84,11 @@ function RegisterPage() {
       <div className="auth-right">
         <div className="auth-form-container auth-form-container-wide">
           <div className="auth-form-header">
-            <h1 className="auth-form-title">Buat Akun Baru</h1>
+            <h1 className="auth-form-title">Create an Account</h1>
             <p className="auth-form-subtitle">
-              Sudah punya akun?{' '}
+              Already have an account?{' '}
               <Link to="/login" className="auth-link">
-                Masuk sekarang
+                Sign in now
               </Link>
             </p>
           </div>
@@ -102,9 +102,9 @@ function RegisterPage() {
             {/* Nama Depan & Nama Belakang */}
             <div className="form-row">
               <AppForm.Item
-                label="Nama Depan"
+                label="First Name"
                 name="firstName"
-                rules={[{ required: true, message: 'Nama depan wajib diisi.' }]}
+                rules={[{ required: true, message: 'First name is required.' }]}
               >
                 <AppInput
                   id="input-firstname"
@@ -114,9 +114,9 @@ function RegisterPage() {
               </AppForm.Item>
 
               <AppForm.Item
-                label="Nama Belakang"
+                label="Last Name"
                 name="lastName"
-                rules={[{ required: true, message: 'Nama belakang wajib diisi.' }]}
+                rules={[{ required: true, message: 'Last name is required.' }]}
               >
                 <AppInput
                   id="input-lastname"
@@ -131,11 +131,11 @@ function RegisterPage() {
               label="Username"
               name="username"
               rules={[
-                { required: true, message: 'Username wajib diisi.' },
-                { min: 3, message: 'Username minimal 3 karakter.' },
+                { required: true, message: 'Username is required.' },
+                { min: 3, message: 'Username must contain at least 3 characters.' },
                 {
                   pattern: /^[a-zA-Z0-9_]+$/,
-                  message: 'Hanya huruf, angka, dan underscore.',
+                  message: 'Use letters, numbers, and underscores only.',
                 },
               ]}
             >
@@ -152,29 +152,29 @@ function RegisterPage() {
                 label="Password"
                 name="password"
                 rules={[
-                  { required: true, message: 'Password wajib diisi.' },
-                  { min: 8, message: 'Password minimal 8 karakter.' },
+                  { required: true, message: 'Password is required.' },
+                  { min: 8, message: 'Password must contain at least 8 characters.' },
                 ]}
               >
                 <AppInput
                   id="input-password"
                   inputType="password"
                   prefixIcon={<LockOutlined />}
-                  placeholder="Min. 8 karakter"
+                  placeholder="At least 8 characters"
                 />
               </AppForm.Item>
 
               <AppForm.Item
-                label="Konfirmasi Password"
+                label="Confirm Password"
                 name="passwordConfirmation"
                 dependencies={['password']}
                 rules={[
-                  { required: true, message: 'Konfirmasi password wajib diisi.' },
+                  { required: true, message: 'Password confirmation is required.' },
                   ({ getFieldValue }) => ({
                     validator(_, value) {
                       if (!value || getFieldValue('password') === value)
                         return Promise.resolve()
-                      return Promise.reject(new Error('Password tidak cocok.'))
+                      return Promise.reject(new Error('Passwords do not match.'))
                     },
                   }),
                 ]}
@@ -183,7 +183,7 @@ function RegisterPage() {
                   id="input-password-confirmation"
                   inputType="password"
                   prefixIcon={<LockOutlined />}
-                  placeholder="Ulangi password"
+                  placeholder="Re-enter your password"
                 />
               </AppForm.Item>
             </div>
@@ -199,12 +199,12 @@ function RegisterPage() {
                 icon={<UserAddOutlined />}
                 className="auth-submit-btn"
               >
-                {loading ? 'Mendaftarkan...' : 'Buat Akun'}
+                {loading ? 'Creating account...' : 'Create Account'}
               </AppButton>
             </AppForm.Item>
 
             <AppDivider>
-              <span className="divider-text">sudah punya akun?</span>
+              <span className="divider-text">already have an account?</span>
             </AppDivider>
 
             <AppButton
@@ -213,14 +213,14 @@ function RegisterPage() {
               block
               onClick={() => navigate('/login')}
             >
-              Masuk ke Akun
+              Sign In
             </AppButton>
           </AppForm>
 
           <p className="auth-footer-note">
-            Dengan mendaftar, Anda menyetujui{' '}
-            <a href="#" className="auth-link">Syarat &amp; Ketentuan</a> dan{' '}
-            <a href="#" className="auth-link">Kebijakan Privasi</a> kami.
+            By registering, you agree to our{' '}
+            <a href="#" className="auth-link">Terms &amp; Conditions</a> and{' '}
+            <a href="#" className="auth-link">Privacy Policy</a>.
           </p>
         </div>
       </div>

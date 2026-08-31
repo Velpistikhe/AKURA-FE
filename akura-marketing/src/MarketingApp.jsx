@@ -10,7 +10,7 @@ function MarketingOverview() {
         <span className="marketing-overview-eyebrow">Marketing workspace</span>
         <Typography.Title level={2}>Akura Marketing</Typography.Title>
         <Typography.Text tone="secondary">
-          Pilih modul Marketing dari navigasi untuk mulai mengelola data.
+          Select a Marketing module from the navigation to start managing data.
         </Typography.Text>
         <div className="marketing-overview-decoration" aria-hidden="true" />
       </Card>

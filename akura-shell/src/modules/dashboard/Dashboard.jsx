@@ -4,9 +4,9 @@ import './Dashboard.css'
 
 function getGreeting() {
   const hour = new Date().getHours()
-  if (hour < 12) return 'Selamat Pagi'
-  if (hour < 17) return 'Selamat Siang'
-  return 'Selamat Malam'
+  if (hour < 12) return 'Good Morning'
+  if (hour < 17) return 'Good Afternoon'
+  return 'Good Evening'
 }
 
 function Dashboard() {
@@ -25,8 +25,8 @@ function Dashboard() {
           </div>
           <h2 className="welcome-name">{displayName}</h2>
           <p className="welcome-desc">
-            Pantau dan kelola semua aktivitas sistem dari sini. &nbsp;
-            {new Date().toLocaleDateString('id-ID', {
+            Monitor and manage all system activity from here. &nbsp;
+            {new Date().toLocaleDateString('en-US', {
               weekday: 'long',
               year: 'numeric',
               month: 'long',

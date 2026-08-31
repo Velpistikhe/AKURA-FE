@@ -19,13 +19,13 @@ function TableSearchFilter({ selectedKeys, setSelectedKeys, confirm, clearFilter
         autoFocus
         allowClear
         maxLength={100}
-        placeholder="Cari nama atau alamat"
+        placeholder="Search name or address"
         value={selectedKeys[0] || ''}
         onChange={(event) => setSelectedKeys(event.target.value ? [event.target.value] : [])}
         onPressEnter={apply}
       />
       <Space>
-        <Button size="small" variant="primary" onClick={apply}>Terapkan</Button>
+        <Button size="small" variant="primary" onClick={apply}>Apply</Button>
         <Button size="small" onClick={reset}>Reset</Button>
       </Space>
     </div>

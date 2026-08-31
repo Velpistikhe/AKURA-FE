@@ -10,7 +10,7 @@ function MenuModule() {
       items={[
         { key: 'menus', label: 'Menu', children: <MenuPage /> },
         { key: 'menu-items', label: 'Menu Item', children: <MenuItemPage /> },
-        { key: 'menu-accesses', label: 'Access Menu', children: <MenuAccessPage /> },
+        { key: 'menu-accesses', label: 'Menu Access', children: <MenuAccessPage /> },
       ]}
     />
   )

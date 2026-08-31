@@ -10,7 +10,7 @@ import { ArrowDownOutlined, ArrowUpOutlined, Statistic } from '../global'
 function AppStatistic({
   trend,
   showTrend = true,
-  trendLabel = 'dari bulan lalu',
+  trendLabel = 'from last month',
   valueStyle = {},
   ...rest
 }) {

@@ -1,56 +1,45 @@
 import { useNavigate } from 'react-router-dom'
 import {
-  Button,
-  SafetyOutlined,
-  ThunderboltOutlined,
-  TeamOutlined,
-  CheckCircleOutlined,
-  ArrowRightOutlined,
-  BarChartOutlined,
-  CloudOutlined,
   ApiOutlined,
+  ArrowRightOutlined,
+  Button,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  SafetyOutlined,
+  TeamOutlined,
+  ThunderboltOutlined,
 } from '../components/global'
 import AkuraLogo from '../components/brand/AkuraLogo'
 import './LandingPage.css'
 
-const features = [
-  {
-    icon: <BarChartOutlined />,
-    title: 'Analitik Real-time',
-    desc: 'Pantau performa bisnis Anda secara langsung dengan dashboard yang intuitif dan informatif.',
-  },
+const services = [
   {
     icon: <SafetyOutlined />,
-    title: 'Keamanan Tingkat Tinggi',
-    desc: 'Data Anda dilindungi dengan enkripsi end-to-end dan sistem autentikasi berlapis.',
+    title: 'NDE Services',
+    desc: 'Non-destructive testing to verify the integrity of materials and equipment without causing damage.',
   },
   {
     icon: <ThunderboltOutlined />,
-    title: 'Performa Cepat',
-    desc: 'Infrastruktur cloud modern memastikan respons cepat dan uptime 99.9%.',
-  },
-  {
-    icon: <CloudOutlined />,
-    title: 'Cloud Native',
-    desc: 'Akses dari mana saja, kapan saja, dengan sinkronisasi data otomatis.',
-  },
-  {
-    icon: <TeamOutlined />,
-    title: 'Kolaborasi Tim',
-    desc: 'Kelola tim dan izin akses dengan mudah untuk produktivitas maksimal.',
+    title: 'Lifting Gear Inspection',
+    desc: 'Comprehensive lifting-equipment inspections that support safe, standards-compliant operations.',
   },
   {
     icon: <ApiOutlined />,
-    title: 'Integrasi Mudah',
-    desc: 'Terhubung dengan sistem yang sudah ada melalui API yang fleksibel.',
+    title: 'Tubular / OCTG Inspection',
+    desc: 'Inspection of pipes and tubular products used in oil and gas drilling and production operations.',
+  },
+  {
+    icon: <TeamOutlined />,
+    title: 'Third-Party QA/QC',
+    desc: 'Independent surveillance to ensure products, processes, and work meet all required specifications.',
   },
 ]
 
-const stats = [
-  { value: '500+', label: 'Klien Aktif' },
-  { value: '99.9%', label: 'Uptime' },
-  { value: '24/7', label: 'Support' },
-  { value: '10+', label: 'Tahun Pengalaman' },
+const strengths = [
+  'Advanced Technology',
+  'Certified Personnel',
+  'Delivery On Time',
+  'Attention to Details',
 ]
 
 function LandingPage() {
@@ -58,216 +47,190 @@ function LandingPage() {
 
   return (
     <div className="landing-root">
-      {/* NAVBAR */}
-      <nav className="landing-nav">
-        <div className="landing-nav-inner">
-          <div className="landing-logo" onClick={() => navigate('/')} role="button">
-            <AkuraLogo size={52} />
+      <div className="landing-topbar">
+        <div className="landing-container topbar-inner">
+          <span>Established since 2001 as an independent Inspection Company</span>
+          <div className="topbar-contact">
+            <span><ClockCircleOutlined /> Monday–Friday, 8:00 AM–5:00 PM</span>
+            <a href="tel:+622188334486">+62 (021) 8833 4486</a>
+            <a href="mailto:marketing@akurabinacitra.com">marketing@akurabinacitra.com</a>
           </div>
+        </div>
+      </div>
+
+      <nav className="landing-nav">
+        <div className="landing-container landing-nav-inner">
+          <button className="landing-logo" onClick={() => navigate('/')} aria-label="Akura Bina Citra home">
+            <AkuraLogo size={53} />
+          </button>
           <div className="landing-nav-links">
-            <a href="#fitur" className="nav-link">Fitur</a>
-            <a href="#tentang" className="nav-link">Tentang</a>
-            <a href="#kontak" className="nav-link">Kontak</a>
+            <a href="#home">Home</a>
+            <a href="#about">About Us</a>
+            <a href="#services">Services</a>
+            <a href="#contact">Contact</a>
           </div>
           <div className="landing-nav-actions">
-            <Button
-              id="nav-login-btn"
-              onClick={() => navigate('/login')}
-              className="btn-outline-primary"
-            >
-              Masuk
-            </Button>
-            <Button
-              id="nav-register-btn"
-              variant="primary"
-              onClick={() => navigate('/register')}
-            >
-              Daftar Sekarang
+            <Button onClick={() => navigate('/login')} className="nav-login-btn">Sign In</Button>
+            <Button type="primary" onClick={() => navigate('/register')} className="akura-primary-btn">
+              Register for the Portal
             </Button>
           </div>
-          {/* Mobile hamburger handled via CSS */}
           <div className="mobile-nav-actions">
-            <Button size="small" onClick={() => navigate('/login')}>Masuk</Button>
-            <Button size="small" variant="primary" onClick={() => navigate('/register')}>Daftar</Button>
+            <Button onClick={() => navigate('/login')}>Sign In</Button>
+            <Button type="primary" onClick={() => navigate('/register')} className="akura-primary-btn">Register</Button>
           </div>
         </div>
       </nav>
 
-      {/* HERO */}
-      <section className="landing-hero">
-        <div className="hero-bg-shapes">
-          <div className="hero-shape hero-shape-1" />
-          <div className="hero-shape hero-shape-2" />
-          <div className="hero-shape hero-shape-3" />
-        </div>
-        <div className="hero-content">
-          <div className="hero-badge">
-            <span>🚀</span> Platform Manajemen Terpadu
-          </div>
-          <h1 className="hero-title">
-            Solusi Digital
-            <span className="hero-title-accent"> Cerdas</span>
-            <br />untuk Bisnis Anda
-          </h1>
-          <p className="hero-desc">
-            Akura Bina Citra menghadirkan sistem manajemen terintegrasi yang membantu
-            bisnis Anda berkembang lebih efisien, lebih cepat, dan lebih cerdas.
-          </p>
-          <div className="hero-cta">
-            <Button
-              id="hero-register-btn"
-              variant="primary"
-              size="large"
-              icon={<ArrowRightOutlined />}
-              onClick={() => navigate('/register')}
-              className="btn-hero-primary"
-            >
-              Mulai Gratis
-            </Button>
-            <Button
-              id="hero-login-btn"
-              size="large"
-              onClick={() => navigate('/login')}
-              className="btn-hero-secondary"
-            >
-              Sudah Punya Akun? Masuk
-            </Button>
-          </div>
-          <div className="hero-checks">
-            {['Gratis 30 hari percobaan', 'Tanpa kartu kredit', 'Setup dalam 5 menit'].map(t => (
-              <div key={t} className="hero-check-item">
-                <CheckCircleOutlined className="check-icon" />
-                <span>{t}</span>
+      <main>
+        <section className="landing-hero" id="home">
+          <div className="hero-overlay" />
+          <div className="landing-container hero-inner">
+            <div className="hero-content">
+              <p className="hero-eyebrow">Management System Certification</p>
+              <h1>Quality and Delivery Are Our <span>#1 Priority</span></h1>
+              <p className="hero-desc">
+                Your independent inspection partner for industrial, oilfield, petrochemical, and
+                geothermal operations—delivering reliable, timely, standards-compliant services.
+              </p>
+              <div className="hero-certifications">
+                <span><CheckCircleOutlined /> API Spec Q1</span>
+                <span><CheckCircleOutlined /> ISO 9001:2015</span>
+                <span><CheckCircleOutlined /> LEEA Full Member</span>
               </div>
-            ))}
-          </div>
-        </div>
-        <div className="hero-visual">
-          <div className="hero-card-mockup">
-            <div className="mockup-header">
-              <div className="mockup-dots">
-                <span /><span /><span />
+              <div className="hero-actions">
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<ArrowRightOutlined />}
+                  onClick={() => navigate('/register')}
+                  className="akura-primary-btn hero-primary-btn"
+                >
+                  Register for the Portal
+                </Button>
+                <a className="hero-secondary-btn" href="#services">Explore Our Services</a>
               </div>
-              <span className="mockup-title">Dashboard Akura</span>
             </div>
-            <div className="mockup-stats">
-              {['Total Pengguna', 'Pendapatan', 'Transaksi', 'Kepuasan'].map((s, i) => (
-                <div key={s} className="mockup-stat">
-                  <div className="mockup-stat-bar" style={{ height: `${40 + i * 15}%` }} />
-                  <span>{s}</span>
-                </div>
+          </div>
+          <div className="hero-side-label">QUALITY CONTROL</div>
+        </section>
+
+        <section className="landing-intro" id="about">
+          <div className="landing-container intro-grid">
+            <div className="intro-heading">
+              <p className="section-kicker">Welcome to</p>
+              <h2>PT Akura Bina Citra</h2>
+            </div>
+            <div className="intro-copy">
+              <p>
+                PT Akura Bina Citra was established in 2001 as an independent inspection company.
+                We support industrial, oilfield, petrochemical, and geothermal businesses with
+                effective, quality-driven solutions that conform to relevant standards.
+              </p>
+              <a href="#advantages">Learn more about us <ArrowRightOutlined /></a>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-services" id="services">
+          <div className="landing-container">
+            <div className="section-heading-row">
+              <div>
+                <p className="section-kicker">Inspection &amp; Maintenance</p>
+                <h2>Our Core Services</h2>
+              </div>
+              <p>Integrated inspection and certification services that safeguard the safety, quality, and compliance of your operations.</p>
+            </div>
+            <div className="services-grid">
+              {services.map((service, index) => (
+                <article className="service-card" key={service.title}>
+                  <span className="service-number">0{index + 1}</span>
+                  <div className="service-icon">{service.icon}</div>
+                  <h3>{service.title}</h3>
+                  <p>{service.desc}</p>
+                  <a href="#contact">Talk to Our Team <ArrowRightOutlined /></a>
+                </article>
               ))}
             </div>
-            <div className="mockup-lines">
-              <div className="mockup-line w-full" />
-              <div className="mockup-line w-3q" />
-              <div className="mockup-line w-half" />
-              <div className="mockup-line w-3q" />
-              <div className="mockup-line w-full" />
+          </div>
+        </section>
+
+        <section className="landing-choice" id="advantages">
+          <div className="landing-container choice-grid">
+            <div className="choice-image">
+              <img src="/akura-brand/inspection.jpg" alt="An Akura professional carrying out inspection work" />
+              <div className="experience-card">
+                <strong>25+</strong>
+                <span>Years of industry experience</span>
+              </div>
+            </div>
+            <div className="choice-content">
+              <p className="section-kicker">Where quality and delivery are the #1 priority</p>
+              <h2>Why Choose Us?</h2>
+              <p>
+                Our commitment to excellence keeps us competitive and relevant in a dynamic
+                industry, with customer satisfaction as our primary objective.
+              </p>
+              <p>
+                Through training and induction, every Akura team member contributes to the
+                consistent implementation of our Quality and HSE Management System.
+              </p>
+              <div className="strength-grid">
+                {strengths.map((item) => (
+                  <div className="strength-item" key={item}>
+                    <CheckCircleOutlined />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* STATS */}
-      <section className="landing-stats">
-        {stats.map(s => (
-          <div key={s.label} className="stat-card">
-            <div className="stat-value">{s.value}</div>
-            <div className="stat-label">{s.label}</div>
-          </div>
-        ))}
-      </section>
-
-      {/* FEATURES */}
-      <section className="landing-features" id="fitur">
-        <div className="section-header">
-          <div className="section-badge">Fitur Unggulan</div>
-          <h2 className="section-title">Semua yang Anda Butuhkan</h2>
-          <p className="section-desc">
-            Platform lengkap dengan fitur-fitur canggih untuk mengelola bisnis secara menyeluruh.
-          </p>
-        </div>
-        <div className="features-grid">
-          {features.map((f) => (
-            <div key={f.title} className="feature-card">
-              <div className="feature-icon">{f.icon}</div>
-              <h3 className="feature-title">{f.title}</h3>
-              <p className="feature-desc">{f.desc}</p>
+        <section className="landing-portal-cta">
+          <div className="landing-container portal-cta-inner">
+            <div>
+              <p className="section-kicker">Akura Digital Portal</p>
+              <h2>Manage services and operations in one portal.</h2>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* CTA SECTION */}
-      <section className="landing-cta" id="tentang">
-        <div className="cta-content">
-          <h2 className="cta-title">Siap Memulai Perjalanan Digital Anda?</h2>
-          <p className="cta-desc">
-            Bergabunglah dengan ratusan bisnis yang telah mempercayakan pengelolaan digital mereka kepada Akura Bina Citra.
-          </p>
-          <div className="cta-buttons">
-            <Button
-              id="cta-register-btn"
-              variant="primary"
-              size="large"
-              icon={<ArrowRightOutlined />}
-              onClick={() => navigate('/register')}
-              className="btn-cta-white"
-            >
-              Daftar Sekarang
-            </Button>
-            <Button
-              id="cta-login-btn"
-              size="large"
-              ghost
-              onClick={() => navigate('/login')}
-            >
-              Masuk ke Akun
-            </Button>
+            <div className="portal-cta-actions">
+              <Button size="large" onClick={() => navigate('/login')} className="cta-login-btn">Sign In</Button>
+              <Button
+                type="primary"
+                size="large"
+                icon={<ArrowRightOutlined />}
+                onClick={() => navigate('/register')}
+                className="akura-primary-btn"
+              >
+                Create Account
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="cta-bg-shapes">
-          <div className="cta-shape-1" />
-          <div className="cta-shape-2" />
-        </div>
-      </section>
+        </section>
+      </main>
 
-      {/* FOOTER */}
-      <footer className="landing-footer" id="kontak">
-        <div className="footer-inner">
+      <footer className="landing-footer" id="contact">
+        <div className="landing-container footer-grid">
           <div className="footer-brand">
-            <div className="landing-logo">
-              <AkuraLogo inverse size={44} />
-            </div>
-            <p className="footer-tagline">
-              Solusi digital terpercaya untuk kemajuan bisnis Indonesia.
-            </p>
+            <AkuraLogo inverse size={53} />
+            <p>An independent inspection company since 2001, supporting industry through quality and dependable service delivery.</p>
           </div>
-          <div className="footer-links">
-            <div className="footer-col">
-              <h4>Produk</h4>
-              <a href="#fitur">Fitur</a>
-              <a href="#">Harga</a>
-              <a href="#">Dokumentasi</a>
-            </div>
-            <div className="footer-col">
-              <h4>Perusahaan</h4>
-              <a href="#tentang">Tentang Kami</a>
-              <a href="#">Karier</a>
-              <a href="#kontak">Kontak</a>
-            </div>
-            <div className="footer-col">
-              <h4>Dukungan</h4>
-              <a href="#">Pusat Bantuan</a>
-              <a href="#">Kebijakan Privasi</a>
-              <a href="#">Syarat & Ketentuan</a>
-            </div>
+          <div className="footer-column">
+            <h3>Services</h3>
+            <a href="#services">NDE Services</a>
+            <a href="#services">Lifting Gear Inspection</a>
+            <a href="#services">Tubular/OCTG Inspection</a>
+            <a href="#services">Third-Party QA/QC</a>
+          </div>
+          <div className="footer-column footer-contact">
+            <h3>Contact Information</h3>
+            <p>POJ Kalimalang, Kp. Pekopen No. 12, Tambun, Bekasi 17510</p>
+            <a href="tel:+622188334486">+62 (021) 8833 4486</a>
+            <a href="mailto:marketing@akurabinacitra.com">marketing@akurabinacitra.com</a>
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© 2024 Akura Bina Citra. Hak Cipta Dilindungi.</span>
-          <span>Made with ❤️ in Indonesia</span>
+          <div className="landing-container">© 2026 PT Akura Bina Citra. All rights reserved.</div>
         </div>
       </footer>
     </div>

@@ -34,7 +34,7 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (credentials) => {
     const res = await authAPI.login(credentials)
     const userData = res.data?.data?.user || null
-    if (!userData) throw new Error('Respons login tidak memuat data pengguna.')
+    if (!userData) throw new Error('The login response did not include user data.')
     setUser(userData)
     return { user: userData, message: res.data?.message }
   }, [])
@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
   const updateProfile = useCallback(async (data) => {
     const res = await authAPI.updateProfile(data)
     const userData = res.data?.data
-    if (!userData) throw new Error('Respons perubahan profil tidak memuat data pengguna.')
+    if (!userData) throw new Error('The profile update response did not include user data.')
     setUser(userData)
     return { user: userData, message: res.data?.message }
   }, [])

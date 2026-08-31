@@ -18,8 +18,8 @@ const SIZE_MAP = { sm: 420, md: 560, lg: 720, xl: 960 }
 function AppModal({
   title,
   size = 'md',
-  okText = 'Simpan',
-  cancelText = 'Batal',
+  okText = 'Save',
+  cancelText = 'Cancel',
   okVariant = 'primary',
   loading = false,
   onOk,
