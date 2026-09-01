@@ -5,6 +5,7 @@ import {
   Card as AntCard,
   Form as AntForm,
   Input as AntInput,
+  InputNumber as AntInputNumber,
   Modal as AntModal,
   Popconfirm as AntPopconfirm,
   Select as AntSelect,
@@ -24,6 +25,35 @@ function createAdapter(Component, displayName, mapProps = (props) => props) {
 
 function disableAutocomplete(props) {
   return { ...props, autoComplete: 'off' }
+}
+
+function preventNumberArrowKeys(event) {
+  if (event.key === 'ArrowUp' || event.key === 'ArrowDown') event.preventDefault()
+}
+
+function configureInput(props) {
+  const { onKeyDown, ...rest } = disableAutocomplete(props)
+  if (props.type !== 'number') return { ...rest, onKeyDown }
+
+  return {
+    ...rest,
+    onKeyDown: (event) => {
+      preventNumberArrowKeys(event)
+      onKeyDown?.(event)
+    },
+  }
+}
+
+function configureInputNumber({ onKeyDown, ...props }) {
+  return {
+    ...props,
+    controls: false,
+    keyboard: false,
+    onKeyDown: (event) => {
+      preventNumberArrowKeys(event)
+      onKeyDown?.(event)
+    },
+  }
 }
 
 export const App = createAdapter(AntApp, 'GlobalApp')
@@ -58,10 +88,11 @@ Form.useForm = AntForm.useForm
 Form.useFormInstance = AntForm.useFormInstance
 Form.useWatch = AntForm.useWatch
 
-export const Input = createAdapter(AntInput, 'GlobalInput', disableAutocomplete)
+export const Input = createAdapter(AntInput, 'GlobalInput', configureInput)
 Input.Search = createAdapter(AntInput.Search, 'GlobalSearchInput', disableAutocomplete)
 Input.Password = createAdapter(AntInput.Password, 'GlobalPasswordInput', disableAutocomplete)
 Input.TextArea = createAdapter(AntInput.TextArea, 'GlobalTextArea', disableAutocomplete)
+export const InputNumber = createAdapter(AntInputNumber, 'GlobalInputNumber', configureInputNumber)
 
 export const Modal = createAdapter(AntModal, 'GlobalModal', ({
   visible,

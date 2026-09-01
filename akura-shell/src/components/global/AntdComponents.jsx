@@ -14,6 +14,7 @@ import {
   Empty as AntEmpty,
   Form as AntForm,
   Input as AntInput,
+  InputNumber as AntInputNumber,
   Layout as AntLayout,
   Menu as AntMenu,
   Modal as AntModal,
@@ -34,6 +35,35 @@ function createAdapter(Component, displayName, mapProps = (props) => props) {
 
 function disableAutocomplete(props) {
   return { ...props, autoComplete: 'off' }
+}
+
+function preventNumberArrowKeys(event) {
+  if (event.key === 'ArrowUp' || event.key === 'ArrowDown') event.preventDefault()
+}
+
+function configureInput(props) {
+  const { onKeyDown, ...rest } = disableAutocomplete(props)
+  if (props.type !== 'number') return { ...rest, onKeyDown }
+
+  return {
+    ...rest,
+    onKeyDown: (event) => {
+      preventNumberArrowKeys(event)
+      onKeyDown?.(event)
+    },
+  }
+}
+
+function configureInputNumber({ onKeyDown, ...props }) {
+  return {
+    ...props,
+    controls: false,
+    keyboard: false,
+    onKeyDown: (event) => {
+      preventNumberArrowKeys(event)
+      onKeyDown?.(event)
+    },
+  }
 }
 
 // Kontrak props aplikasi berada di sisi kiri. Jika Ant Design mengubah atau
@@ -79,10 +109,11 @@ Form.Provider = createAdapter(AntForm.Provider, 'GlobalFormProvider')
 Form.useForm = AntForm.useForm
 Form.useFormInstance = AntForm.useFormInstance
 Form.useWatch = AntForm.useWatch
-export const Input = createAdapter(AntInput, 'GlobalInput', disableAutocomplete)
+export const Input = createAdapter(AntInput, 'GlobalInput', configureInput)
 Input.Search = createAdapter(AntInput.Search, 'GlobalSearchInput', disableAutocomplete)
 Input.Password = createAdapter(AntInput.Password, 'GlobalPasswordInput', disableAutocomplete)
 Input.TextArea = createAdapter(AntInput.TextArea, 'GlobalTextArea', disableAutocomplete)
+export const InputNumber = createAdapter(AntInputNumber, 'GlobalInputNumber', configureInputNumber)
 export const Layout = createAdapter(AntLayout, 'GlobalLayout')
 Layout.Header = createAdapter(AntLayout.Header, 'GlobalLayoutHeader')
 Layout.Content = createAdapter(AntLayout.Content, 'GlobalLayoutContent')
