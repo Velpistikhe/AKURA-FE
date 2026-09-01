@@ -3,12 +3,14 @@ import {
   App,
   Button,
   DeleteOutlined,
+  EditOutlined,
   Form,
   Input,
   Modal,
   PlusOutlined,
   Popconfirm,
   Select,
+  Space,
   Table,
   TableSearchFilter,
   Tag,
@@ -39,6 +41,8 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
   const [sortOrder, setSortOrder] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [loadingDetailId, setLoadingDetailId] = useState(null)
+  const [editingStaff, setEditingStaff] = useState(null)
   const [addModalOpen, setAddModalOpen] = useState(false)
   const requestIdRef = useRef(0)
 
@@ -82,21 +86,54 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
   }, [company?.id, visible])
 
   const openAdd = () => {
+    setEditingStaff(null)
     form.resetFields()
-    form.setFieldsValue({ name: '', title: 'mr' })
+    form.setFieldsValue({ name: '', title: 'mr', telp: '', email: '' })
     setAddModalOpen(true)
   }
 
-  const addStaff = async () => {
+  const openEdit = async (staff) => {
+    setLoadingDetailId(staff.id)
+    try {
+      const response = await companyStaffService.get(staff.id)
+      const detail = response.data?.staff || response.data
+      if (!detail?.id) throw new Error('Invalid staff detail data.')
+
+      setEditingStaff(detail)
+      form.resetFields()
+      form.setFieldsValue({
+        name: detail.name,
+        title: detail.title,
+        telp: detail.telp || '',
+        email: detail.email || '',
+      })
+      setAddModalOpen(true)
+    } catch (error) {
+      message.error(error.message)
+    } finally {
+      setLoadingDetailId(null)
+    }
+  }
+
+  const saveStaff = async () => {
     const values = await form.validateFields()
     setSaving(true)
     try {
-      await companyStaffService.create({
+      const payload = {
         companyId: company.id,
         name: values.name.trim(),
         title: values.title,
-      })
-      message.success('Staff member added successfully.')
+        telp: values.telp?.trim() || null,
+        email: values.email?.trim() || null,
+      }
+
+      if (editingStaff) {
+        await companyStaffService.update(editingStaff.id, payload)
+        message.success('Staff member updated successfully.')
+      } else {
+        await companyStaffService.create(payload)
+        message.success('Staff member added successfully.')
+      }
       setAddModalOpen(false)
       await loadStaffs()
       await onChanged?.()
@@ -156,19 +193,43 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
       render: (value) => <Tag color="blue">{value === 'mrs' ? 'Mrs' : 'Mr'}</Tag>,
     },
     {
+      title: 'Phone',
+      dataIndex: 'telp',
+      key: 'telp',
+      width: 150,
+      render: (value) => value || '—',
+    },
+    {
+      title: 'Email',
+      dataIndex: 'email',
+      key: 'email',
+      width: 220,
+      render: (value) => value || '—',
+    },
+    {
       title: 'Actions',
       key: 'actions',
-      width: 80,
+      width: 120,
+      fixed: 'right',
       render: (_, staff) => (
-        <Popconfirm
-          title="Delete staff member?"
-          okText="Delete"
-          cancelText="Cancel"
-          okButtonProps={{ danger: true }}
-          onConfirm={() => deleteStaff(staff)}
-        >
-          <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Delete ${staff.name}`} />
-        </Popconfirm>
+        <Space>
+          <Button
+            variant="text"
+            icon={<EditOutlined />}
+            busy={loadingDetailId === staff.id}
+            onClick={() => openEdit(staff)}
+            aria-label={`Edit ${staff.name}`}
+          />
+          <Popconfirm
+            title="Delete staff member?"
+            okText="Delete"
+            cancelText="Cancel"
+            okButtonProps={{ danger: true }}
+            onConfirm={() => deleteStaff(staff)}
+          >
+            <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Delete ${staff.name}`} />
+          </Popconfirm>
+        </Space>
       ),
     },
   ]
@@ -192,7 +253,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
           busy={loading}
           columns={columns}
           dataSource={staffs}
-          scroll={{ x: 700 }}
+          scroll={{ x: 950 }}
           onChange={handleTableChange}
           pagination={{
             current: pagination.page,
@@ -206,12 +267,12 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
       </Modal>
 
       <Modal
-        title={`Add Staff: ${company?.name || ''}`}
+        title={`${editingStaff ? 'Edit' : 'Add'} Staff: ${company?.name || ''}`}
         visible={addModalOpen}
         busy={saving}
-        okText="Add"
+        okText={editingStaff ? 'Save' : 'Add'}
         cancelText="Cancel"
-        onOk={addStaff}
+        onOk={saveStaff}
         onCancel={() => setAddModalOpen(false)}
         preRender
         unmountOnClose
@@ -222,6 +283,12 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
           </Form.Item>
           <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Title is required.' }]}>
             <Select options={TITLES} />
+          </Form.Item>
+          <Form.Item name="telp" label="Phone" rules={[{ max: 30, message: 'Phone must not exceed 30 characters.' }]}>
+            <Input maxLength={30} placeholder="example: +62 812 3456 7890" />
+          </Form.Item>
+          <Form.Item name="email" label="Email" rules={[{ type: 'email', message: 'Enter a valid email address.' }, { max: 254 }]}>
+            <Input maxLength={254} placeholder="example: john@example.com" />
           </Form.Item>
         </Form>
       </Modal>

@@ -77,7 +77,7 @@ function CompanyPage() {
   const openCreate = () => {
     setEditingCompany(null)
     form.resetFields()
-    form.setFieldsValue({ name: '', address: '', hasContract: false })
+    form.setFieldsValue({ name: '', type: '', address: '', hasContract: false })
     setModalOpen(true)
   }
 
@@ -92,6 +92,7 @@ function CompanyPage() {
       form.resetFields()
       form.setFieldsValue({
         name: detail.name,
+        type: detail.type,
         address: detail.address,
         hasContract: detail.hasContract,
       })
@@ -109,6 +110,7 @@ function CompanyPage() {
     try {
       const payload = {
         name: values.name.trim(),
+        type: values.type.trim(),
         address: values.address.trim(),
         hasContract: values.hasContract,
       }
@@ -165,6 +167,14 @@ function CompanyPage() {
         />
       ),
       render: (value) => <Typography.Text strong>{value}</Typography.Text>,
+    },
+    {
+      title: 'Type',
+      dataIndex: 'type',
+      key: 'type',
+      width: 150,
+      sorter: true,
+      sortOrder: getSortOrder('type', sortBy, sortOrder),
     },
     {
       title: 'Address',
@@ -270,6 +280,9 @@ function CompanyPage() {
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item name="name" label="Name" rules={[{ required: true, whitespace: true, message: 'Name is required.' }, { max: 200 }]}>
             <Input maxLength={200} placeholder="example: PT Akura Indonesia" />
+          </Form.Item>
+          <Form.Item name="type" label="Type" rules={[{ required: true, whitespace: true, message: 'Company type is required.' }, { max: 100 }]}>
+            <Input maxLength={100} placeholder="example: Customer" />
           </Form.Item>
           <Form.Item name="address" label="Address" rules={[{ required: true, whitespace: true, message: 'Address is required.' }, { max: 500 }]}>
             <Input.TextArea maxLength={500} rows={4} placeholder="example: Jakarta" showCount />
