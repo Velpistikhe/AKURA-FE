@@ -36,6 +36,7 @@ function MenuPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [search, setSearch] = useState('')
+  const [hasItemFilter, setHasItemFilter] = useState('')
   const [activeFilter, setActiveFilter] = useState('')
   const [sortBy, setSortBy] = useState('')
   const [sortOrder, setSortOrder] = useState('')
@@ -45,6 +46,7 @@ function MenuPage() {
   const [editingMenu, setEditingMenu] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const requestIdRef = useRef(0)
+  const hasItem = Form.useWatch('hasItem', form)
 
   const loadMenus = useCallback(async () => {
     const requestId = ++requestIdRef.current
@@ -54,6 +56,7 @@ function MenuPage() {
         page,
         limit: pageSize,
         search,
+        hasItem: hasItemFilter,
         isActive: activeFilter,
         sortBy,
         sortOrder,
@@ -66,7 +69,7 @@ function MenuPage() {
     } finally {
       if (requestId === requestIdRef.current) setLoading(false)
     }
-  }, [activeFilter, message, page, pageSize, search, sortBy, sortOrder])
+  }, [activeFilter, hasItemFilter, message, page, pageSize, search, sortBy, sortOrder])
 
   useEffect(() => {
     const timeoutId = setTimeout(loadMenus, 300)
@@ -76,7 +79,7 @@ function MenuPage() {
   const openCreate = () => {
     setEditingMenu(null)
     form.resetFields()
-    form.setFieldsValue({ key: '', label: '', order: 0, isActive: true })
+    form.setFieldsValue({ key: '', label: '', hasItem: false, items: [], order: 0, isActive: true })
     setModalOpen(true)
   }
 
@@ -93,6 +96,7 @@ function MenuPage() {
       form.setFieldsValue({
         key: detail.key,
         label: detail.label,
+        hasItem: detail.hasItem,
         order: detail.order,
         isActive: detail.isActive,
       })
@@ -106,16 +110,33 @@ function MenuPage() {
 
   const saveMenu = async () => {
     const values = await form.validateFields()
+    const items = (values.items || []).map((item) => ({
+      key: item.key.trim(),
+      label: item.label.trim(),
+      order: item.order,
+    }))
+    if (values.hasItem && new Set(items.map((item) => item.key)).size !== items.length) {
+      message.error('Menu item keys must be unique.')
+      return
+    }
     setSaving(true)
     try {
       if (editingMenu) {
-        await menuService.update(editingMenu.id, values)
+        await menuService.update(editingMenu.id, {
+          key: values.key.trim(),
+          label: values.label.trim(),
+          hasItem: Boolean(values.hasItem),
+          order: values.order,
+          isActive: values.isActive,
+        })
         message.success('Menu updated successfully.')
       } else {
         const createPayload = {
-          key: values.key,
-          label: values.label,
+          key: values.key.trim(),
+          label: values.label.trim(),
+          hasItem: Boolean(values.hasItem),
           order: values.order,
+          ...(values.hasItem ? { items } : {}),
         }
         await menuService.create(createPayload)
         message.success('Menu created successfully.')
@@ -144,6 +165,7 @@ function MenuPage() {
     const nextPageSize = tablePagination.pageSize || pageSize
     setPageSize(nextPageSize)
     setPage(nextPageSize !== pageSize ? 1 : tablePagination.current || 1)
+    setHasItemFilter(filters.hasItem?.[0] || '')
     setActiveFilter(filters.isActive?.[0] || '')
     setSortBy(sorter.order ? sorter.field : '')
     setSortOrder(sorter.order ? (sorter.order === 'ascend' ? 'asc' : 'desc') : '')
@@ -167,6 +189,18 @@ function MenuPage() {
       render: (value) => <Typography.Text code>{value}</Typography.Text>,
     },
     { title: 'Label', dataIndex: 'label', key: 'label', sorter: true, sortOrder: getSortOrder('label', sortBy, sortOrder) },
+    {
+      title: 'Has Items',
+      dataIndex: 'hasItem',
+      key: 'hasItem',
+      width: 120,
+      sorter: true,
+      sortOrder: getSortOrder('hasItem', sortBy, sortOrder),
+      filters: [{ text: 'Yes', value: 'true' }, { text: 'No', value: 'false' }],
+      filterMultiple: false,
+      filteredValue: hasItemFilter ? [hasItemFilter] : null,
+      render: (value) => <Tag color={value ? 'blue' : 'default'}>{value ? 'Yes' : 'No'}</Tag>,
+    },
     { title: 'Order', dataIndex: 'order', key: 'order', width: 100, sorter: true, sortOrder: getSortOrder('order', sortBy, sortOrder) },
     {
       title: 'Status',
@@ -267,6 +301,44 @@ function MenuPage() {
           <Form.Item name="label" label="Label" rules={[{ required: true, message: 'Label is required.' }, { max: 200 }]}>
             <Input placeholder="example: App Manager" />
           </Form.Item>
+          <Form.Item name="hasItem" label="Has Menu Items" valuePropName="checked">
+            <Switch activeLabel="Yes" inactiveLabel="No" />
+          </Form.Item>
+          {!editingMenu && hasItem && (
+            <Form.List
+              name="items"
+              rules={[{
+                validator: async (_, items) => {
+                  if (!items?.length) throw new Error('Add at least one menu item.')
+                  if (items.length > 100) throw new Error('A menu can contain a maximum of 100 items.')
+                },
+              }]}
+            >
+              {(fields, { add, remove }, { errors }) => (
+                <div className="menu-nested-items">
+                  <div className="menu-nested-items-heading">
+                    <Typography.Text strong>Initial Menu Items</Typography.Text>
+                    <Button variant="dashed" icon={<PlusOutlined />} onClick={() => add({ key: '', label: '', order: 0 })}>Add Item</Button>
+                  </div>
+                  {fields.map(({ key, ...fieldProps }) => (
+                    <div className="menu-nested-item" key={key}>
+                      <Form.Item {...fieldProps} name={[fieldProps.name, 'key']} rules={[{ required: true, message: 'Key is required.' }, { pattern: /^[a-z0-9_-]+$/, message: 'Use lowercase letters, numbers, underscores, or hyphens.' }, { max: 100 }]}>
+                        <Input placeholder="Item key" />
+                      </Form.Item>
+                      <Form.Item {...fieldProps} name={[fieldProps.name, 'label']} rules={[{ required: true, message: 'Label is required.' }, { max: 200 }]}>
+                        <Input placeholder="Item label" />
+                      </Form.Item>
+                      <Form.Item {...fieldProps} name={[fieldProps.name, 'order']} rules={[{ required: true, message: 'Order is required.' }]}>
+                        <InputNumber min={0} precision={0} />
+                      </Form.Item>
+                      <Button isDanger variant="text" icon={<DeleteOutlined />} onClick={() => remove(fieldProps.name)} aria-label="Delete menu item" />
+                    </div>
+                  ))}
+                  <Form.ErrorList errors={errors} />
+                </div>
+              )}
+            </Form.List>
+          )}
           <Form.Item name="order" label="Order" rules={[{ required: true, message: 'Order is required.' }]}>
             <InputNumber min={0} precision={0} className="menu-order-input" />
           </Form.Item>

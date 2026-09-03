@@ -1,9 +1,9 @@
-import CatalogPage from '../catalog/CatalogPage'
+import ServiceCatalogPage from './ServiceCatalogPage'
 import { serviceService } from '../../services/serviceService'
 
 function ServicePage() {
   return (
-    <CatalogPage
+    <ServiceCatalogPage
       entityLabel="Service"
       entityLabelLower="service"
       dataKey="services"

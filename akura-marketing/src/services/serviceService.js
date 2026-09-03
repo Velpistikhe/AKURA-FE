@@ -14,6 +14,10 @@ export const serviceService = {
   list: (params = {}) => apiRequest(`${SERVICE_PATH}?${withQuery(params)}`),
   get: (serviceId) => apiRequest(`${SERVICE_PATH}/${serviceId}`),
   create: (data) => apiRequest(SERVICE_PATH, { method: 'POST', body: JSON.stringify(data) }),
+  update: (serviceId, data) => apiRequest(`${SERVICE_PATH}/${serviceId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  }),
   remove: (serviceId) => apiRequest(`${SERVICE_PATH}/${serviceId}`, { method: 'DELETE' }),
   createScope: (serviceId, data) => apiRequest(`${SERVICE_PATH}/${serviceId}/scopes`, {
     method: 'POST',
@@ -23,10 +27,6 @@ export const serviceService = {
     method: 'DELETE',
   }),
   createMaintenanceScope: (serviceId, data) => apiRequest(`${SERVICE_PATH}/${serviceId}/maintenance/scopes`, {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }),
-  createMaintenance: (serviceId, data) => apiRequest(`${SERVICE_PATH}/${serviceId}/maintenance`, {
     method: 'POST',
     body: JSON.stringify(data),
   }),

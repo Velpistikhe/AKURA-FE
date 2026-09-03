@@ -74,7 +74,7 @@ function ItemPage() {
     (service) => service.id === selectedServiceId,
   );
   const itemHasMaintenance = Boolean(
-    editingItem?.service?.hasService || selectedService?.hasService,
+    editingItem?.service?.hasMaintenance || selectedService?.hasMaintenance,
   );
 
   const loadServices = useCallback(async () => {
@@ -394,7 +394,7 @@ function ItemPage() {
                 <Select
                   options={services.map((service) => ({
                     value: service.id,
-                    label: `${service.code} — ${service.name}`,
+                    label: service.name,
                   }))}
                 />
               </Form.Item>

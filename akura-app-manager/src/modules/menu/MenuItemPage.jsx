@@ -51,11 +51,13 @@ function MenuItemPage() {
   const requestIdRef = useRef(0)
 
   const menuOptions = useMemo(
-    () => parentMenus.map((menu) => ({ value: menu.id, label: menu.label })),
+    () => parentMenus
+      .filter((menu) => menu.hasItem)
+      .map((menu) => ({ value: menu.id, label: menu.label })),
     [parentMenus],
   )
-  const menuLabels = useMemo(
-    () => new Map(parentMenus.map((menu) => [menu.id, menu.label])),
+  const menuById = useMemo(
+    () => new Map(parentMenus.map((menu) => [menu.id, menu])),
     [parentMenus],
   )
 
@@ -104,10 +106,9 @@ function MenuItemPage() {
     setEditingItem(null)
     form.resetFields()
     form.setFieldsValue({
-      menuId: menuFilter || undefined,
+      menuId: menuOptions.some((option) => option.value === menuFilter) ? menuFilter : undefined,
       key: '',
       label: '',
-      path: '',
       order: 0,
       isActive: true,
     })
@@ -128,7 +129,6 @@ function MenuItemPage() {
         menuId: detail.menuId || detail.menu?.id,
         key: detail.key,
         label: detail.label,
-        path: detail.path,
         order: detail.order,
         isActive: detail.isActive,
       })
@@ -152,7 +152,6 @@ function MenuItemPage() {
           menuId: values.menuId,
           key: values.key,
           label: values.label,
-          path: values.path,
           order: values.order,
         })
         message.success('Menu item created successfully.')
@@ -197,7 +196,7 @@ function MenuItemPage() {
       filters: menuOptions.map((option) => ({ text: option.label, value: option.value })),
       filterMultiple: false,
       filteredValue: menuFilter ? [menuFilter] : null,
-      render: (menuId) => menuLabels.get(menuId) || menuId,
+      render: (menuId) => menuById.get(menuId)?.label || menuId,
     },
     {
       title: 'Key',
@@ -209,14 +208,21 @@ function MenuItemPage() {
       filterDropdown: (props) => (
         <TableSearchFilter
           {...props}
-          placeholder="Search key, label, or path"
+          placeholder="Search key or label"
           onSearch={(value) => { setSearch(value); setPage(1) }}
         />
       ),
       render: (value) => <Typography.Text code>{value}</Typography.Text>,
     },
     { title: 'Label', dataIndex: 'label', key: 'label', sorter: true, sortOrder: getSortOrder('label', sortBy, sortOrder) },
-    { title: 'Path', dataIndex: 'path', key: 'path', sorter: true, sortOrder: getSortOrder('path', sortBy, sortOrder), render: (value) => <Typography.Text code>{value}</Typography.Text> },
+    {
+      title: 'Generated Path',
+      key: 'generatedPath',
+      render: (_, item) => {
+        const menuKey = menuById.get(item.menuId)?.key
+        return <Typography.Text code>{menuKey ? `/${menuKey}/${item.key}` : '—'}</Typography.Text>
+      },
+    },
     { title: 'Order', dataIndex: 'order', key: 'order', width: 90, sorter: true, sortOrder: getSortOrder('order', sortBy, sortOrder) },
     {
       title: 'Status',
@@ -262,7 +268,7 @@ function MenuItemPage() {
           <Typography.Title level={2}>Menu Item Management</Typography.Title>
           <Typography.Text tone="secondary">Manage the active routes displayed within each menu.</Typography.Text>
         </div>
-        <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate} disabled={!parentMenus.length}>Add Menu Item</Button>
+        <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate} disabled={!menuOptions.length}>Add Menu Item</Button>
       </div>
 
       <Card>
@@ -294,9 +300,6 @@ function MenuItemPage() {
           </Form.Item>
           <Form.Item name="label" label="Label" rules={[{ required: true, message: 'Label is required.' }, { max: 200 }]}>
             <Input placeholder="example: Menu" />
-          </Form.Item>
-          <Form.Item name="path" label="Path" rules={[{ required: true, message: 'Path is required.' }, { max: 500 }]}>
-            <Input placeholder="example: appmanager/menu" />
           </Form.Item>
           <Form.Item name="order" label="Order" rules={[{ required: true, message: 'Order is required.' }]}>
             <InputNumber min={0} precision={0} className="menu-order-input" />

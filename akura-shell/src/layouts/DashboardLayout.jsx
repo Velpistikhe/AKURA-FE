@@ -34,6 +34,7 @@ import {
   AppBadge,
   AppBreadcrumb,
   AppButton,
+  AppLoading,
 } from '../components/ui'
 import './DashboardLayout.css'
 import './DashboardLayout.dynamic.css'
@@ -83,16 +84,11 @@ function resolveMenuIcon(name) {
   return <Icon />
 }
 
-function resolveMenuPath(path) {
-  const normalized = String(path || '').trim().replace(/^\/+|\/+$/g, '')
-  if (!normalized) return ''
-  if (normalized === 'dashboard' || normalized.startsWith('dashboard/')) {
-    return `/${normalized}`
-  }
-  if (normalized === 'marketing' || normalized.startsWith('marketing/')) {
-    return `/${normalized}`
-  }
-  return `/dashboard/${normalized}`
+function resolveMenuPath(menuKey, itemKey) {
+  const segments = [menuKey, itemKey]
+    .map((key) => String(key || '').trim().replace(/^\/+|\/+$/g, ''))
+    .filter(Boolean)
+  return segments.length ? `/${segments.join('/')}` : ''
 }
 
 function translateMenuLabel(label) {
@@ -120,29 +116,50 @@ function translateMenuLabel(label) {
 }
 
 function mapMenus(menus) {
-  if (!Array.isArray(menus)) return []
+  const dashboardMenu = {
+    key: '/dashboard',
+    label: 'Dashboard',
+    icon: <DashboardOutlined />,
+  }
 
-  return [...menus]
+  if (!Array.isArray(menus)) return [dashboardMenu]
+
+  const responseMenus = [...menus]
+    .filter((menu) => String(menu.key || '').trim() !== 'dashboard')
     .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-    .map((menu) => ({
-      key: menu.key,
-      label: translateMenuLabel(menu.label),
-      icon: resolveMenuIcon(menu.icon),
-      children: Array.isArray(menu.items)
+    .map((menu) => {
+      const menuPath = resolveMenuPath(menu.key)
+      const base = {
+        key: menu.hasItem ? `group:${menu.key}` : menuPath,
+        label: translateMenuLabel(menu.label),
+        icon: resolveMenuIcon(menu.key),
+      }
+
+      if (!menu.hasItem) return base
+
+      const children = Array.isArray(menu.items)
         ? [...menu.items]
             .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
             .map((item) => ({
-              key: resolveMenuPath(item.path),
+              key: resolveMenuPath(menu.key, item.key),
               label: translateMenuLabel(item.label),
-              icon: resolveMenuIcon(item.icon),
+              icon: resolveMenuIcon(item.key),
             }))
-        : [],
-    }))
-    .filter((menu) => menu.key && menu.label && menu.children.length > 0)
+            .filter((item) => item.key && item.label)
+        : []
+
+      return { ...base, children }
+    })
+    .filter((menu) => menu.key && menu.label && (!menu.children || menu.children.length > 0))
+
+  return [dashboardMenu, ...responseMenus]
 }
 
 function findActiveMenu(menuItems, pathname) {
   for (const group of menuItems) {
+    if (!group.children && group.key === pathname) {
+      return { groupKey: null, label: group.label }
+    }
     const activeItem = group.children?.find((item) => item.key === pathname)
     if (activeItem) return { groupKey: group.key, label: activeItem.label }
   }
@@ -154,6 +171,7 @@ function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
   const [openMenuKeys, setOpenMenuKeys] = useState([])
+  const [loggingOut, setLoggingOut] = useState(false)
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -173,13 +191,16 @@ function DashboardLayout() {
   }, [])
 
   const handleLogout = async () => {
+    if (loggingOut) return
+    setLoggingOut(true)
+
     try {
       const responseMessage = await logout()
       notify.success('Logout Successful', responseMessage || 'You have signed out successfully.')
     } catch (error) {
       notify.error('Logout Failed', error.response?.data?.message || error.message || 'Unable to sign out.')
     } finally {
-      navigate('/login')
+      window.location.replace('/')
     }
   }
 
@@ -196,7 +217,7 @@ function DashboardLayout() {
   const currentLabel = activeMenu?.label
     || staticLabels[location.pathname]
     || (location.pathname.startsWith('/dashboard/user/') ? 'My Profile' : 'Dashboard')
-  const visibleOpenMenuKeys = activeMenu && !openMenuKeys.includes(activeMenu.groupKey)
+  const visibleOpenMenuKeys = activeMenu?.groupKey && !openMenuKeys.includes(activeMenu.groupKey)
     ? [...openMenuKeys, activeMenu.groupKey]
     : openMenuKeys
 
@@ -212,6 +233,8 @@ function DashboardLayout() {
     else if (key === 'profile') navigate('/dashboard/profile')
     else if (key === 'settings') navigate('/dashboard/settings')
   }
+
+  if (loggingOut) return <AppLoading message="Signing out..." />
 
   return (
     <Layout className="dashboard-root">

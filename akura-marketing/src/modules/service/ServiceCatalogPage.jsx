@@ -4,6 +4,7 @@ import {
   Button,
   Card,
   DeleteOutlined,
+  EditOutlined,
   Form,
   Input,
   Modal,
@@ -17,7 +18,7 @@ import {
   Typography,
 } from '../../components/global'
 import '../company/CompanyPage.css'
-import './CatalogPage.css'
+import './ServiceCatalogPage.css'
 
 const DEFAULT_PAGE_SIZE = 20
 
@@ -30,7 +31,7 @@ function scopeValues(scopes = []) {
   return scopes.map((scope) => typeof scope === 'string' ? scope : scope.scope)
 }
 
-function CatalogPage({
+function ServiceCatalogPage({
   entityLabel,
   entityLabelLower,
   dataKey,
@@ -43,12 +44,10 @@ function CatalogPage({
   const [form] = Form.useForm()
   const [scopeForm] = Form.useForm()
   const [maintenanceScopeForm] = Form.useForm()
-  const [maintenanceForm] = Form.useForm()
   const [records, setRecords] = useState([])
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 1 })
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
-  const [codeFilter, setCodeFilter] = useState('')
   const [nameFilter, setNameFilter] = useState('')
   const [activeFilter, setActiveFilter] = useState('')
   const [sortBy, setSortBy] = useState('')
@@ -56,16 +55,15 @@ function CatalogPage({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [loadingDetailId, setLoadingDetailId] = useState(null)
+  const [editingRecord, setEditingRecord] = useState(null)
   const [detailRecord, setDetailRecord] = useState(null)
   const [modalOpen, setModalOpen] = useState(false)
   const [scopeSaving, setScopeSaving] = useState(false)
   const [maintenanceScopeSaving, setMaintenanceScopeSaving] = useState(false)
-  const [maintenanceSaving, setMaintenanceSaving] = useState(false)
   const [deletingScopeId, setDeletingScopeId] = useState(null)
   const [deletingMaintenanceScopeId, setDeletingMaintenanceScopeId] = useState(null)
   const requestIdRef = useRef(0)
-  const hasMaintenance = Form.useWatch('hasService', form)
-  const viewHasMaintenance = Form.useWatch('hasService', maintenanceForm)
+  const hasMaintenance = Form.useWatch('hasMaintenance', form)
 
   const loadRecords = useCallback(async () => {
     const requestId = ++requestIdRef.current
@@ -74,7 +72,6 @@ function CatalogPage({
       const response = await service.list({
         page,
         limit: pageSize,
-        code: codeFilter,
         name: nameFilter,
         isActive: activeFilter,
         sortBy,
@@ -88,7 +85,7 @@ function CatalogPage({
     } finally {
       if (requestId === requestIdRef.current) setLoading(false)
     }
-  }, [activeFilter, codeFilter, dataKey, message, nameFilter, page, pageSize, service, sortBy, sortOrder])
+  }, [activeFilter, dataKey, message, nameFilter, page, pageSize, service, sortBy, sortOrder])
 
   useEffect(() => {
     const timeoutId = setTimeout(loadRecords, 300)
@@ -96,13 +93,14 @@ function CatalogPage({
   }, [loadRecords])
 
   const openCreate = () => {
+    setEditingRecord(null)
     form.resetFields()
     form.setFieldsValue({
-      code: '',
       name: '',
       scopes: [],
-      hasService: false,
-      maintenance: { name: '', scopes: [] },
+      hasMaintenance: false,
+      maintenanceScopes: [],
+      isActive: true,
     })
     setModalOpen(true)
   }
@@ -127,10 +125,24 @@ function CatalogPage({
     if (detail) {
       scopeForm.resetFields()
       maintenanceScopeForm.resetFields()
-      maintenanceForm.resetFields()
-      maintenanceForm.setFieldsValue({ hasService: Boolean(detail.hasService), name: '', scopes: [] })
       setDetailRecord(detail)
     }
+  }
+
+  const openEdit = async (record) => {
+    const detail = await getDetail(record)
+    if (!detail) return
+
+    setEditingRecord(detail)
+    form.resetFields()
+    form.setFieldsValue({
+      name: detail.name,
+      scopes: scopeValues(detail.scopes),
+      hasMaintenance: Boolean(detail.hasMaintenance),
+      maintenanceScopes: scopeValues(detail.maintenanceScopes),
+      isActive: Boolean(detail.isActive),
+    })
+    setModalOpen(true)
   }
 
   const refreshDetail = async () => {
@@ -180,28 +192,6 @@ function CatalogPage({
     }
   }
 
-  const saveMaintenance = async (values) => {
-    const scopes = scopeValues(values.scopes).map((scope) => scope.trim())
-    if (new Set(scopes).size !== scopes.length) {
-      message.error('Maintenance scopes must be unique.')
-      return
-    }
-    setMaintenanceSaving(true)
-    try {
-      await service.createMaintenance(detailRecord.id, {
-        name: values.name.trim(),
-        scopes,
-      })
-      message.success('Maintenance added successfully.')
-      maintenanceForm.resetFields()
-      await refreshDetail()
-    } catch (error) {
-      message.error(error.message)
-    } finally {
-      setMaintenanceSaving(false)
-    }
-  }
-
   const deleteMaintenanceScope = async (scope) => {
     setDeletingMaintenanceScopeId(scope.id)
     try {
@@ -218,12 +208,20 @@ function CatalogPage({
   const saveRecord = async () => {
     const values = await form.validateFields()
     const scopes = scopeValues(values.scopes).map((scope) => scope.trim())
-    const maintenanceScopes = scopeValues(values.maintenance?.scopes).map((scope) => scope.trim())
+    const maintenanceScopes = scopeValues(values.maintenanceScopes).map((scope) => scope.trim())
+    if (scopes.length > 100 || maintenanceScopes.length > 100) {
+      message.error('A service can contain a maximum of 100 scopes in each scope list.')
+      return
+    }
     if (new Set(scopes).size !== scopes.length) {
       message.error('Scopes must be unique.')
       return
     }
-    if (values.hasService && new Set(maintenanceScopes).size !== maintenanceScopes.length) {
+    if (values.hasMaintenance && maintenanceScopes.length === 0) {
+      message.error('Add at least one maintenance scope when maintenance is enabled.')
+      return
+    }
+    if (values.hasMaintenance && new Set(maintenanceScopes).size !== maintenanceScopes.length) {
       message.error('Maintenance scopes must be unique.')
       return
     }
@@ -231,22 +229,21 @@ function CatalogPage({
     setSaving(true)
     try {
       const payload = {
-        code: values.code.trim(),
         name: values.name.trim(),
-      }
-      await service.create({
-        ...payload,
         scopes,
         ...(supportsMaintenance ? {
-          hasService: Boolean(values.hasService),
-          maintenance: values.hasService ? {
-            name: values.maintenance.name.trim(),
-            scopes: maintenanceScopes,
-          } : undefined,
+          hasMaintenance: Boolean(values.hasMaintenance),
+          maintenanceScopes: values.hasMaintenance ? maintenanceScopes : [],
         } : {}),
-      })
+      }
 
-      message.success(`${entityLabel} created successfully.`)
+      if (editingRecord) {
+        await service.update(editingRecord.id, { ...payload, isActive: Boolean(values.isActive) })
+      } else {
+        await service.create(payload)
+      }
+
+      message.success(`${entityLabel} ${editingRecord ? 'updated' : 'created'} successfully.`)
       setModalOpen(false)
       await loadRecords()
     } catch (error) {
@@ -271,7 +268,6 @@ function CatalogPage({
     const nextPageSize = tablePagination.pageSize || pageSize
     setPageSize(nextPageSize)
     setPage(nextPageSize !== pageSize ? 1 : tablePagination.current || 1)
-    setCodeFilter(filters.code?.[0] || '')
     setNameFilter(filters.name?.[0] || '')
     setActiveFilter(filters.isActive?.[0] || '')
     setSortBy(sorter.order ? sorter.field : '')
@@ -279,20 +275,6 @@ function CatalogPage({
   }
 
   const columns = [
-    {
-      title: 'Code',
-      dataIndex: 'code',
-      key: 'code',
-      width: 180,
-      ellipsis: true,
-      sorter: true,
-      sortOrder: getSortOrder('code', sortBy, sortOrder),
-      filteredValue: codeFilter ? [codeFilter] : null,
-      filterDropdown: (props) => (
-        <TableSearchFilter {...props} placeholder="Search code" onSearch={(value) => { setCodeFilter(value); setPage(1) }} />
-      ),
-      render: (value) => <Typography.Text code title={value}>{value}</Typography.Text>,
-    },
     {
       title: 'Name',
       dataIndex: 'name',
@@ -333,13 +315,19 @@ function CatalogPage({
     },
     ...(supportsMaintenance ? [{
       title: 'Maintenance',
-      dataIndex: 'maintenance',
-      key: 'maintenance',
+      dataIndex: 'maintenanceScopes',
+      key: 'maintenanceScopes',
       width: 240,
       ellipsis: true,
-      render: (maintenance) => maintenance?.name
-        ? <Typography.Text title={maintenance.name}>{maintenance.name}</Typography.Text>
-        : <Typography.Text tone="secondary">None</Typography.Text>,
+      render: (maintenanceScopes, record) => {
+        if (!record.hasMaintenance) return <Typography.Text tone="secondary">Disabled</Typography.Text>
+        const summary = Array.isArray(maintenanceScopes)
+          ? scopeValues(maintenanceScopes).join(', ')
+          : String(maintenanceScopes || '')
+        return summary
+          ? <Typography.Text className="catalog-scope-summary" title={summary}>{summary}</Typography.Text>
+          : <Typography.Text tone="secondary">No scopes</Typography.Text>
+      },
     }] : []),
     {
       title: 'Actions',
@@ -349,6 +337,13 @@ function CatalogPage({
       render: (_, record) => (
         <Space>
           <Button variant="link" busy={loadingDetailId === record.id} onClick={() => openDetail(record)}>View</Button>
+          <Button
+            variant="text"
+            icon={<EditOutlined />}
+            busy={loadingDetailId === record.id}
+            onClick={() => openEdit(record)}
+            aria-label={`Edit ${record.name}`}
+          />
           {canDelete && (
             <Popconfirm title={`Delete ${entityLabelLower}?`} okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }} onConfirm={() => deleteRecord(record)}>
               <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Delete ${record.name}`} />
@@ -376,7 +371,7 @@ function CatalogPage({
           columns={columns}
           dataSource={records}
           tableLayout="fixed"
-          scroll={{ x: supportsMaintenance ? 1490 : 1250 }}
+          scroll={{ x: supportsMaintenance ? 1310 : 1070 }}
           onChange={handleTableChange}
           pagination={{
             current: pagination.page,
@@ -390,11 +385,11 @@ function CatalogPage({
       </Card>
 
       <Modal
-        title={`Add ${entityLabel}`}
+        title={`${editingRecord ? 'Edit' : 'Add'} ${entityLabel}`}
         visible={modalOpen}
         width={680}
         busy={saving}
-        okText="Add"
+        okText={editingRecord ? 'Save' : 'Add'}
         cancelText="Cancel"
         onOk={saveRecord}
         onCancel={() => setModalOpen(false)}
@@ -402,9 +397,6 @@ function CatalogPage({
         unmountOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
-          <Form.Item name="code" label="Code" rules={[{ required: true, whitespace: true, message: 'Code is required.' }, { max: 50 }, { pattern: /^[A-Z0-9_-]+$/, message: 'Use uppercase letters, numbers, underscores, or hyphens.' }]}>
-            <Input maxLength={50} placeholder="example: SOCIAL_MEDIA" />
-          </Form.Item>
           <Form.Item name="name" label="Name" rules={[{ required: true, whitespace: true, message: 'Name is required.' }, { max: 200 }]}>
             <Input maxLength={200} placeholder={`${entityLabel} name`} />
           </Form.Item>
@@ -430,19 +422,12 @@ function CatalogPage({
 
               {supportsMaintenance && (
                 <div className="catalog-maintenance-fields">
-                  <Form.Item name="hasService" label="Has maintenance service" valuePropName="checked">
+                  <Form.Item name="hasMaintenance" label="Has maintenance service" valuePropName="checked">
                     <Switch activeLabel="Yes" inactiveLabel="No" />
                   </Form.Item>
                   {hasMaintenance && (
                     <div className="catalog-maintenance-panel">
-                      <Form.Item
-                        name={['maintenance', 'name']}
-                        label="Maintenance Name"
-                        rules={[{ required: true, whitespace: true, message: 'Maintenance name is required.' }, { max: 200 }]}
-                      >
-                        <Input maxLength={200} placeholder="Maintenance name" />
-                      </Form.Item>
-                      <Form.List name={['maintenance', 'scopes']}>
+                      <Form.List name="maintenanceScopes">
                         {(fields, { add, remove }) => (
                           <div className="catalog-scopes catalog-maintenance-scopes">
                             <div className="catalog-scopes-heading">
@@ -464,6 +449,11 @@ function CatalogPage({
                   )}
                 </div>
               )}
+              {editingRecord && (
+                <Form.Item name="isActive" label="Status" valuePropName="checked">
+                  <Switch activeLabel="Active" inactiveLabel="Inactive" />
+                </Form.Item>
+              )}
           </>
         </Form>
       </Modal>
@@ -471,15 +461,13 @@ function CatalogPage({
       <Modal className="catalog-view-modal" title={`View ${entityLabelLower}`} visible={Boolean(detailRecord)} width={800} footer={null} onCancel={() => setDetailRecord(null)} unmountOnClose>
         {detailRecord && (
           <div className="catalog-detail">
-            <div><span>Code</span><Typography.Text code>{detailRecord.code}</Typography.Text></div>
             <div><span>Name</span><strong>{detailRecord.name}</strong></div>
             <div><span>Status</span><Tag color={detailRecord.isActive ? 'success' : 'default'}>{detailRecord.isActive ? 'Active' : 'Inactive'}</Tag></div>
             {supportsMaintenance && (
               <div>
                 <span>Maintenance</span>
-                {detailRecord.maintenance ? (
+                {detailRecord.hasMaintenance ? (
                   <div className="catalog-maintenance-detail">
-                    <strong>{detailRecord.maintenance.name}</strong>
                     {detailRecord.isActive && (
                       <Form form={maintenanceScopeForm} className="catalog-detail-scope-form" preserve={false} onFinish={saveMaintenanceScope}>
                         <Form.Item
@@ -491,15 +479,15 @@ function CatalogPage({
                         <Button variant="primary" icon={<PlusOutlined />} htmlType="submit" busy={maintenanceScopeSaving}>Add</Button>
                       </Form>
                     )}
-                    {(detailRecord.maintenance.scopes || []).length ? (
+                    {(detailRecord.maintenanceScopes || []).length ? (
                       <div className="catalog-detail-scopes">
-                        {detailRecord.maintenance.scopes.map((scope) => (
+                        {detailRecord.maintenanceScopes.map((scope) => (
                           <div className="catalog-detail-scope" key={scope.id}>
                             <Typography.Text title={scope.scope}>{scope.scope}</Typography.Text>
                             {canDeleteScope && detailRecord.isActive && (
                               <Popconfirm
                                 title="Delete maintenance scope?"
-                                description="The scope will be deactivated for this maintenance record."
+                                description="The scope will be deactivated for this service."
                                 okText="Delete"
                                 cancelText="Cancel"
                                 okButtonProps={{ danger: true }}
@@ -519,43 +507,7 @@ function CatalogPage({
                       </div>
                     ) : <Typography.Text tone="secondary">No maintenance scopes</Typography.Text>}
                   </div>
-                ) : !detailRecord.isActive ? <Typography.Text tone="secondary">The service is inactive; maintenance cannot be managed.</Typography.Text> : (
-                    <Form form={maintenanceForm} className="catalog-maintenance-create" layout="vertical" preserve={false} onFinish={saveMaintenance}>
-                      <Form.Item name="hasService" label="Has maintenance" valuePropName="checked">
-                        <Switch activeLabel="Yes" inactiveLabel="No" />
-                      </Form.Item>
-                      {viewHasMaintenance && (
-                      <>
-                        <Form.Item
-                          name="name"
-                          label="Maintenance Name"
-                          rules={[{ required: true, whitespace: true, message: 'Maintenance name is required.' }, { max: 200 }]}
-                        >
-                          <Input maxLength={200} placeholder="Maintenance name" />
-                        </Form.Item>
-                        <Form.List name="scopes">
-                          {(fields, { add, remove }) => (
-                            <div className="catalog-scopes catalog-maintenance-scopes">
-                              <div className="catalog-scopes-heading">
-                                <Typography.Text strong>Maintenance Scopes</Typography.Text>
-                                <Button variant="dashed" icon={<PlusOutlined />} onClick={() => add('')}>Add Scope</Button>
-                              </div>
-                              {fields.map(({ key, ...fieldProps }) => (
-                                <div className="catalog-scope-row" key={key}>
-                                  <Form.Item {...fieldProps} rules={[{ required: true, whitespace: true, message: 'Maintenance scope is required.' }, { max: 500 }]}>
-                                    <Input maxLength={500} placeholder="Maintenance scope name" />
-                                  </Form.Item>
-                                  <Button isDanger variant="text" icon={<DeleteOutlined />} onClick={() => remove(fieldProps.name)} aria-label="Delete maintenance scope" />
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </Form.List>
-                        <Button className="catalog-maintenance-submit" variant="primary" htmlType="submit" busy={maintenanceSaving}>Add Maintenance</Button>
-                      </>
-                      )}
-                    </Form>
-                )}
+                ) : <Typography.Text tone="secondary">Maintenance is disabled for this service.</Typography.Text>}
               </div>
             )}
             <div>
@@ -608,4 +560,4 @@ function CatalogPage({
   )
 }
 
-export default CatalogPage
+export default ServiceCatalogPage

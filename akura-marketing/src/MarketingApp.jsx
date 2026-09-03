@@ -1,6 +1,5 @@
 import { App, Card, Typography } from "./components/global";
-import CompanyPage from "./modules/company/CompanyPage";
-import ServiceMaintenancePage from "./modules/service/ServiceMaintenancePage";
+import AppRoute from "./routes/AppRoute";
 import "./MarketingApp.css";
 
 function MarketingOverview() {
@@ -19,29 +18,11 @@ function MarketingOverview() {
 }
 
 function MarketingApp({ pathname = window.location.pathname }) {
-  const normalizedPath = pathname.replace(/\/+$/, "");
-  const endsWithAny = (...paths) =>
-    paths.some((path) => normalizedPath.endsWith(path));
-  let content = <MarketingOverview />;
-
-  if (endsWithAny("/marketing/manage-company", "/marketing/companies")) {
-    content = <CompanyPage />;
-  } else if (
-    endsWithAny(
-      "/service",
-      "/services",
-      "/marketing/manage-service",
-      "/marketing/manage-services",
-      "/marketing/manage-maintenance",
-      "/marketing/manage-maintenances",
-      "/marketing/maintenance",
-      "/marketing/maintenances",
-    )
-  ) {
-    content = <ServiceMaintenancePage />;
-  }
-
-  return <App>{content}</App>;
+  return (
+    <App>
+      <AppRoute pathname={pathname} fallback={<MarketingOverview />} />
+    </App>
+  );
 }
 
 export default MarketingApp;

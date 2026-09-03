@@ -15,15 +15,32 @@ import PublicRoute from "./PublicRoute";
 
 function AppRoute() {
   const { profileLoading } = useAuth();
-  const { menuLoading } = useMenu();
+  const { menus, menuLoading } = useMenu();
   const appLoading = profileLoading || menuLoading;
+
+  const mfeComponents = {
+    app_manager: RemoteAppManager,
+    marketing: RemoteMarketing,
+  };
+
+  const mfeRoutes = (menus || []).reduce((routes, menu) => {
+    const key = String(menu.key || "")
+      .trim()
+      .replace(/^\/+|\/+$/g, "");
+    const Component = mfeComponents[key];
+    if (key && Component && !routes.some((route) => route.key === key)) {
+      routes.push({ key, Component });
+    }
+    return routes;
+  }, []);
 
   if (appLoading) return <AppLoading message="Loading profile and menu..." />;
 
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
+
       <Route element={<PublicRoute />}>
-        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
       </Route>
@@ -34,13 +51,14 @@ function AppRoute() {
           <Route path="profile" element={<UserModule />} />
           <Route path="settings" element={<UserModule />} />
           <Route path="user/*" element={<UserModule />} />
-          <Route path="appmanager/*" element={<RemoteAppManager />} />
           <Route path="*" element={<Dashboard />} />
         </Route>
-        <Route path="/marketing" element={<DashboardLayout />}>
-          <Route index element={<RemoteMarketing />} />
-          <Route path="*" element={<RemoteMarketing />} />
-        </Route>
+        {mfeRoutes.map(({ key, Component }) => (
+          <Route key={key} path={`/${key}`} element={<DashboardLayout />}>
+            <Route index element={<Component />} />
+            <Route path="*" element={<Component />} />
+          </Route>
+        ))}
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

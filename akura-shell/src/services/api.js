@@ -57,7 +57,10 @@ function refreshSession() {
 
 function redirectToLogin() {
   clearRefreshToken()
-  if (!window.location.pathname.startsWith('/login')) {
+  const publicPaths = ['/', '/login', '/register']
+  const isPublicPath = publicPaths.includes(window.location.pathname)
+
+  if (!isPublicPath) {
     window.location.assign('/login')
   }
 }
