@@ -13,17 +13,18 @@ function withQuery(params = {}) {
 export const serviceService = {
   list: (params = {}) => apiRequest(`${SERVICE_PATH}?${withQuery(params)}`),
   get: (serviceId) => apiRequest(`${SERVICE_PATH}/${serviceId}`),
+  history: (serviceId, { page = 1, limit = 20 } = {}) => apiRequest(`${SERVICE_PATH}/${serviceId}/history?${withQuery({ page, limit })}`),
   create: (data) => apiRequest(SERVICE_PATH, { method: 'POST', body: JSON.stringify(data) }),
   update: (serviceId, data) => apiRequest(`${SERVICE_PATH}/${serviceId}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   }),
   remove: (serviceId) => apiRequest(`${SERVICE_PATH}/${serviceId}`, { method: 'DELETE' }),
-  createScope: (serviceId, data) => apiRequest(`${SERVICE_PATH}/${serviceId}/scopes`, {
+  createInspectionScope: (serviceId, data) => apiRequest(`${SERVICE_PATH}/${serviceId}/inspection/scopes`, {
     method: 'POST',
     body: JSON.stringify(data),
   }),
-  removeScope: (serviceId, scopeId) => apiRequest(`${SERVICE_PATH}/${serviceId}/scopes/${scopeId}`, {
+  removeInspectionScope: (serviceId, inspectionScopeId) => apiRequest(`${SERVICE_PATH}/${serviceId}/inspection/scopes/${inspectionScopeId}`, {
     method: 'DELETE',
   }),
   createMaintenanceScope: (serviceId, data) => apiRequest(`${SERVICE_PATH}/${serviceId}/maintenance/scopes`, {

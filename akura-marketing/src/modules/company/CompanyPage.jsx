@@ -7,7 +7,6 @@ import {
   DeleteOutlined,
   EyeOutlined,
   HistoryOutlined,
-  UploadOutlined,
   Form,
   Input,
   Modal,
@@ -22,7 +21,6 @@ import {
   Typography,
 } from '../../components/global'
 import { companyService } from '../../services/companyService'
-import CompanyContractUpload from './CompanyContractUpload'
 import CompanyView from './CompanyView'
 import CompanyHistoryModal from './CompanyHistoryModal'
 import './CompanyPage.css'
@@ -52,7 +50,6 @@ function CompanyPage() {
   const [saving, setSaving] = useState(false)
   const [loadingDetailId, setLoadingDetailId] = useState(null)
   const [editingCompany, setEditingCompany] = useState(null)
-  const [uploadCompany, setUploadCompany] = useState(null)
   const [viewCompany, setViewCompany] = useState(null)
   const [historyCompany, setHistoryCompany] = useState(null)
   const viewRequestRef = useRef(0)
@@ -272,14 +269,12 @@ function CompanyPage() {
       fixed: 'right',
       render: (_, company) => (
         <Space>
-          <Button variant="text" icon={<HistoryOutlined />} title="View History Company" aria-label={`View company history for ${company.name}`} onClick={() => setHistoryCompany(company)} />
-          <Button variant="text" icon={<UploadOutlined />} title="Upload contract items" aria-label={`Upload contract items for ${company.name}`} onClick={() => setUploadCompany(company)} />
+          <Button variant="text" icon={<HistoryOutlined />} title="View Company History" onClick={() => setHistoryCompany(company)} />
           <Button
             variant="text"
             icon={<EyeOutlined />}
             busy={loadingDetailId === company.id}
             onClick={() => openView(company)}
-            aria-label={`View ${company.name}`}
             title="View Company"
           />
           <Popconfirm
@@ -290,7 +285,7 @@ function CompanyPage() {
             okButtonProps={{ danger: true }}
             onConfirm={() => deleteCompany(company)}
           >
-            <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Deactivate ${company.name}`} />
+            <Button isDanger variant="text" icon={<DeleteOutlined />} title="Deactivate Company" />
           </Popconfirm>
         </Space>
       ),
@@ -375,7 +370,6 @@ function CompanyPage() {
         </Form>
       </Modal>
 
-      {uploadCompany && <CompanyContractUpload key={uploadCompany.id} company={uploadCompany} onClose={() => setUploadCompany(null)} onChanged={loadCompanies} />}
     </section>
   )
 }

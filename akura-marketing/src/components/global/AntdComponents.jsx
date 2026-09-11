@@ -1,5 +1,6 @@
 import { forwardRef } from 'react'
 import './ModalMotion.css'
+import './Button.css'
 import {
   App as AntApp,
   Button as AntButton,
@@ -15,6 +16,7 @@ import {
   Table as AntTable,
   Tabs as AntTabs,
   Tag as AntTag,
+  Tooltip as AntTooltip,
   Typography as AntTypography,
 } from 'antd'
 
@@ -76,20 +78,34 @@ function configureInputNumber(props) {
 export const App = createAdapter(AntApp, 'GlobalApp')
 App.useApp = AntApp.useApp
 
-export const Button = createAdapter(AntButton, 'GlobalButton', ({
+function joinClassNames(...values) {
+  return values.filter(Boolean).join(' ')
+}
+
+// Keep Ant Design-specific Button prop mapping and visual conventions in one adapter.
+// When Ant Design changes its Button API, consumers remain unchanged and only this mapping needs updating.
+export const Button = forwardRef(({
   variant,
   busy,
   isDanger,
   type,
   loading,
   danger,
+  title,
+  className,
   ...props
-}) => ({
-  ...props,
-  type: variant ?? type,
-  loading: busy ?? loading,
-  danger: isDanger ?? danger,
-}))
+}, ref) => {
+  const button = <AntButton
+    ref={ref}
+    {...props}
+    className={joinClassNames('akura-button', className)}
+    type={variant ?? type}
+    loading={busy ?? loading}
+    danger={isDanger ?? danger}
+  />
+  return title ? <AntTooltip title={title}>{button}</AntTooltip> : button
+})
+Button.displayName = 'GlobalButton'
 
 export const Card = createAdapter(AntCard, 'GlobalCard', ({ bordered, variant, ...props }) => ({
   ...props,
@@ -148,6 +164,7 @@ export const Tabs = createAdapter(AntTabs, 'GlobalTabs', ({ initialKey, defaultA
   defaultActiveKey: initialKey ?? defaultActiveKey,
 }))
 export const Tag = createAdapter(AntTag, 'GlobalTag')
+export const Tooltip = createAdapter(AntTooltip, 'GlobalTooltip')
 export const Typography = createAdapter(AntTypography, 'GlobalTypography')
 Typography.Text = createAdapter(AntTypography.Text, 'GlobalTypographyText', ({ tone, type, ...props }) => ({
   ...props,

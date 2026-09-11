@@ -10,7 +10,7 @@ export function validateWorkbook(file) {
   return ''
 }
 
-export default function CompanyContractUpload({ company, onClose, onChanged }) {
+export default function CompanyContractUpload({ company, contract = null, onClose, onChanged }) {
   const [closing, setClosing] = useState(false)
   const { message } = App.useApp()
   const [confirmSave, confirmation] = useSaveConfirmation()
@@ -24,6 +24,12 @@ export default function CompanyContractUpload({ company, onClose, onChanged }) {
   const busyRef = useRef(false)
   const requestRef = useRef(0)
   const loadContracts = useCallback(async () => {
+    if (contract) {
+      setContracts([contract])
+      setContractId(contract.id)
+      setLoading(false)
+      return
+    }
     const requestId = ++requestRef.current
     setLoading(true)
     setContractId(undefined)
@@ -37,7 +43,7 @@ export default function CompanyContractUpload({ company, onClose, onChanged }) {
     } finally {
       if (requestId === requestRef.current) setLoading(false)
     }
-  }, [company.id])
+  }, [company.id, contract])
   useEffect(() => {
     loadContracts()
     return () => { requestRef.current++ }
@@ -45,7 +51,7 @@ export default function CompanyContractUpload({ company, onClose, onChanged }) {
 
   const upload = async () => {
     if (busyRef.current || loading) return
-    const selected = contracts.find((row) => row.id === contractId)
+    const selected = contract || contracts.find((row) => row.id === contractId)
     const validation = validateWorkbook(file)
     if (!selected || validation) { setError(!selected ? 'Select a contract.' : validation); return }
     busyRef.current = true
@@ -70,17 +76,19 @@ export default function CompanyContractUpload({ company, onClose, onChanged }) {
 
   return <Modal title={`Upload Contract Items — ${company.name}`} visible={!closing}
     onCancel={() => { if (!busyRef.current) setClosing(true) }} afterClose={onClose}
-    onOk={upload} okText="Upload" busy={saving} okButtonProps={{ disabled: loading || !contractId || !file }}
+    onOk={upload} okText="Upload" busy={saving} okButtonProps={{ disabled: loading || !(contract || contractId) || !file }}
     cancelButtonProps={{ disabled: saving }} closable={!saving} mask={{ closable: !saving }} keyboard={!saving}>
     {confirmation}
     <div className="contract-upload-fields">
       <p>Download the Excel template from the Item menu, edit the prices, and choose YA for the rows to import. Keep the hidden columns unchanged. Upload creates new contract prices; existing prices cannot be replaced.</p>
+      {!contract && <>
       <label htmlFor="contract-upload-contract">Company contract</label>
       <Select id="contract-upload-contract" placeholder="Select a contract" value={contractId} onChange={setContractId}
         loading={loading} disabled={loading || saving} options={contracts.map((row) => ({ value: row.id,
           label: `${row.status} · ${new Date(row.effectiveFrom).toLocaleDateString()} – ${row.effectiveUntil ? new Date(row.effectiveUntil).toLocaleDateString() : 'No end date'} · ${row.id.slice(0, 8)}` }))} />
       {!loading && !contracts.length && <Typography.Text>No eligible contract found. A CREATE or ACTIVE contract that has not ended is required.</Typography.Text>}
       <Button disabled={saving || loading} onClick={() => { setError(''); loadContracts() }}>Reload contracts</Button>
+      </>}
       <label htmlFor="contract-upload-file">Excel file (.xlsx, up to 5 MB)</label>
       <input id="contract-upload-file" type="file" accept=".xlsx" disabled={saving} onChange={(event) => {
         const selected = event.target.files?.[0]

@@ -42,6 +42,16 @@
 .table-filter-dropdown .ant-btn { width: 100%; }
 
 .staff-modal-action { display: flex; justify-content: flex-end; margin-bottom: 18px; }
+.company-staff-table .ant-table { overflow: hidden; border: 1px solid var(--border, #e1e7f0); border-radius: 12px; background: var(--surface, #fff); }
+.company-staff-table .ant-table-thead > tr > th { padding-block: 13px; background: linear-gradient(180deg, var(--surface-muted, #eaf0f8), var(--surface-subtle, #f6f8fc)) !important; border-bottom-color: var(--border, #e1e7f0); color: var(--text-secondary, #51617f); font-size: 11px; font-weight: 750; letter-spacing: .055em; text-transform: uppercase; }
+.company-staff-table .ant-table-tbody > tr > td { padding-block: 15px; border-bottom-color: var(--border, #e1e7f0); vertical-align: middle; }
+.company-staff-table .ant-table-tbody > tr:last-child > td { border-bottom: 0; }
+.company-staff-table .ant-table-tbody > tr:hover > td { background: var(--surface-subtle, #f6f8fc) !important; }
+.company-staff-table .ant-table-cell-fix-right { background: var(--surface, #fff); box-shadow: -8px 0 14px rgb(15 30 61 / 3%); }
+.company-staff-table .ant-table-tbody > tr:hover .ant-table-cell-fix-right { background: var(--surface-subtle, #f6f8fc); }
+.company-staff-table .ant-space { gap: 6px !important; }
+.company-staff-table .akura-button.ant-btn { min-width: 34px; height: 34px; padding-inline: 8px; }
+.company-staff-name { color: var(--text-primary, #20304b); font-weight: 700; }
 .ant-modal .ant-modal-content { border-radius: 18px; box-shadow: 0 24px 70px rgba(15, 30, 61, 0.22); }
 .ant-modal .ant-modal-title { color: var(--text-primary, #1a2e5e); font-size: 18px; font-weight: 750; }
 .ant-modal .ant-form-item-label > label { color: var(--text-primary, #33476c); font-weight: 600; }
@@ -55,6 +65,7 @@
   .company-page .ant-pagination { justify-content: center; }
   .company-page .ant-pagination-total-text { width: 100%; text-align: center; }
   .staff-modal-action .ant-btn { width: 100%; }
+  .company-staff-table .ant-table-thead > tr > th { font-size: 10px; }
 }
 
 @media (max-width: 480px) {
@@ -70,12 +81,39 @@
 .contract-upload-fields input[type="file"] { max-width: 100%; color: var(--text-primary, #20304b); }
 .contract-upload-errors { max-height: 220px; overflow: auto; padding-left: 20px; margin-top: 10px; }
 
-.company-view-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
-.company-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; margin: 16px 0 28px; }
+.company-view-section { padding: 22px; border: 1px solid var(--border, #e5eaf3); border-radius: 14px; background: var(--surface-subtle, #fafbfe); }
+.company-view-section + .company-view-section { margin-top: 18px; }
+.company-view-heading, .company-view-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+.company-view-section-heading h3, .company-view-heading h3 { margin: 0; }
+.company-view-section-heading .ant-typography { display: block; margin-top: 4px; }
+.company-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 24px; margin: 0; }
 .company-detail-grid dt { color: var(--text-secondary, #5c6c84); font-size: 12px; margin-bottom: 5px; }
 .company-detail-grid dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
 .company-history { margin: 16px 0 28px; }
 .company-staff-section { margin-top: 16px; }
 .company-staff-history-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 24px; }
 .company-staff-history-heading h3 { margin: 0; }
-@media (max-width: 600px) { .company-detail-grid { grid-template-columns: 1fr; } .company-view-heading { align-items: flex-start; flex-direction: column; } }
+.company-contract-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.company-contract-list { display: grid; gap: 10px; margin-top: 14px; }
+.company-contract-card { display: grid; grid-template-columns: auto repeat(4, minmax(130px, 1fr)) auto; align-items: center; gap: 16px; padding: 14px; border: 1px solid var(--border, #e5eaf3); border-radius: 10px; background: var(--surface, #fff); }
+.company-contract-card > div { display: grid; gap: 3px; }
+.company-contract-card span { color: var(--text-secondary, #5c6c84); font-size: 12px; }
+.company-contract-card strong { font-weight: 600; }
+.company-contract-row-actions { display: flex !important; flex-wrap: wrap; gap: 8px; }
+.company-contract-history-heading { margin-top: 24px; }
+.company-contract-history-heading h4 { margin: 0 0 4px; }
+.company-contract-history-heading .ant-typography { display: block; }
+.company-contract-history-content { display: grid; grid-template-rows: 0fr; opacity: 0; transform: translateY(-6px); transition: grid-template-rows 240ms ease, opacity 180ms ease, transform 240ms ease; }
+.company-contract-history-content.is-visible { grid-template-rows: 1fr; opacity: 1; transform: translateY(0); }
+.company-contract-history-content-inner { min-height: 0; overflow: hidden; }
+.company-contract-history-content-inner > :first-child { margin-top: 16px; }
+.company-staff-history-content { display: grid; grid-template-rows: 0fr; opacity: 0; transform: translateY(-6px); transition: grid-template-rows 240ms ease, opacity 180ms ease, transform 240ms ease; }
+.company-staff-history-content.is-visible { grid-template-rows: 1fr; opacity: 1; transform: translateY(0); }
+.company-staff-history-content-inner { min-height: 0; overflow: hidden; }
+.company-staff-history-content-inner > :first-child { margin-top: 16px; }
+.company-history-controls, .company-history-pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 16px 0; }
+.company-history-controls .ant-select { min-width: 160px; }
+.company-history-pagination { justify-content: flex-end; color: var(--text-secondary, #5c6c84); font-size: 13px; }
+.company-staff-history-list { display: grid; gap: 10px; }
+@media (max-width: 600px) { .company-detail-grid { grid-template-columns: 1fr; } .company-view-heading, .company-view-section-heading { align-items: flex-start; flex-direction: column; } .company-contract-actions { justify-content: flex-start; } .company-contract-card { grid-template-columns: 1fr; gap: 10px; } .company-view-section { padding: 16px; } }
+@media (prefers-reduced-motion: reduce) { .company-contract-history-content, .company-staff-history-content { transition: none; } }

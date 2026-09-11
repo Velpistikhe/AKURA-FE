@@ -1,0 +1,41 @@
+.akura-button.ant-btn {
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--button-border, rgba(26, 46, 94, 0.26));
+  border-radius: 9px;
+  box-shadow: 0 1px 2px rgba(15, 30, 61, 0.05);
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.akura-button.ant-btn:hover:not(:disabled) {
+  border-color: var(--primary, #1a2e5e);
+  box-shadow: 0 4px 12px rgba(15, 30, 61, 0.12);
+  transform: translateY(-1px);
+}
+
+.akura-button.ant-btn-primary {
+  border-color: var(--primary, #1a2e5e);
+}
+
+.akura-button.ant-btn-dangerous {
+  border-color: currentColor;
+}
+
+:root[data-theme='dark'] .akura-button.ant-btn {
+  border-color: rgb(175 190 211 / 55%);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 28%);
+}
+
+:root[data-theme='dark'] .akura-button.ant-btn:hover:not(:disabled) {
+  border-color: var(--primary-lighter, #829fe0);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 30%);
+}
+
+:root[data-theme='dark'] .akura-button.ant-btn-primary {
+  border-color: var(--primary-lighter, #829fe0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .akura-button.ant-btn { transition: none; }
+  .akura-button.ant-btn:hover:not(:disabled) { transform: none; }
+}

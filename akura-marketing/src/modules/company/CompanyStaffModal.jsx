@@ -212,6 +212,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = fa
           onSearch={(value) => { setSearch(value); setPage(1) }}
         />
       ),
+      render: (value) => <strong className="company-staff-name">{value}</strong>,
     },
     {
       title: 'Title',
@@ -246,13 +247,13 @@ function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = fa
       fixed: 'right',
       render: (_, staff) => (
         <Space>
-          <Button variant={embedded ? 'link' : 'text'} icon={<HistoryOutlined />} title="View Staff History" aria-label={`View history of ${staff.name}`} onClick={() => setHistoryStaff(staff)}>{embedded ? 'History' : null}</Button>
+          <Button variant="text" icon={<HistoryOutlined />} title="View Staff History" onClick={() => setHistoryStaff(staff)} />
           <Button
             variant="text"
             icon={<EditOutlined />}
             busy={loadingDetailId === staff.id}
             onClick={() => openEdit(staff)}
-            aria-label={`Edit ${staff.name}`}
+            title="Edit Staff"
           />
           <Popconfirm
             title="Deactivate staff member?"
@@ -261,7 +262,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = fa
             okButtonProps={{ danger: true }}
             onConfirm={() => deleteStaff(staff)}
           >
-            <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Deactivate ${staff.name}`} />
+            <Button isDanger variant="text" icon={<DeleteOutlined />} title="Deactivate Staff" />
           </Popconfirm>
         </Space>
       ),
@@ -285,6 +286,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = fa
           <Button variant="primary" icon={<PlusOutlined />} onClick={openAdd}>Add Staff</Button>
         </div>
         <Table
+          className="company-staff-table"
           rowKey="id"
           busy={loading}
           columns={columns}
