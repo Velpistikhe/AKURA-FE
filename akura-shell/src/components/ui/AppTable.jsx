@@ -27,7 +27,7 @@ function AppTable({
         </div>
       }
       description={
-        <span style={{ color: '#8a9ab8', fontSize: 14, fontWeight: 500 }}>
+        <span style={{ color: 'var(--text-muted)', fontSize: 14, fontWeight: 500 }}>
           {emptyText}
         </span>
       }

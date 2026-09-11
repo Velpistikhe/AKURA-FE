@@ -1,8 +1,10 @@
 import MenuModule from '../modules/menu/MenuModule'
+import OfficeBranchPage from '../modules/office-branch/OfficeBranchPage'
 import UserPage from '../modules/user/UserPage'
 
 const moduleRoutes = {
   menus: MenuModule,
+  'office-branches': OfficeBranchPage,
   users: UserPage,
 }
 

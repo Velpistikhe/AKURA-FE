@@ -1,7 +1,7 @@
 // Ant Design adapter boundary. Semua wrapper dan modul aplikasi mengambil
 // dependency UI dari file ini agar upgrade Ant Design tetap terisolasi.
 export * from './AntdComponents'
-export { message, notification } from 'antd'
+export { message, notification, theme } from 'antd'
 
 export { default as enUS } from 'antd/locale/en_US'
 
@@ -14,6 +14,8 @@ export {
   ArrowUpOutlined,
   BarChartOutlined,
   BellOutlined,
+  MoonOutlined,
+  SunOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
   CloseCircleOutlined,
@@ -42,3 +44,4 @@ export {
   UserOutlined,
   WarningOutlined,
 } from '@ant-design/icons'
+export { useSaveConfirmation } from './useSaveConfirmation'

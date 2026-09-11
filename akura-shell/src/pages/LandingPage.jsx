@@ -1,3 +1,4 @@
+import ThemeToggle from '../components/ui/ThemeToggle'
 import { useNavigate } from 'react-router-dom'
 import {
   ApiOutlined,
@@ -10,6 +11,7 @@ import {
   ThunderboltOutlined,
 } from '../components/global'
 import AkuraLogo from '../components/brand/AkuraLogo'
+import { useAuth } from '../context/AuthContext'
 import './LandingPage.css'
 
 const services = [
@@ -44,6 +46,9 @@ const strengths = [
 
 function LandingPage() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
+  const portalPath = isAuthenticated ? '/dashboard' : '/login'
+  const portalLabel = isAuthenticated ? 'Dashboard' : 'Sign In'
 
   return (
     <div className="landing-root">
@@ -60,9 +65,7 @@ function LandingPage() {
 
       <nav className="landing-nav">
         <div className="landing-container landing-nav-inner">
-          <button className="landing-logo" onClick={() => navigate('/')} aria-label="Akura Bina Citra home">
-            <AkuraLogo size={53} />
-          </button>
+          <AkuraLogo className="landing-logo" size={53} />
           <div className="landing-nav-links">
             <a href="#home">Home</a>
             <a href="#about">About Us</a>
@@ -70,13 +73,15 @@ function LandingPage() {
             <a href="#contact">Contact</a>
           </div>
           <div className="landing-nav-actions">
-            <Button onClick={() => navigate('/login')} className="nav-login-btn">Sign In</Button>
+            <ThemeToggle />
+            <Button onClick={() => navigate(portalPath)} className="nav-login-btn">{portalLabel}</Button>
             <Button type="primary" onClick={() => navigate('/register')} className="akura-primary-btn">
               Register for the Portal
             </Button>
           </div>
           <div className="mobile-nav-actions">
-            <Button onClick={() => navigate('/login')}>Sign In</Button>
+            <ThemeToggle />
+            <Button onClick={() => navigate(portalPath)}>{portalLabel}</Button>
             <Button type="primary" onClick={() => navigate('/register')} className="akura-primary-btn">Register</Button>
           </div>
         </div>
@@ -194,7 +199,7 @@ function LandingPage() {
               <h2>Manage services and operations in one portal.</h2>
             </div>
             <div className="portal-cta-actions">
-              <Button size="large" onClick={() => navigate('/login')} className="cta-login-btn">Sign In</Button>
+              <Button size="large" onClick={() => navigate(portalPath)} className="cta-login-btn">{portalLabel}</Button>
               <Button
                 type="primary"
                 size="large"

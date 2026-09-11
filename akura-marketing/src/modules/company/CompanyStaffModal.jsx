@@ -1,9 +1,11 @@
+import { useSaveConfirmation } from '../../components/global'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   App,
   Button,
   DeleteOutlined,
   EditOutlined,
+  HistoryOutlined,
   Form,
   Input,
   Modal,
@@ -15,6 +17,7 @@ import {
   TableSearchFilter,
   Tag,
 } from '../../components/global'
+import CompanyHistoryModal from './CompanyHistoryModal'
 import { companyStaffService } from '../../services/companyStaffService'
 
 const DEFAULT_PAGE_SIZE = 20
@@ -28,9 +31,15 @@ function getSortOrder(column, sortBy, sortOrder) {
   return sortOrder === 'asc' ? 'ascend' : 'descend'
 }
 
-function CompanyStaffModal({ company, visible, onClose, onChanged }) {
+function StaffContainer({ embedded, children, ...props }) {
+  return embedded ? <section className="company-staff-section">{children}</section> : <Modal {...props}>{children}</Modal>
+}
+
+function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = false }) {
   const { message } = App.useApp()
+  const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = Form.useForm()
+  const [historyStaff, setHistoryStaff] = useState(null)
   const [staffs, setStaffs] = useState([])
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 1 })
   const [page, setPage] = useState(1)
@@ -65,7 +74,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
       setStaffs(response.data?.staffs || [])
       setPagination(response.data?.pagination || { page, total: 0, totalPages: 1 })
     } catch (error) {
-      if (requestId === requestIdRef.current) message.error(error.message)
+      if (requestId === requestIdRef.current) { setStaffs([]); message.error(error.message) }
     } finally {
       if (requestId === requestIdRef.current) setLoading(false)
     }
@@ -73,10 +82,11 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
 
   useEffect(() => {
     const timeoutId = setTimeout(loadStaffs, 300)
-    return () => clearTimeout(timeoutId)
+    return () => { clearTimeout(timeoutId); requestIdRef.current++ }
   }, [loadStaffs])
 
   useEffect(() => {
+    setHistoryStaff(null)
     if (!visible) return
     setPage(1)
     setSearch('')
@@ -116,11 +126,21 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
   }
 
   const saveStaff = async () => {
+    const currentValues = form.getFieldsValue(true)
+    if (editingStaff
+      && (currentValues.name || '').trim() === (editingStaff.name || '').trim()
+      && currentValues.title === editingStaff.title
+      && (currentValues.telp?.trim() || null) === (editingStaff.telp?.trim() || null)
+      && (currentValues.email?.trim() || null) === (editingStaff.email?.trim() || null)) {
+      message.warning('No changes were made.')
+      return
+    }
+
     const values = await form.validateFields()
+    if (!await confirmSave('company staff member')) return
     setSaving(true)
     try {
-      const payload = {
-        companyId: company.id,
+      const staffPayload = {
         name: values.name.trim(),
         title: values.title,
         telp: values.telp?.trim() || null,
@@ -128,10 +148,14 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
       }
 
       if (editingStaff) {
-        await companyStaffService.update(editingStaff.id, payload)
+        const response = await companyStaffService.update(editingStaff.id, {
+          ...Object.fromEntries(Object.entries(staffPayload).filter(([key, value]) => value !== editingStaff[key])),
+          version: editingStaff.version,
+        })
+        setHistoryStaff((current) => current?.id === editingStaff.id ? response.data : current)
         message.success('Staff member updated successfully.')
       } else {
-        await companyStaffService.create(payload)
+        await companyStaffService.create({ companyId: company.id, ...staffPayload })
         message.success('Staff member added successfully.')
       }
       setAddModalOpen(false)
@@ -139,6 +163,11 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
       await onChanged?.()
     } catch (error) {
       message.error(error.message)
+      if (error.status === 409) {
+        message.warning('Review the latest company and staff data before reopening Edit and trying again.')
+        await loadStaffs()
+        await onChanged?.()
+      }
     } finally {
       setSaving(false)
     }
@@ -146,13 +175,17 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
 
   const deleteStaff = async (staff) => {
     try {
-      await companyStaffService.remove(staff.id)
-      message.success('Staff member deleted successfully.')
+      await companyStaffService.remove(staff.id, staff.version)
+      message.success('Staff member deactivated successfully.')
       if (staffs.length === 1 && page > 1) setPage((current) => current - 1)
       else await loadStaffs()
       await onChanged?.()
     } catch (error) {
       message.error(error.message)
+      if (error.status === 409) {
+        await loadStaffs()
+        await onChanged?.()
+      }
     }
   }
 
@@ -209,10 +242,11 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
     {
       title: 'Actions',
       key: 'actions',
-      width: 120,
+      width: 160,
       fixed: 'right',
       render: (_, staff) => (
         <Space>
+          <Button variant={embedded ? 'link' : 'text'} icon={<HistoryOutlined />} title="View Staff History" aria-label={`View history of ${staff.name}`} onClick={() => setHistoryStaff(staff)}>{embedded ? 'History' : null}</Button>
           <Button
             variant="text"
             icon={<EditOutlined />}
@@ -221,13 +255,13 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
             aria-label={`Edit ${staff.name}`}
           />
           <Popconfirm
-            title="Delete staff member?"
-            okText="Delete"
+            title="Deactivate staff member?"
+            okText="Deactivate"
             cancelText="Cancel"
             okButtonProps={{ danger: true }}
             onConfirm={() => deleteStaff(staff)}
           >
-            <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Delete ${staff.name}`} />
+            <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Deactivate ${staff.name}`} />
           </Popconfirm>
         </Space>
       ),
@@ -236,7 +270,9 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
 
   return (
     <>
-      <Modal
+      {saveConfirmation}
+      <StaffContainer
+        embedded={embedded}
         title={`Company Staff: ${company?.name || ''}`}
         visible={visible}
         width={900}
@@ -264,7 +300,9 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
             showTotal: (total) => `${total} staff`,
           }}
         />
-      </Modal>
+      </StaffContainer>
+
+      {visible && historyStaff && <CompanyHistoryModal record={historyStaff} staff onClose={() => setHistoryStaff(null)} />}
 
       <Modal
         title={`${editingStaff ? 'Edit' : 'Add'} Staff: ${company?.name || ''}`}
@@ -273,16 +311,20 @@ function CompanyStaffModal({ company, visible, onClose, onChanged }) {
         okText={editingStaff ? 'Save' : 'Add'}
         cancelText="Cancel"
         onOk={saveStaff}
-        onCancel={() => setAddModalOpen(false)}
+        onCancel={() => { if (!saving) setAddModalOpen(false) }}
+        mask={{ closable: !saving }}
+        keyboard={!saving}
+        closable={!saving}
+        cancelButtonProps={{ disabled: saving }}
         preRender
         unmountOnClose
       >
         <Form form={form} layout="vertical" preserve={false}>
+          <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Title is required.' }, { type: 'enum', enum: ['mr', 'mrs'] }]}>
+            <Select options={TITLES} />
+          </Form.Item>
           <Form.Item name="name" label="Name" rules={[{ required: true, whitespace: true, message: 'Name is required.' }, { max: 200 }]}>
             <Input maxLength={200} placeholder="example: John Doe" />
-          </Form.Item>
-          <Form.Item name="title" label="Title" rules={[{ required: true, message: 'Title is required.' }]}>
-            <Select options={TITLES} />
           </Form.Item>
           <Form.Item name="telp" label="Phone" rules={[{ max: 30, message: 'Phone must not exceed 30 characters.' }]}>
             <Input maxLength={30} placeholder="example: +62 812 3456 7890" />

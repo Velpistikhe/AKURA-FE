@@ -14,6 +14,7 @@ function withQuery(params = {}) {
 
 export const companyStaffService = {
   list: (params = {}) => apiRequest(`${STAFF_PATH}?${withQuery(params)}`),
+  history: (companyStaffId, { page = 1, limit = 20 } = {}) => apiRequest(`${STAFF_PATH}/${companyStaffId}/history?${withQuery({ page, limit })}`),
   get: (companyStaffId) => apiRequest(`${STAFF_PATH}/${companyStaffId}`),
   create: (data) => apiRequest(STAFF_PATH, {
     method: 'POST',
@@ -23,8 +24,9 @@ export const companyStaffService = {
     method: 'PATCH',
     body: JSON.stringify(data),
   }),
-  remove: (companyStaffId) => apiRequest(`${STAFF_PATH}/${companyStaffId}`, {
+  remove: (companyStaffId, version) => apiRequest(`${STAFF_PATH}/${companyStaffId}`, {
     method: 'DELETE',
+    body: JSON.stringify({ version }),
   }),
 }
 

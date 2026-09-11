@@ -1,3 +1,4 @@
+import { useSaveConfirmation } from '../../components/global'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   App,
@@ -46,6 +47,7 @@ function toPayloadValue(value) {
 
 function MenuAccessPage() {
   const { message } = App.useApp()
+  const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = Form.useForm()
   const [accesses, setAccesses] = useState([])
   const [menuItems, setMenuItems] = useState([])
@@ -116,14 +118,23 @@ function MenuAccessPage() {
     loadAccesses()
   }, [loadAccesses])
 
-  const openCreate = () => {
-    setEditingAccess(null)
+  useEffect(() => {
+    if (!modalOpen) return
+
     form.resetFields()
-    form.setFieldsValue({
+    form.setFieldsValue(editingAccess ? {
+      menuItemId: editingAccess.menuItemId || editingAccess.menuItem?.id,
+      role: toFormValue(editingAccess.role),
+      section: toFormValue(editingAccess.section),
+    } : {
       menuItemId: menuItemFilter || undefined,
       role: 'ALL',
       section: 'ALL',
     })
+  }, [editingAccess, form, menuItemFilter, modalOpen])
+
+  const openCreate = () => {
+    setEditingAccess(null)
     setModalOpen(true)
   }
 
@@ -135,12 +146,6 @@ function MenuAccessPage() {
       if (!detail?.id) throw new Error('Invalid menu access detail data.')
 
       setEditingAccess(detail)
-      form.resetFields()
-      form.setFieldsValue({
-        menuItemId: detail.menuItemId || detail.menuItem?.id,
-        role: toFormValue(detail.role),
-        section: toFormValue(detail.section),
-      })
       setModalOpen(true)
     } catch (error) {
       message.error(error.message)
@@ -157,6 +162,7 @@ function MenuAccessPage() {
       section: toPayloadValue(values.section),
     }
 
+    if (!await confirmSave('menu access')) return
     setSaving(true)
     try {
       if (editingAccess) {
@@ -266,6 +272,7 @@ function MenuAccessPage() {
 
   return (
     <section className="menu-page">
+      {saveConfirmation}
       <div className="menu-page-heading">
         <div>
           <Typography.Title level={2}>Menu Access</Typography.Title>

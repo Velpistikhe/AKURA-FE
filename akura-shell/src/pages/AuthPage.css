@@ -181,14 +181,14 @@
   align-items: center;
   justify-content: center;
   padding: 40px 24px;
-  background: #f5f7ff;
+  background: var(--surface-subtle, #f5f7ff);
   overflow-y: auto;
 }
 
 .auth-form-container {
   width: 100%;
   max-width: 440px;
-  background: white;
+  background: var(--surface, white);
   border-radius: 24px;
   padding: 48px 44px;
   box-shadow: 0 8px 40px rgba(26, 46, 94, 0.1);
@@ -208,14 +208,14 @@
 .auth-form-title {
   font-size: 28px;
   font-weight: 800;
-  color: #1a2e5e;
+  color: var(--text-primary, #1a2e5e);
   margin-bottom: 8px;
   line-height: 1.2;
 }
 
 .auth-form-subtitle {
   font-size: 14px;
-  color: #5a6a8a;
+  color: var(--text-secondary, #5a6a8a);
 }
 
 .auth-link {
@@ -232,7 +232,7 @@
 
 /* Form Inputs */
 .input-prefix-icon {
-  color: #8a9ab8;
+  color: var(--text-muted, #8a9ab8);
   margin-right: 4px;
 }
 
@@ -280,7 +280,7 @@
 
 .divider-text {
   font-size: 12px;
-  color: #8a9ab8;
+  color: var(--text-muted, #8a9ab8);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -290,10 +290,10 @@
 .btn-alt {
   height: 46px !important;
   border: 1.5px solid rgba(26, 46, 94, 0.2) !important;
-  color: #1a2e5e !important;
+  color: var(--text-primary, #1a2e5e) !important;
   font-weight: 600 !important;
   border-radius: 10px !important;
-  background: white !important;
+  background: var(--surface, white) !important;
   transition: var(--transition) !important;
 }
 
@@ -314,7 +314,7 @@
   margin-top: 24px;
   text-align: center;
   font-size: 12px;
-  color: #8a9ab8;
+  color: var(--text-muted, #8a9ab8);
   line-height: 1.6;
 }
 

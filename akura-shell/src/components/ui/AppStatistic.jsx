@@ -23,7 +23,7 @@ function AppStatistic({
         contentStyle={{
           fontSize: 28,
           fontWeight: 800,
-          color: '#1a2e5e',
+          color: 'var(--text-primary)',
           lineHeight: 1.2,
           ...valueStyle,
         }}

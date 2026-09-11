@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSaveConfirmation } from '../../components/global'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   App,
   Button,
@@ -15,6 +16,7 @@ import {
   Typography,
 } from '../../components/global'
 import { userService } from '../../services/userService'
+import { officeBranchService } from '../../services/officeBranchService'
 import '../menu/MenuPage.css'
 
 const DEFAULT_PAGE_SIZE = 20
@@ -24,6 +26,7 @@ const SECTION_OPTIONS = [
   { value: 'ALL', label: 'No section' },
   ...SECTIONS.map((section) => ({ value: section, label: section })),
 ]
+const NO_OFFICE_BRANCH = 'NONE'
 
 function getSortOrder(column, sortBy, sortOrder) {
   if (sortBy !== column) return null
@@ -36,8 +39,10 @@ function responseUser(response) {
 
 function UserPage() {
   const { message } = App.useApp()
+  const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = Form.useForm()
   const [users, setUsers] = useState([])
+  const [officeBranches, setOfficeBranches] = useState([])
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 1 })
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
@@ -48,11 +53,35 @@ function UserPage() {
   const [sortBy, setSortBy] = useState('')
   const [sortOrder, setSortOrder] = useState('')
   const [loading, setLoading] = useState(true)
+  const [loadingOfficeBranches, setLoadingOfficeBranches] = useState(false)
   const [saving, setSaving] = useState(false)
   const [loadingDetailId, setLoadingDetailId] = useState(null)
   const [editingUser, setEditingUser] = useState(null)
+  const [userIsActive, setUserIsActive] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const requestIdRef = useRef(0)
+
+  const officeBranchOptions = useMemo(() => [
+    { value: NO_OFFICE_BRANCH, label: 'No office branch' },
+    ...officeBranches.map((branch) => ({ value: branch.id, label: branch.name })),
+  ], [officeBranches])
+
+  const officeBranchById = useMemo(
+    () => new Map(officeBranches.map((branch) => [branch.id, branch.name])),
+    [officeBranches],
+  )
+
+  const loadOfficeBranches = useCallback(async () => {
+    setLoadingOfficeBranches(true)
+    try {
+      const response = await officeBranchService.options()
+      setOfficeBranches(Array.isArray(response.data) ? response.data : [])
+    } catch (error) {
+      message.error(error.message)
+    } finally {
+      setLoadingOfficeBranches(false)
+    }
+  }, [message])
 
   const loadUsers = useCallback(async () => {
     const requestId = ++requestIdRef.current
@@ -79,9 +108,25 @@ function UserPage() {
   }, [activeFilter, message, page, pageSize, roleFilter, search, sectionFilter, sortBy, sortOrder])
 
   useEffect(() => {
+    loadOfficeBranches()
+  }, [loadOfficeBranches])
+
+  useEffect(() => {
     const timeoutId = setTimeout(loadUsers, 300)
     return () => clearTimeout(timeoutId)
   }, [loadUsers])
+
+  useEffect(() => {
+    if (!modalOpen || !editingUser) return
+
+    setUserIsActive(editingUser.isActive === true)
+    form.resetFields()
+    form.setFieldsValue({
+      role: editingUser.role,
+      section: editingUser.section || 'ALL',
+      officeBranchId: editingUser.officeBranchId || NO_OFFICE_BRANCH,
+    })
+  }, [editingUser, form, modalOpen])
 
   const openEdit = async (user) => {
     setLoadingDetailId(user.id)
@@ -90,12 +135,6 @@ function UserPage() {
       if (!detail?.id) throw new Error('Invalid user detail data.')
 
       setEditingUser(detail)
-      form.resetFields()
-      form.setFieldsValue({
-        role: detail.role,
-        section: detail.section || 'ALL',
-        isActive: detail.isActive,
-      })
       setModalOpen(true)
     } catch (error) {
       message.error(error.message)
@@ -108,35 +147,40 @@ function UserPage() {
     const values = await form.validateFields()
     setSaving(true)
     try {
-      let currentUser = editingUser
-      let changed = false
+      const changes = {}
 
-      if (values.role !== currentUser.role) {
-        currentUser = responseUser(await userService.setRole(currentUser.id, {
-          role: values.role,
-          version: currentUser.version,
-        }))
-        changed = true
+      if (values.role !== editingUser.role) {
+        changes.role = values.role
       }
 
       const nextSection = values.section === 'ALL' ? null : values.section
-      if (nextSection !== currentUser.section) {
-        currentUser = responseUser(await userService.setSection(currentUser.id, {
-          section: nextSection,
-          version: currentUser.version,
-        }))
-        changed = true
+      if (nextSection !== editingUser.section) {
+        changes.section = nextSection
       }
 
-      if (values.isActive !== currentUser.isActive) {
-        currentUser = responseUser(await userService.setStatus(currentUser.id, {
-          isActive: values.isActive,
-          version: currentUser.version,
-        }))
-        changed = true
+      const nextOfficeBranchId = values.officeBranchId === NO_OFFICE_BRANCH ? null : values.officeBranchId
+      if (nextOfficeBranchId !== editingUser.officeBranchId) {
+        changes.officeBranchId = nextOfficeBranchId
       }
 
-      message.success(changed ? 'User updated successfully.' : 'No changes were made to the user.')
+      if (userIsActive !== editingUser.isActive) {
+        changes.isActive = userIsActive
+      }
+
+      const changed = Object.keys(changes).length > 0
+      if (!changed) {
+        message.warning('No changes were made.')
+        return
+      }
+      if (!await confirmSave('user')) return
+      if (changed) {
+        await userService.update(editingUser.id, {
+          ...changes,
+          version: editingUser.version,
+        })
+      }
+
+      message.success('User updated successfully.')
       setModalOpen(false)
       await loadUsers()
     } catch (error) {
@@ -220,6 +264,12 @@ function UserPage() {
       render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Tag>,
     },
     {
+      title: 'Office Branch',
+      dataIndex: 'officeBranchId',
+      key: 'officeBranchId',
+      render: (value) => value ? officeBranchById.get(value) || value : 'No office branch',
+    },
+    {
       title: 'Actions',
       key: 'actions',
       width: 90,
@@ -240,10 +290,11 @@ function UserPage() {
 
   return (
     <section className="menu-page">
+      {saveConfirmation}
       <div className="menu-page-heading">
         <div>
           <Typography.Title level={2}>User Management</Typography.Title>
-          <Typography.Text tone="secondary">Manage Akura user roles, sections, and statuses.</Typography.Text>
+          <Typography.Text tone="secondary">Manage Akura user roles, sections, office branches, and statuses.</Typography.Text>
         </div>
       </div>
 
@@ -284,8 +335,17 @@ function UserPage() {
           <Form.Item name="section" label="Section">
             <Select options={SECTION_OPTIONS} />
           </Form.Item>
-          <Form.Item name="isActive" label="Status" valuePropName="checked">
-            <Switch activeLabel="Active" inactiveLabel="Inactive" />
+          <Form.Item name="officeBranchId" label="Office Branch">
+            <Select
+              showSearch
+              optionFilterProp="label"
+              loading={loadingOfficeBranches}
+              options={officeBranchOptions}
+              placeholder="Select office branch"
+            />
+          </Form.Item>
+          <Form.Item label="Status">
+            <Switch checked={userIsActive} onChange={setUserIsActive} activeLabel="Active" inactiveLabel="Inactive" />
           </Form.Item>
         </Form>
       </Modal>

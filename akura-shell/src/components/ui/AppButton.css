@@ -34,7 +34,7 @@
 /* Outline */
 .app-btn--outline {
   border: 1.5px solid #1a2e5e !important;
-  color: #1a2e5e !important;
+  color: var(--text-primary, #1a2e5e) !important;
   background: transparent !important;
 }
 .app-btn--outline:not(:disabled):hover {

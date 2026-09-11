@@ -1,3 +1,4 @@
+import ThemeToggle from '../components/ui/ThemeToggle'
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import {
@@ -5,6 +6,7 @@ import {
   UserAddOutlined,
   UserOutlined,
   LockOutlined,
+  useSaveConfirmation,
 } from '../components/global'
 import AkuraLogo from '../components/brand/AkuraLogo'
 import { authAPI } from '../services/api'
@@ -18,12 +20,14 @@ import {
 import './AuthPage.css'
 
 function RegisterPage() {
+  const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = AppForm.useForm()
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const notify = useNotification()
 
   const handleRegister = async (values) => {
+    if (!await confirmSave('new account')) return
     setLoading(true)
     try {
       await authAPI.register({
@@ -48,6 +52,8 @@ function RegisterPage() {
 
   return (
     <div className="auth-root">
+      <ThemeToggle className="auth-theme-toggle" />
+      {saveConfirmation}
       {/* ── Left Panel ─────────────────────────────────────────── */}
       <div className="auth-left auth-left-register">
         <div className="auth-left-content">

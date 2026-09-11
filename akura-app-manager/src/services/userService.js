@@ -15,15 +15,7 @@ function withQuery(params = {}) {
 export const userService = {
   list: (params = {}) => apiRequest(`${USER_PATH}?${withQuery(params)}`),
   get: (userId) => apiRequest(`${USER_PATH}/${userId}`),
-  setRole: (userId, data) => apiRequest(`${USER_PATH}/${userId}/role`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  }),
-  setSection: (userId, data) => apiRequest(`${USER_PATH}/${userId}/section`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  }),
-  setStatus: (userId, data) => apiRequest(`${USER_PATH}/${userId}/status`, {
+  update: (userId, data) => apiRequest(`${USER_PATH}/${userId}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   }),

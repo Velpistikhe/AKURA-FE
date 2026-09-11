@@ -1,3 +1,4 @@
+import { useSaveConfirmation } from '../../components/global'
 import { useState } from 'react'
 import {
   Form,
@@ -27,6 +28,7 @@ function formatDate(value) {
 function UserModule() {
   const { user, updateProfile, changePassword } = useAuth()
   const notify = useNotification()
+  const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [profileForm] = Form.useForm()
   const [passwordForm] = Form.useForm()
   const [profileOpen, setProfileOpen] = useState(false)
@@ -46,6 +48,7 @@ function UserModule() {
 
   const saveProfile = async () => {
     const values = await profileForm.validateFields()
+    if (!await confirmSave('profile')) return
     setProfileSaving(true)
     try {
       await updateProfile(values)
@@ -60,6 +63,7 @@ function UserModule() {
 
   const savePassword = async () => {
     const values = await passwordForm.validateFields()
+    if (!await confirmSave('new password')) return
     setPasswordSaving(true)
     try {
       await changePassword(values)
@@ -75,6 +79,7 @@ function UserModule() {
 
   return (
     <section className="user-module-page">
+      {saveConfirmation}
       <div className="user-module-heading">
         <div>
           <h1>My Profile</h1>

@@ -27,7 +27,7 @@ const ICONS = {
   error:   <CloseCircleOutlined style={{ color: '#e02020' }} />,
   warning: <WarningOutlined     style={{ color: '#faad14' }} />,
   info:    <InfoCircleOutlined  style={{ color: '#1890ff' }} />,
-  default: <BellOutlined        style={{ color: '#1a2e5e' }} />,
+  default: <BellOutlined        style={{ color: 'var(--text-primary)' }} />,
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -50,18 +50,19 @@ export function NotificationProvider({ children }) {
         type,
         // antd v6: 'message' → 'title'
         title: (
-          <span style={{ fontWeight: 700, color: '#1a2e5e', fontSize: 14 }}>
+          <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: 14 }}>
             {title}
           </span>
         ),
         description: desc ? (
-          <span style={{ color: '#5a6a8a', fontSize: 13 }}>{desc}</span>
+          <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{desc}</span>
         ) : undefined,
         icon: ICONS[type] || ICONS.default,
         style: {
           borderRadius: 14,
+          background: 'var(--surface)',
           boxShadow: '0 8px 32px rgba(26, 46, 94, 0.15)',
-          border: '1px solid rgba(26, 46, 94, 0.07)',
+          border: '1px solid var(--border)',
         },
         ...options,
       })

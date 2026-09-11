@@ -5,7 +5,7 @@
   justify-content: center;
   gap: 16px;
   min-height: 160px;
-  background: #f0f4ff;
+  background: var(--bg-light);
 }
 
 .app-loading-full-screen {
@@ -13,7 +13,7 @@
 }
 
 .app-loading-message {
-  color: #5a6a8a;
+  color: var(--text-secondary, #5a6a8a);
   font-size: 14px;
   font-weight: 500;
 }

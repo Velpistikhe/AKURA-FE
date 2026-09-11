@@ -11,15 +11,18 @@ function captureRefreshToken(payload) {
 }
 
 async function executeRequest(path, options = {}) {
+  const { responseType, ...requestOptions } = options
+  const headers = new Headers(options.headers)
+  if (!(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
   const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
+    ...requestOptions,
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
   })
 
+  if (response.ok && responseType === 'blob') {
+    return { response, payload: { blob: await response.blob() } }
+  }
   const payload = await response.json().catch(() => null)
   captureRefreshToken(payload)
   return { response, payload }

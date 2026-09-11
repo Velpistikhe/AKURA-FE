@@ -1,0 +1,21 @@
+/* Keep the dialog and its backdrop visible until the close motion completes. */
+@media (prefers-reduced-motion: no-preference) {
+  .ant-modal-root .ant-modal.ant-zoom-leave {
+    animation: akura-modal-close 180ms ease-in both !important;
+    pointer-events: none;
+  }
+
+  .ant-modal-root .ant-modal-mask.ant-fade-leave {
+    animation: akura-modal-mask-close 180ms ease-in both !important;
+  }
+}
+
+@keyframes akura-modal-close {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.96); }
+}
+
+@keyframes akura-modal-mask-close {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}

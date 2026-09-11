@@ -5,8 +5,8 @@
 }
 
 .user-module-heading { margin-bottom: 24px; }
-.user-module-heading h1 { margin: 0; color: #1a2e5e; font-size: clamp(25px, 3vw, 32px); letter-spacing: -0.025em; }
-.user-module-heading p { margin: 7px 0 0; color: #6f7f9f; line-height: 1.6; }
+.user-module-heading h1 { margin: 0; color: var(--text-primary, #1a2e5e); font-size: clamp(25px, 3vw, 32px); letter-spacing: -0.025em; }
+.user-module-heading p { margin: 7px 0 0; color: var(--text-secondary, #6f7f9f); line-height: 1.6; }
 
 .profile-card { overflow: hidden; }
 .profile-card .ant-card-body { padding: 0; }
@@ -43,9 +43,9 @@
 
 .profile-detail:nth-child(odd) { padding-right: 24px; }
 .profile-detail:nth-child(even) { padding-left: 24px; border-left: 1px solid rgba(26, 46, 94, 0.08); }
-.profile-detail span { color: #8795af; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
-.profile-detail strong { overflow-wrap: anywhere; color: #253759; font-size: 15px; }
-.profile-detail small { color: #9aa6bb; font-size: 11px; }
+.profile-detail span { color: var(--text-muted, #8795af); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.profile-detail strong { overflow-wrap: anywhere; color: var(--text-primary, #253759); font-size: 15px; }
+.profile-detail small { color: var(--text-muted, #9aa6bb); font-size: 11px; }
 
 .profile-actions { display: flex; gap: 12px; padding: 22px 30px 28px; }
 

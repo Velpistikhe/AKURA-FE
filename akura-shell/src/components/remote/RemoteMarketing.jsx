@@ -1,6 +1,6 @@
 import { Component, lazy, Suspense } from 'react'
 import { Alert, Button } from '../global'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { AppLoading } from '../ui'
 import { useAuth } from '../../context/AuthContext'
 
@@ -33,11 +33,12 @@ class MarketingErrorBoundary extends Component {
 function RemoteMarketing() {
   const { user } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
 
   return (
     <MarketingErrorBoundary>
       <Suspense fallback={<AppLoading message="Loading Akura Marketing..." fullScreen={false} />}>
-        <FederatedMarketing currentUser={user} pathname={location.pathname} />
+        <FederatedMarketing currentUser={user} pathname={location.pathname} navigate={navigate} />
       </Suspense>
     </MarketingErrorBoundary>
   )

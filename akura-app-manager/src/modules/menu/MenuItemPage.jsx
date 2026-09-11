@@ -1,3 +1,4 @@
+import { useSaveConfirmation } from '../../components/global'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   App,
@@ -32,6 +33,7 @@ function getSortOrder(column, sortBy, sortOrder) {
 
 function MenuItemPage() {
   const { message } = App.useApp()
+  const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = Form.useForm()
   const [items, setItems] = useState([])
   const [parentMenus, setParentMenus] = useState([])
@@ -47,6 +49,7 @@ function MenuItemPage() {
   const [saving, setSaving] = useState(false)
   const [loadingDetailId, setLoadingDetailId] = useState(null)
   const [editingItem, setEditingItem] = useState(null)
+  const [itemIsActive, setItemIsActive] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const requestIdRef = useRef(0)
 
@@ -102,16 +105,26 @@ function MenuItemPage() {
     return () => clearTimeout(timeoutId)
   }, [loadItems])
 
-  const openCreate = () => {
-    setEditingItem(null)
+  useEffect(() => {
+    if (!modalOpen) return
+
+    setItemIsActive(editingItem ? editingItem.isActive === true : true)
     form.resetFields()
-    form.setFieldsValue({
+    form.setFieldsValue(editingItem ? {
+      menuId: editingItem.menuId || editingItem.menu?.id,
+      key: editingItem.key,
+      label: editingItem.label,
+      order: editingItem.order,
+    } : {
       menuId: menuOptions.some((option) => option.value === menuFilter) ? menuFilter : undefined,
       key: '',
       label: '',
       order: 0,
-      isActive: true,
     })
+  }, [editingItem, form, menuFilter, menuOptions, modalOpen])
+
+  const openCreate = () => {
+    setEditingItem(null)
     setModalOpen(true)
   }
 
@@ -124,14 +137,6 @@ function MenuItemPage() {
       if (!detail?.id) throw new Error('Invalid menu item detail data.')
 
       setEditingItem(detail)
-      form.resetFields()
-      form.setFieldsValue({
-        menuId: detail.menuId || detail.menu?.id,
-        key: detail.key,
-        label: detail.label,
-        order: detail.order,
-        isActive: detail.isActive,
-      })
       setModalOpen(true)
     } catch (error) {
       message.error(error.message)
@@ -142,10 +147,11 @@ function MenuItemPage() {
 
   const saveItem = async () => {
     const values = await form.validateFields()
+    if (!await confirmSave('menu item')) return
     setSaving(true)
     try {
       if (editingItem) {
-        await menuItemService.update(editingItem.id, values)
+        await menuItemService.update(editingItem.id, { ...values, isActive: itemIsActive })
         message.success('Menu item updated successfully.')
       } else {
         await menuItemService.create({
@@ -263,6 +269,7 @@ function MenuItemPage() {
 
   return (
     <section className="menu-page">
+      {saveConfirmation}
       <div className="menu-page-heading">
         <div>
           <Typography.Title level={2}>Menu Item Management</Typography.Title>
@@ -304,7 +311,7 @@ function MenuItemPage() {
           <Form.Item name="order" label="Order" rules={[{ required: true, message: 'Order is required.' }]}>
             <InputNumber min={0} precision={0} className="menu-order-input" />
           </Form.Item>
-          {editingItem && <Form.Item name="isActive" label="Status" valuePropName="checked"><Switch activeLabel="Active" inactiveLabel="Inactive" /></Form.Item>}
+          {editingItem && <Form.Item label="Status"><Switch checked={itemIsActive} onChange={setItemIsActive} activeLabel="Active" inactiveLabel="Inactive" /></Form.Item>}
         </Form>
       </Modal>
     </section>

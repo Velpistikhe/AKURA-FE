@@ -12,12 +12,12 @@
   overflow: hidden;
   border: 1px solid rgba(26, 46, 94, 0.08);
   border-radius: 20px;
-  background: linear-gradient(135deg, #fff 0%, #f6f8fd 100%);
+  background: linear-gradient(135deg, var(--surface, #fff) 0%, var(--surface-subtle, #f6f8fd) 100%);
   box-shadow: 0 14px 40px rgba(26, 46, 94, 0.09);
 }
 
 .marketing-overview-card .ant-card-body { align-self: center; position: relative; z-index: 1; padding: 38px; }
-.marketing-overview-card h2.ant-typography { margin: 8px 0; color: #1a2e5e; font-size: clamp(26px, 3vw, 36px); letter-spacing: -0.03em; }
+.marketing-overview-card h2.ant-typography { margin: 8px 0; color: var(--text-primary, #1a2e5e); font-size: clamp(26px, 3vw, 36px); letter-spacing: -0.03em; }
 .marketing-overview-eyebrow { color: #e02020; font-size: 12px; font-weight: 750; letter-spacing: 0.12em; text-transform: uppercase; }
 .marketing-overview-decoration { position: absolute; width: 240px; height: 240px; right: -40px; top: -70px; border-radius: 50%; background: radial-gradient(circle, rgba(42, 64, 128, 0.18), transparent 68%); animation: marketing-float 8s ease-in-out infinite; }
 

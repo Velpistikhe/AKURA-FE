@@ -1,4 +1,5 @@
 import { forwardRef } from 'react'
+import './ModalMotion.css'
 import {
   App as AntApp,
   Button as AntButton,
@@ -30,31 +31,47 @@ function disableAutocomplete(props) {
   return { ...props, autoComplete: 'off' }
 }
 
-function preventNumberArrowKeys(event) {
-  if (event.key === 'ArrowUp' || event.key === 'ArrowDown') event.preventDefault()
-}
-
-function configureInput(props) {
-  const { onKeyDown, ...rest } = disableAutocomplete(props)
-  if (props.type !== 'number') return { ...rest, onKeyDown }
-
+function nonNegativeInputEvents({ onKeyDown, onBeforeInput, onPaste }) {
   return {
-    ...rest,
     onKeyDown: (event) => {
-      preventNumberArrowKeys(event)
+      if (['ArrowUp', 'ArrowDown', '-'].includes(event.key)) event.preventDefault()
       onKeyDown?.(event)
+    },
+    onBeforeInput: (event) => {
+      if (event.data?.includes('-')) event.preventDefault()
+      onBeforeInput?.(event)
+    },
+    onPaste: (event) => {
+      if (event.clipboardData.getData('text').includes('-')) event.preventDefault()
+      onPaste?.(event)
     },
   }
 }
 
-function configureInputNumber({ onKeyDown, ...props }) {
+function configureInput(props) {
+  const rest = disableAutocomplete(props)
+  if (props.type !== 'number') return rest
+
+  return {
+    ...rest,
+    min: Math.max(0, Number(props.min) || 0),
+    ...nonNegativeInputEvents(props),
+    onChange: (event) => {
+      if (Number(event.target.value) < 0) event.target.value = '0'
+      props.onChange?.(event)
+    },
+  }
+}
+
+function configureInputNumber(props) {
   return {
     ...props,
+    min: Math.max(0, Number(props.min) || 0),
     controls: false,
     keyboard: false,
-    onKeyDown: (event) => {
-      preventNumberArrowKeys(event)
-      onKeyDown?.(event)
+    ...nonNegativeInputEvents(props),
+    onChange: (value) => {
+      props.onChange?.(value != null && Number(value) < 0 ? (props.stringMode ? '0' : 0) : value)
     },
   }
 }

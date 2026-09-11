@@ -1,3 +1,4 @@
+import { useSaveConfirmation } from '../../components/global'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   App,
@@ -30,6 +31,7 @@ function getSortOrder(column, sortBy, sortOrder) {
 
 function MenuPage() {
   const { message } = App.useApp()
+  const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = Form.useForm()
   const [menus, setMenus] = useState([])
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 1 })
@@ -44,9 +46,10 @@ function MenuPage() {
   const [saving, setSaving] = useState(false)
   const [loadingDetailId, setLoadingDetailId] = useState(null)
   const [editingMenu, setEditingMenu] = useState(null)
+  const [menuHasItem, setMenuHasItem] = useState(false)
+  const [menuIsActive, setMenuIsActive] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const requestIdRef = useRef(0)
-  const hasItem = Form.useWatch('hasItem', form)
 
   const loadMenus = useCallback(async () => {
     const requestId = ++requestIdRef.current
@@ -76,10 +79,27 @@ function MenuPage() {
     return () => clearTimeout(timeoutId)
   }, [loadMenus])
 
+  useEffect(() => {
+    if (!modalOpen) return
+
+    setMenuHasItem(editingMenu ? editingMenu.hasItem === true : false)
+    setMenuIsActive(editingMenu ? editingMenu.isActive === true : true)
+    form.resetFields()
+    form.setFieldsValue(editingMenu ? {
+      key: editingMenu.key,
+      label: editingMenu.label,
+      items: [],
+      order: editingMenu.order,
+    } : {
+      key: '',
+      label: '',
+      items: [],
+      order: 0,
+    })
+  }, [editingMenu, form, modalOpen])
+
   const openCreate = () => {
     setEditingMenu(null)
-    form.resetFields()
-    form.setFieldsValue({ key: '', label: '', hasItem: false, items: [], order: 0, isActive: true })
     setModalOpen(true)
   }
 
@@ -92,14 +112,6 @@ function MenuPage() {
       if (!detail?.id) throw new Error('Invalid menu detail data.')
 
       setEditingMenu(detail)
-      form.resetFields()
-      form.setFieldsValue({
-        key: detail.key,
-        label: detail.label,
-        hasItem: detail.hasItem,
-        order: detail.order,
-        isActive: detail.isActive,
-      })
       setModalOpen(true)
     } catch (error) {
       message.error(error.message)
@@ -115,28 +127,29 @@ function MenuPage() {
       label: item.label.trim(),
       order: item.order,
     }))
-    if (values.hasItem && new Set(items.map((item) => item.key)).size !== items.length) {
+    if (menuHasItem && new Set(items.map((item) => item.key)).size !== items.length) {
       message.error('Menu item keys must be unique.')
       return
     }
+    if (!await confirmSave('menu')) return
     setSaving(true)
     try {
       if (editingMenu) {
         await menuService.update(editingMenu.id, {
           key: values.key.trim(),
           label: values.label.trim(),
-          hasItem: Boolean(values.hasItem),
+          hasItem: menuHasItem,
           order: values.order,
-          isActive: values.isActive,
+          isActive: menuIsActive,
         })
         message.success('Menu updated successfully.')
       } else {
         const createPayload = {
           key: values.key.trim(),
           label: values.label.trim(),
-          hasItem: Boolean(values.hasItem),
+          hasItem: menuHasItem,
           order: values.order,
-          ...(values.hasItem ? { items } : {}),
+          ...(menuHasItem ? { items } : {}),
         }
         await menuService.create(createPayload)
         message.success('Menu created successfully.')
@@ -247,6 +260,7 @@ function MenuPage() {
 
   return (
     <section className="menu-page">
+      {saveConfirmation}
       <div className="menu-page-heading">
         <div>
           <Typography.Title level={2}>Menu Management</Typography.Title>
@@ -301,10 +315,10 @@ function MenuPage() {
           <Form.Item name="label" label="Label" rules={[{ required: true, message: 'Label is required.' }, { max: 200 }]}>
             <Input placeholder="example: App Manager" />
           </Form.Item>
-          <Form.Item name="hasItem" label="Has Menu Items" valuePropName="checked">
-            <Switch activeLabel="Yes" inactiveLabel="No" />
+          <Form.Item label="Has Menu Items">
+            <Switch checked={menuHasItem} onChange={setMenuHasItem} activeLabel="Yes" inactiveLabel="No" />
           </Form.Item>
-          {!editingMenu && hasItem && (
+          {!editingMenu && menuHasItem && (
             <Form.List
               name="items"
               rules={[{
@@ -343,8 +357,8 @@ function MenuPage() {
             <InputNumber min={0} precision={0} className="menu-order-input" />
           </Form.Item>
           {editingMenu && (
-            <Form.Item name="isActive" label="Status" valuePropName="checked">
-              <Switch activeLabel="Active" inactiveLabel="Inactive" />
+            <Form.Item label="Status">
+              <Switch checked={menuIsActive} onChange={setMenuIsActive} activeLabel="Active" inactiveLabel="Inactive" />
             </Form.Item>
           )}
         </Form>

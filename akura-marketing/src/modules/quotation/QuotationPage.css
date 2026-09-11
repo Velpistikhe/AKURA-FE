@@ -1,0 +1,18 @@
+.quotation-page { min-width: 0; }
+.quotation-page .ant-table-cell { overflow-wrap: anywhere; }
+.quotation-form-grid, .quotation-detail-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
+.quotation-form-grid .ant-input-number, .quotation-items-table .ant-input-number { width: 100%; }
+.quotation-lines, .quotation-detail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-width: 0; }
+.quotation-lines > *, .quotation-detail > * { min-width: 0; }
+.quotation-lines-heading { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.quotation-detail-fields > div { display: grid; gap: 5px; padding: 12px 0; border-bottom: 1px solid var(--border, #edf0f6); overflow-wrap: anywhere; }
+.quotation-totals { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 24px; padding: 16px 0; }
+@media (max-width: 700px) { .quotation-form-grid, .quotation-detail-fields { grid-template-columns: minmax(0, 1fr); } }
+
+.quotation-item-filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.quotation-item-filters > .ant-input-affix-wrapper { flex: 1 1 180px; }
+
+.quotation-items-table .ant-table-cell { vertical-align: top; }
+.quotation-items-table .ant-form-item { margin-bottom: 0; }
+.quotation-selected-item { display: grid; gap: 6px; }
+.quotation-selected-item > .ant-btn { justify-self: start; padding: 0; height: auto; }

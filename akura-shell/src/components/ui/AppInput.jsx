@@ -9,7 +9,7 @@ import { Input } from '../global'
  */
 function AppInput({ inputType = 'text', prefixIcon, prefix, ...rest }) {
   const resolvedPrefix = prefixIcon ? (
-    <span style={{ color: '#8a9ab8', marginRight: 2 }}>{prefixIcon}</span>
+    <span style={{ color: 'var(--text-muted)', marginRight: 2 }}>{prefixIcon}</span>
   ) : prefix
 
   if (inputType === 'password') {

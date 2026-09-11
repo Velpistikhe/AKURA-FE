@@ -2,7 +2,7 @@
   width: min(100%, 1480px);
   min-height: 100%;
   margin-inline: auto;
-  color: #1a2e5e;
+  color: var(--text-primary, #1a2e5e);
   animation: module-enter 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
@@ -27,13 +27,13 @@
 }
 
 .menu-page > .ant-card > .ant-card-body { padding: 10px 18px 4px; }
-.menu-page .ant-table { color: #253759; }
+.menu-page .ant-table { color: var(--text-primary, #253759); }
 .menu-page .ant-table-container { border-radius: 12px; }
 
 .menu-page .ant-table-thead > tr > th {
   height: 52px;
-  background: #f8faff !important;
-  color: #51617f;
+  background: var(--surface-subtle, #f8faff) !important;
+  color: var(--text-secondary, #51617f);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -42,12 +42,12 @@
 
 .menu-page .ant-table-tbody > tr > td { padding-block: 14px; }
 .menu-page .ant-table-tbody > tr { transition: background-color 180ms ease; }
-.menu-page .ant-table-tbody > tr:hover > td { background: #f8faff !important; }
-.menu-page .ant-table-cell-fix-right { background: #fff; }
-.menu-page .ant-table-tbody > tr:hover .ant-table-cell-fix-right { background: #f8faff !important; }
+.menu-page .ant-table-tbody > tr:hover > td { background: var(--surface-subtle, #f8faff) !important; }
+.menu-page .ant-table-cell-fix-right { background: var(--surface, #fff); }
+.menu-page .ant-table-tbody > tr:hover .ant-table-cell-fix-right { background: var(--surface-subtle, #f8faff) !important; }
 .menu-page .ant-pagination { margin: 18px 0 14px; }
-.menu-page .ant-btn-text { border-radius: 9px; color: #465a82; }
-.menu-page .ant-btn-text:hover { background: #edf2fb; color: #1a2e5e; }
+.menu-page .ant-btn-text { border-radius: 9px; color: var(--text-secondary, #465a82); }
+.menu-page .ant-btn-text:hover { background: var(--surface-muted, #edf2fb); color: var(--text-primary, #1a2e5e); }
 .menu-page .ant-tag { border-radius: 999px; padding-inline: 9px; font-weight: 600; }
 
 .table-filter-dropdown {
@@ -67,9 +67,9 @@
 .menu-nested-items {
   padding: 16px;
   margin-bottom: 22px;
-  border: 1px solid #e5eaf3;
+  border: 1px solid var(--border, #e5eaf3);
   border-radius: 12px;
-  background: #fafbfe;
+  background: var(--surface-subtle, #fafbfe);
 }
 
 .menu-nested-items-heading {
@@ -93,9 +93,9 @@
 .menu-access-section {
   padding: 16px;
   margin-bottom: 22px;
-  border: 1px solid #e5eaf3;
+  border: 1px solid var(--border, #e5eaf3);
   border-radius: 12px;
-  background: #fafbfe;
+  background: var(--surface-subtle, #fafbfe);
 }
 
 .menu-access-header {
@@ -120,7 +120,7 @@
   align-items: start;
   gap: 12px;
   padding-top: 12px;
-  border-top: 1px solid #e9edf5;
+  border-top: 1px solid var(--border, #e9edf5);
 }
 
 .menu-access-row + .menu-access-row { margin-top: 2px; }
@@ -128,8 +128,8 @@
 .menu-access-remove { margin-top: 30px; }
 
 .ant-modal .ant-modal-content { border-radius: 18px; box-shadow: 0 24px 70px rgba(15, 30, 61, 0.22); }
-.ant-modal .ant-modal-title { color: #1a2e5e; font-size: 18px; font-weight: 750; }
-.ant-modal .ant-form-item-label > label { color: #33476c; font-weight: 600; }
+.ant-modal .ant-modal-title { color: var(--text-primary, #1a2e5e); font-size: 18px; font-weight: 750; }
+.ant-modal .ant-form-item-label > label { color: var(--text-primary, #33476c); font-weight: 600; }
 .ant-modal .ant-input, .ant-modal .ant-input-affix-wrapper, .ant-modal .ant-select-selector, .ant-modal .ant-input-number { border-radius: 9px !important; }
 
 .ant-tabs > .ant-tabs-nav { margin-bottom: 24px; }

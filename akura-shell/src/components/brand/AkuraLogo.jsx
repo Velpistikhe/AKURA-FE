@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import './AkuraLogo.css'
 
 function AkuraLogo({
@@ -11,14 +12,14 @@ function AkuraLogo({
     : '/favicon.png'
 
   return (
-    <span
+    <Link
+      to="/"
       className={`akura-logo ${showWordmark ? '' : 'akura-logo-mark-only'} ${className}`.trim()}
       style={{ '--akura-logo-height': `${size}px` }}
-      role="img"
       aria-label="Akura Bina Citra"
     >
       <img src={source} alt="" aria-hidden="true" />
-    </span>
+    </Link>
   )
 }
 

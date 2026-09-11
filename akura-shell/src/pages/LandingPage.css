@@ -701,11 +701,11 @@
     gap: 12px;
   }
 
-  .landing-logo .akura-logo {
+  .landing-logo {
     --akura-logo-height: 42px !important;
   }
 
-  .mobile-nav-actions .ant-btn:first-child {
+  .mobile-nav-actions .ant-btn:nth-child(2) {
     display: none;
   }
 

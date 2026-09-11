@@ -4,11 +4,9 @@ import {
   Empty,
   Layout,
   Menu,
-  Tooltip,
   ApiOutlined,
   AppstoreOutlined,
   BarChartOutlined,
-  BellOutlined,
   DashboardOutlined,
   DatabaseOutlined,
   FileTextOutlined,
@@ -24,6 +22,7 @@ import {
   TeamOutlined,
   UserOutlined,
 } from '../components/global'
+import ThemeToggle from '../components/ui/ThemeToggle'
 import AkuraLogo from '../components/brand/AkuraLogo'
 import { useAuth } from '../context/AuthContext'
 import { useMenu } from '../context/MenuContext'
@@ -31,7 +30,6 @@ import { useNotification } from '../context/NotificationContext'
 import {
   AppAvatar,
   AppDropdown,
-  AppBadge,
   AppBreadcrumb,
   AppButton,
   AppLoading,
@@ -79,6 +77,7 @@ function resolveMenuIcon(name) {
     'layout-dashboard': 'dashboard',
     'question-circle': 'help',
     'safety-outlined': 'security',
+    'office-branches': 'database',
   }
   const Icon = MENU_ICONS[aliases[normalized] || normalized] || AppstoreOutlined
   return <Icon />
@@ -103,6 +102,10 @@ function translateMenuLabel(label) {
     'Manajemen Menu Item': 'Menu Item Management',
     'Akses Menu': 'Menu Access',
     'Access Menu': 'Menu Access',
+    'Cabang Kantor': 'Office Branches',
+    'Kantor Cabang': 'Office Branches',
+    'Kelola Cabang': 'Office Branch Management',
+    'Manajemen Cabang': 'Office Branch Management',
     'Kelola Company': 'Manage Companies',
     'Pengelolaan Company': 'Company Management',
     'Kelola Service': 'Manage Services',
@@ -313,6 +316,8 @@ function DashboardLayout() {
           <div className="header-left">
             <AppButton
               id="btn-toggle-sidebar"
+              aria-label="Toggle navigation"
+              aria-expanded={isMobile ? mobileOpen : !collapsed}
               variant="text"
               icon={
                 isMobile
@@ -332,27 +337,18 @@ function DashboardLayout() {
           </div>
 
           <div className="header-right">
-            <Tooltip title="Notifications">
-              <AppBadge variant="danger" count={3} size="small" className="notif-badge">
-                <AppButton
-                  id="btn-notifications"
-                  variant="text"
-                  icon={<BellOutlined />}
-                  className="header-icon-btn"
-                />
-              </AppBadge>
-            </Tooltip>
+            <ThemeToggle />
 
             <div className="header-divider" />
 
             <AppDropdown menu={{ items: userMenuItems, onClick: handleUserMenu }}>
-              <div className="header-user-btn" id="header-user-dropdown" role="button">
+              <button type="button" className="header-user-btn" id="header-user-dropdown" aria-label="Account menu">
                 <AppAvatar name={displayName} size={34} colorScheme="primary" />
                 <div className="header-user-info">
                   <span className="header-user-name">{displayName}</span>
                   <span className="header-user-role">{user?.role || 'Administrator'}</span>
                 </div>
-              </div>
+              </button>
             </AppDropdown>
           </div>
         </Header>

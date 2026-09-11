@@ -1,3 +1,4 @@
+import ThemeToggle from '../components/ui/ThemeToggle'
 import { useState } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import {
@@ -54,6 +55,7 @@ function LoginPage() {
 
   return (
     <div className="auth-root">
+      <ThemeToggle className="auth-theme-toggle" />
       {/* ── Left Panel ─────────────────────────────────────────── */}
       <div className="auth-left">
         <div className="auth-left-content">
