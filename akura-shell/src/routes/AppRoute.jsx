@@ -9,7 +9,7 @@ import RemoteAppManager from "../components/remote/RemoteAppManager";
 import RemoteMarketing from "../components/remote/RemoteMarketing";
 import RemoteFinance from "../components/remote/RemoteFinance";
 import RemoteReference from "../components/remote/RemoteReference";
-import RemoteWorkOrders from "../components/remote/RemoteWorkOrders";
+import RemoteFieldService from "../components/remote/RemoteFieldService";
 import { AppLoading } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import { useMenu } from "../context/MenuContext";
@@ -26,6 +26,7 @@ function AppRoute() {
     marketing: RemoteMarketing,
     finance: RemoteFinance,
     referensi: RemoteReference,
+    "field-service": RemoteFieldService,
   };
 
   const mfeRoutes = (menus || []).reduce((routes, menu) => {
@@ -51,10 +52,6 @@ function AppRoute() {
       </Route>
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/field-service" element={<DashboardLayout />}>
-          <Route index element={<RemoteWorkOrders />} />
-          <Route path="*" element={<RemoteWorkOrders />} />
-        </Route>
         <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="profile" element={<UserModule />} />

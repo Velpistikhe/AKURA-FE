@@ -4,8 +4,6 @@ import ServicePage from '../modules/service/ServicePage'
 import QuotationPage from '../modules/quotation/QuotationPage'
 import QuotationCreatePage from '../modules/quotation/QuotationCreatePage'
 import { canManageQuotations } from '../modules/quotation/quotationAccess'
-import WorkOrderPage from '../modules/work-order/WorkOrderPage'
-import WorkOrderCreatePage from '../modules/work-order/WorkOrderCreatePage'
 
 const moduleRoutes = {
   '/referensi/companies': CompanyPage,
@@ -16,11 +14,6 @@ const moduleRoutes = {
 function AppRoute({ currentUser, pathname = window.location.pathname, navigate, fallback = null }) {
   const readOnly = !canManageQuotations(currentUser)
   const path = pathname.replace(/\/+$/, '')
-  if (/^\/field-service\/work-orders?(\/create)?$/.test(path)) {
-    return path.endsWith('/create')
-      ? <WorkOrderCreatePage key={path} currentUser={currentUser} onBack={() => navigate(path.slice(0, -7))} />
-      : <WorkOrderPage key={path} currentUser={currentUser} onCreate={() => navigate(`${path}/create`)} />
-  }
   const isQuotationCreate = /^\/marketing\/(quotations|quotation)\/create$/.test(path)
   if (isQuotationCreate || /^\/marketing\/(quotations|quotation)$/.test(path)) {
     return <div key={`${path}-${readOnly}`} className={`quotation-route quotation-route--${isQuotationCreate && !readOnly ? 'create' : 'browse'}`}>

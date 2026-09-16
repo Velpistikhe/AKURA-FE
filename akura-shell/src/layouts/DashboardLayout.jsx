@@ -27,7 +27,6 @@ import AkuraLogo from '../components/brand/AkuraLogo'
 import { useAuth } from '../context/AuthContext'
 import { useMenu } from '../context/MenuContext'
 import { useNotification } from '../context/NotificationContext'
-import { resolveMenuPath } from '../routes/workOrderRouting'
 import {
   AppAvatar,
   AppDropdown,
@@ -110,6 +109,11 @@ function translateMenuLabel(label) {
     'Layanan': 'Services',
   }
   return translations[label] || label
+}
+
+function resolveMenuPath(...keys) {
+  const segments = keys.map((key) => String(key || '').trim().replace(/^\/+|\/+$/g, '')).filter(Boolean)
+  return segments.length ? `/${segments.join('/')}` : ''
 }
 
 function mapMenus(menus) {

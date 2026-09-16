@@ -3,26 +3,12 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { resolveFieldServiceRoute } from '../src/routes/fieldServiceRoutes.js'
 import { canAccessWorkOrders } from '../src/modules/work-order/workOrderModel.js'
-import { resolveMenuPath, workOrderMfe } from '../../akura-shell/src/routes/workOrderRouting.js'
-
-const marketing = { key: 'marketing', items: [{ key: 'work-orders' }] }
-const field = { key: 'field-service', items: [{ key: 'work-orders' }] }
-test('Work order navigation uses canonical field-service paths without affecting other modules', () => {
-  for (const key of ['marketing', 'field-service', 'fieldservice']) assert.equal(resolveMenuPath(key, 'work-orders'), '/field-service/work-orders')
-  assert.equal(resolveMenuPath('marketing', 'quotations'), '/marketing/quotations')
-  assert.equal(resolveMenuPath('/referensi/', '/taxes/'), '/referensi/taxes')
-})
-test('Menu access selects the MFE and Field Service stays read-only even with both menus', () => {
-  assert.equal(workOrderMfe([marketing], { section: 'MARKETING' }), 'marketing')
-  assert.equal(workOrderMfe([field], { role: 'ADMIN', section: 'MARKETING' }), 'fieldservice')
-  assert.equal(workOrderMfe([marketing, field], { section: 'FIELD_SERVICE' }), 'fieldservice')
-  assert.equal(workOrderMfe([marketing], { section: 'FIELD_SERVICE' }), 'fieldservice')
-  assert.equal(workOrderMfe([{ key: 'marketing', items: [] }], { role: 'ADMIN' }), null)
-})
 test('Field Service rejects creation and legacy Marketing routes', () => {
   assert.equal(resolveFieldServiceRoute('/field-service/work-orders/'), 'work-orders')
   assert.equal(resolveFieldServiceRoute('/field-service/work-orders/create'), null)
   assert.equal(resolveFieldServiceRoute('/marketing/work-orders'), null)
+  assert.equal(resolveFieldServiceRoute('/field-service/work-order'), null)
+  assert.equal(resolveFieldServiceRoute('/fieldservice/work-orders'), null)
   assert.equal(resolveFieldServiceRoute('/field-service'), 'overview')
 })
 test('Service exposes GET only and preserves pagination, search and false filters', async () => {
