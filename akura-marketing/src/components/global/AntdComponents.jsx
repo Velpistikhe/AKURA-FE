@@ -10,6 +10,7 @@ import {
   InputNumber as AntInputNumber,
   Modal as AntModal,
   Popconfirm as AntPopconfirm,
+  Result as AntResult,
   Select as AntSelect,
   Space as AntSpace,
   Switch as AntSwitch,
@@ -76,6 +77,7 @@ function configureInputNumber(props) {
 }
 
 export const App = createAdapter(AntApp, 'GlobalApp')
+export const Result = createAdapter(AntResult, 'GlobalResult')
 App.useApp = AntApp.useApp
 
 function joinClassNames(...values) {
@@ -98,6 +100,7 @@ export const Button = forwardRef(({
   const button = <AntButton
     ref={ref}
     {...props}
+    aria-label={props['aria-label'] ?? (!props.children ? title : undefined)}
     className={joinClassNames('akura-button', className)}
     type={variant ?? type}
     loading={busy ?? loading}

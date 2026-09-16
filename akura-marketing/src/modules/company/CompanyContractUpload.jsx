@@ -24,20 +24,16 @@ export default function CompanyContractUpload({ company, contract = null, onClos
   const busyRef = useRef(false)
   const requestRef = useRef(0)
   const loadContracts = useCallback(async () => {
-    if (contract) {
-      setContracts([contract])
-      setContractId(contract.id)
-      setLoading(false)
-      return
-    }
     const requestId = ++requestRef.current
     setLoading(true)
     setContractId(undefined)
     try {
-      const rows = await loadAll(contractService.list, 'contracts', { companyId: company.id })
+      const rows = contract ? [(await contractService.get(contract.id)).data]
+        : await loadAll(contractService.list, 'contracts', { companyId: company.id })
       if (requestId !== requestRef.current) return
       setContracts(rows.filter((row) => row.isActive && ['CREATE', 'ACTIVE'].includes(row.status)
         && (!row.effectiveUntil || new Date(row.effectiveUntil).getTime() > Date.now())))
+      if (contract) setContractId(contract.id)
     } catch (err) {
       if (requestId === requestRef.current) { setError(err.message); setContracts([]) }
     } finally {
@@ -51,7 +47,7 @@ export default function CompanyContractUpload({ company, contract = null, onClos
 
   const upload = async () => {
     if (busyRef.current || loading) return
-    const selected = contract || contracts.find((row) => row.id === contractId)
+    const selected = contracts.find((row) => row.id === contractId)
     const validation = validateWorkbook(file)
     if (!selected || validation) { setError(!selected ? 'Select a contract.' : validation); return }
     busyRef.current = true
@@ -76,7 +72,7 @@ export default function CompanyContractUpload({ company, contract = null, onClos
 
   return <Modal title={`Upload Contract Items — ${company.name}`} visible={!closing}
     onCancel={() => { if (!busyRef.current) setClosing(true) }} afterClose={onClose}
-    onOk={upload} okText="Upload" busy={saving} okButtonProps={{ disabled: loading || !(contract || contractId) || !file }}
+    onOk={upload} okText="Upload" busy={saving} okButtonProps={{ disabled: loading || !contracts.some((row) => row.id === contractId) || !file }}
     cancelButtonProps={{ disabled: saving }} closable={!saving} mask={{ closable: !saving }} keyboard={!saving}>
     {confirmation}
     <div className="contract-upload-fields">

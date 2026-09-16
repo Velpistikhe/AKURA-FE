@@ -34,7 +34,7 @@ function getSortOrder(column, sortBy, sortOrder) {
   return sortOrder === 'asc' ? 'ascend' : 'descend'
 }
 
-function CompanyPage() {
+function CompanyPage({ currentUser }) {
   const { message } = App.useApp()
   const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = Form.useForm()
@@ -324,7 +324,7 @@ function CompanyPage() {
 
       {historyCompany && <CompanyHistoryModal record={historyCompany} onClose={() => setHistoryCompany(null)} />}
 
-      {viewCompany && <CompanyView company={viewCompany}
+      {viewCompany && <CompanyView company={viewCompany} currentUser={currentUser}
         editing={modalOpen || loadingDetailId === viewCompany.id}
         onClose={() => { viewRequestRef.current++; setViewCompany(null) }}
         onEdit={openEdit} onChanged={refreshView} />}

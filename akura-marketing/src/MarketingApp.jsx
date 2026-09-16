@@ -17,10 +17,10 @@ function MarketingOverview() {
   );
 }
 
-function MarketingApp({ pathname = window.location.pathname, navigate = (path) => window.location.assign(path) }) {
+function MarketingApp({ currentUser, pathname = window.location.pathname, navigate = (path) => window.location.assign(path) }) {
   return (
     <App>
-      <AppRoute pathname={pathname} navigate={navigate} fallback={<MarketingOverview />} />
+      <AppRoute currentUser={currentUser} pathname={pathname} navigate={navigate} fallback={<MarketingOverview />} />
     </App>
   );
 }

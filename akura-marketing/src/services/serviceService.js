@@ -19,7 +19,7 @@ export const serviceService = {
     method: 'PATCH',
     body: JSON.stringify(data),
   }),
-  remove: (serviceId) => apiRequest(`${SERVICE_PATH}/${serviceId}`, { method: 'DELETE' }),
+  remove: (serviceId, version) => apiRequest(`${SERVICE_PATH}/${serviceId}`, { method: 'DELETE', body: JSON.stringify({ version }) }),
   createInspectionScope: (serviceId, data) => apiRequest(`${SERVICE_PATH}/${serviceId}/inspection/scopes`, {
     method: 'POST',
     body: JSON.stringify(data),

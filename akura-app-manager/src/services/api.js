@@ -2,13 +2,8 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000
 const SHELL_URL = (import.meta.env.VITE_AKURA_SHELL_URL || 'http://localhost:4173').replace(/\/+$/, '')
 const REFRESH_PATH = '/auth/refresh-token'
 
-let refreshToken = ''
 let refreshPromise = null
 
-function captureRefreshToken(payload) {
-  const token = payload?.data?.refreshToken || payload?.refreshToken
-  if (typeof token === 'string' && token) refreshToken = token
-}
 
 async function executeRequest(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -21,7 +16,6 @@ async function executeRequest(path, options = {}) {
   })
 
   const payload = await response.json().catch(() => null)
-  captureRefreshToken(payload)
 
   return { response, payload }
 }
@@ -30,7 +24,6 @@ function refreshSession() {
   if (!refreshPromise) {
     refreshPromise = executeRequest(REFRESH_PATH, {
       method: 'POST',
-      body: JSON.stringify({ refreshToken }),
     })
       .then(({ response, payload }) => {
         if (!response.ok) {
@@ -54,7 +47,6 @@ function createApiError(response, payload) {
 }
 
 function redirectToLogin() {
-  refreshToken = ''
   window.location.assign(`${SHELL_URL}/login`)
 }
 

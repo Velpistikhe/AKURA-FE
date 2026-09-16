@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
-import { App, Button, DeleteOutlined, EditOutlined, EyeOutlined, Form, Input, Modal, Popconfirm, Select, Table, Tag, Typography, UploadOutlined, useSaveConfirmation } from '../../components/global'
+import { App, Button, DeleteOutlined, EditOutlined, EyeOutlined, Form, Input, Modal, Select, Table, Tag, Typography, UploadOutlined, useSaveConfirmation } from '../../components/global'
 import { contractService } from '../../services/contractService'
 import CompanyContractUpload from './CompanyContractUpload'
+import PendingContracts from './PendingContracts'
+import { canAdministerContracts } from './contractAccess'
 
 function formatContractDate(value) {
   return value ? String(value).slice(0, 10) : '-'
 }
 
-export default function CompanyContractSection({ company, onChanged, historyOnly = false }) {
+export default function CompanyContractSection({ company, currentUser, onChanged, historyOnly = false }) {
+  const canAdminister = canAdministerContracts(currentUser)
+  const [pendingRevision, setPendingRevision] = useState(0)
   const { message } = App.useApp()
   const [form] = Form.useForm()
+  const [terminationForm] = Form.useForm()
   const [confirmSave, confirmation] = useSaveConfirmation()
   const [contracts, setContracts] = useState([])
   const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 1 })
@@ -20,12 +25,14 @@ export default function CompanyContractSection({ company, onChanged, historyOnly
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [terminating, setTerminating] = useState(false)
+  const [terminationContract, setTerminationContract] = useState(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [editingContract, setEditingContract] = useState(null)
   const [uploadContract, setUploadContract] = useState(null)
   const [priceListContract, setPriceListContract] = useState(null)
   const [priceList, setPriceList] = useState({ prices: [], pagination: { total: 0 } })
   const [priceListLoading, setPriceListLoading] = useState(false)
+  const [pricePage, setPricePage] = useState(1)
   const [contractHistoryVisible, setContractHistoryVisible] = useState(false)
 
   const loadContracts = useCallback(async () => {
@@ -50,13 +57,15 @@ export default function CompanyContractSection({ company, onChanged, historyOnly
     if (!priceListContract) return
     let active = true
     setPriceListLoading(true)
-    contractService.listPrices({ contractId: priceListContract.id, page: 1, limit: 100 }).then((response) => {
+    setPriceList({ prices: [], pagination: { total: 0 } })
+    contractService.listPrices({ contractId: priceListContract.id, page: pricePage, limit: 20 }).then((response) => {
       if (active) setPriceList(response.data || { prices: [], pagination: { total: 0 } })
     }).catch((error) => { if (active) message.error(error.message) }).finally(() => { if (active) setPriceListLoading(false) })
     return () => { active = false }
-  }, [message, priceListContract])
+  }, [message, priceListContract, pricePage])
 
   const refreshCompanyDetail = async () => {
+    setPendingRevision((value) => value + 1)
     if (contractHistoryVisible) await loadContracts()
     await onChanged?.()
   }
@@ -68,6 +77,7 @@ export default function CompanyContractSection({ company, onChanged, historyOnly
   }
 
   const openUpdate = (contract) => {
+    if (!canAdminister) return
     form.resetFields()
     form.setFieldsValue({
       contractNumber: contract.contractNumber,
@@ -107,6 +117,7 @@ export default function CompanyContractSection({ company, onChanged, historyOnly
   }
 
   const updateContract = async () => {
+    if (!canAdminister) return
     const values = await form.validateFields()
     if (new Date(values.effectiveUntil) <= new Date(values.effectiveFrom)) {
       form.setFields([{ name: 'effectiveUntil', errors: ['End date must be after the start date.'] }])
@@ -132,15 +143,27 @@ export default function CompanyContractSection({ company, onChanged, historyOnly
     }
   }
 
-  const terminateContract = async (contract) => {
+  const terminateContract = async () => {
+    if (!canAdminister) return
+    const { terminatedAt } = await terminationForm.validateFields()
+    const contract = terminationContract
+    if (terminatedAt <= formatContractDate(contract.effectiveFrom)) {
+      terminationForm.setFields([{ name: 'terminatedAt', errors: ['Termination date must be after the start date.'] }])
+      return
+    }
     if (!await confirmSave('contract termination')) return
     setTerminating(true)
     try {
-      await contractService.remove(contract.id, contract.version)
+      await contractService.remove(contract.id, contract.version, terminatedAt)
       message.success('Contract terminated successfully.')
+      setTerminationContract(null)
       await refreshCompanyDetail()
     } catch (error) {
       message.error(error.message)
+      if (error.status === 409) {
+        setTerminationContract(null)
+        await refreshCompanyDetail()
+      }
     } finally {
       setTerminating(false)
     }
@@ -198,12 +221,10 @@ export default function CompanyContractSection({ company, onChanged, historyOnly
         <div><span>Effective from</span><strong>{formatContractDate(activeContract.effectiveFrom)}</strong></div>
         <div><span>Effective until</span><strong>{formatContractDate(activeContract.effectiveUntil)}</strong></div>
         <div className="company-contract-row-actions">
-          {activeContract.hasList && <Button variant="text" icon={<EyeOutlined />} title="View Price List" onClick={() => setPriceListContract(activeContract)} />}
+          {activeContract.hasList && <Button variant="text" icon={<EyeOutlined />} title="View Price List" onClick={() => { setPricePage(1); setPriceListContract(activeContract) }} />}
           <Button variant="text" icon={<UploadOutlined />} title="Upload Price List" onClick={() => setUploadContract(activeContract)} />
-          <Button variant="text" icon={<EditOutlined />} title="Update Contract" onClick={() => openUpdate(activeContract)} />
-          <Popconfirm title="Terminate this contract?" description="This action cannot be undone." okText="Terminate" cancelText="Cancel" okButtonProps={{ danger: true }} onConfirm={() => terminateContract(activeContract)}>
-            <Button variant="text" isDanger icon={<DeleteOutlined />} title="Terminate Contract" busy={terminating} />
-          </Popconfirm>
+          {canAdminister && <Button variant="text" icon={<EditOutlined />} title="Update Contract" onClick={() => openUpdate(activeContract)} />}
+          {canAdminister && <Button variant="text" isDanger icon={<DeleteOutlined />} title="Terminate Contract" onClick={() => { terminationForm.resetFields(); setTerminationContract(activeContract) }} />}
         </div>
       </div>
     </div> : <Typography.Text tone="secondary">No contract is currently active for this company.</Typography.Text>}
@@ -236,17 +257,24 @@ export default function CompanyContractSection({ company, onChanged, historyOnly
         <Form.Item name="effectiveUntil" label="Effective Until" rules={[{ required: true, message: 'End date is required.' }]}><Input type="date" /></Form.Item>
       </Form>
     </Modal>
+    <Modal title="Terminate Contract" visible={Boolean(terminationContract)} busy={terminating} okText="Terminate" okButtonProps={{ danger: true }}
+      onOk={terminateContract} onCancel={() => { if (!terminating) setTerminationContract(null) }} unmountOnClose>
+      <Form form={terminationForm} layout="vertical" preserve={false}>
+        <Form.Item name="terminatedAt" label="Termination Date" rules={[{ required: true, message: 'Termination date is required.' }]}><Input type="date" /></Form.Item>
+      </Form>
+    </Modal>
     <Modal title={`Price List: ${priceListContract?.contractNumber || ''}`} visible={Boolean(priceListContract)} footer={null} width={1000} onCancel={() => setPriceListContract(null)} unmountOnClose>
-      <Table rowKey="id" busy={priceListLoading} dataSource={priceList.prices || []} scroll={{ x: 850 }} pagination={{ total: priceList.pagination?.total || 0, pageSize: 100, hideOnSinglePage: true }}
+      <Table rowKey="id" busy={priceListLoading} dataSource={priceList.prices || []} scroll={{ x: 850 }} pagination={{ current: pricePage, total: priceList.pagination?.total || 0, pageSize: 20, showSizeChanger: false, onChange: setPricePage, hideOnSinglePage: true }}
         columns={[
-          { title: 'Service', render: (_, row) => row.itemSize?.item?.service?.name || '-' },
-          { title: 'Item', render: (_, row) => row.itemSize?.item?.name || '-' },
-          { title: 'Size', render: (_, row) => row.itemSize?.size || '-' },
+          { title: 'Service', render: (_, row) => row.catalogSnapshot?.serviceName || '-' },
+          { title: 'Item', render: (_, row) => row.catalogSnapshot?.itemName || '-' },
+          { title: 'Size', render: (_, row) => row.catalogSnapshot?.size || '-' },
           { title: 'Service Price', dataIndex: 'priceService', render: (value) => value ?? '-' },
           { title: 'Maintenance Price', dataIndex: 'priceMaintenance', render: (value) => value ?? '-' },
           { title: 'Status', dataIndex: 'isActive', render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Tag> },
         ]} />
     </Modal>
+    <PendingContracts companyId={company.id} currentUser={currentUser} revision={pendingRevision} onChanged={refreshCompanyDetail} onUpload={setUploadContract} />
     {uploadContract && <CompanyContractUpload company={company} contract={uploadContract} onClose={() => setUploadContract(null)} onChanged={refreshCompanyDetail} />}
     </section>
   </>

@@ -27,6 +27,7 @@ import AkuraLogo from '../components/brand/AkuraLogo'
 import { useAuth } from '../context/AuthContext'
 import { useMenu } from '../context/MenuContext'
 import { useNotification } from '../context/NotificationContext'
+import { resolveMenuPath } from '../routes/workOrderRouting'
 import {
   AppAvatar,
   AppDropdown,
@@ -81,13 +82,6 @@ function resolveMenuIcon(name) {
   }
   const Icon = MENU_ICONS[aliases[normalized] || normalized] || AppstoreOutlined
   return <Icon />
-}
-
-function resolveMenuPath(menuKey, itemKey) {
-  const segments = [menuKey, itemKey]
-    .map((key) => String(key || '').trim().replace(/^\/+|\/+$/g, ''))
-    .filter(Boolean)
-  return segments.length ? `/${segments.join('/')}` : ''
 }
 
 function translateMenuLabel(label) {

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { clearRefreshToken, getRefreshToken, setRefreshToken } from './tokenStore'
+import { clearRefreshToken, setRefreshToken } from './tokenStore'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1'
 
@@ -45,7 +45,7 @@ function isRefreshAllowed(config) {
 function refreshSession() {
   if (!refreshPromise) {
     refreshPromise = refreshApi
-      .post('/auth/refresh-token', { refreshToken: getRefreshToken() })
+      .post('/auth/refresh-token')
       .then(captureRefreshToken)
       .finally(() => {
         refreshPromise = null
@@ -114,10 +114,9 @@ export const authAPI = {
 
   /**
    * Logout — POST /auth/logout
-   * Body: { refreshToken } (kirim string kosong jika tidak ada)
+   * Refresh token is read from the HttpOnly cookie.
    */
-  logout: (refreshToken = getRefreshToken()) =>
-    api.post('/auth/logout', { refreshToken }).finally(clearRefreshToken),
+  logout: () => api.post('/auth/logout').finally(clearRefreshToken),
 
   refreshToken: () => refreshSession(),
 

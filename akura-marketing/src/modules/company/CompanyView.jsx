@@ -4,7 +4,7 @@ import CompanyStaffModal from './CompanyStaffModal'
 import CompanyStaffHistorySection from './CompanyStaffHistorySection'
 import CompanyContractSection from './CompanyContractSection'
 
-export default function CompanyView({ company, onClose, onEdit, onChanged, editing }) {
+export default function CompanyView({ company, currentUser, onClose, onEdit, onChanged, editing }) {
   const [closing, setClosing] = useState(false)
   const [staffHistoryVisible, setStaffHistoryVisible] = useState(false)
   const [staffHistoryLoaded, setStaffHistoryLoaded] = useState(false)
@@ -29,7 +29,7 @@ export default function CompanyView({ company, onClose, onEdit, onChanged, editi
           'Sister Company': company.isSisterCompany ? 'Yes' : 'No', 'Current Contract': company.contract?.status || 'No active contract' }).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || '-'}</dd></div>)}
       </dl>
     </section>
-    <CompanyContractSection company={company} onChanged={onChanged} />
+    <CompanyContractSection company={company} currentUser={currentUser} onChanged={onChanged} />
     <section className="company-view-section">
       <h3>Company Staff</h3>
       <CompanyStaffModal key={company.id} company={company} visible embedded onChanged={handleStaffChanged} />

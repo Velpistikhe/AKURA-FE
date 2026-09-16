@@ -40,9 +40,9 @@ export function AuthProvider({ children }) {
   }, [])
 
   // ─── Logout ──────────────────────────────────────────────────────────────────
-  const logout = useCallback(async (refreshToken) => {
+  const logout = useCallback(async () => {
     try {
-      const res = await authAPI.logout(refreshToken)
+      const res = await authAPI.logout()
       return res.data?.message
     } finally {
       setUser(null)

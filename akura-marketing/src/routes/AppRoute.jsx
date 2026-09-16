@@ -3,24 +3,35 @@ import ItemPage from '../modules/item/ItemPage'
 import ServicePage from '../modules/service/ServicePage'
 import QuotationPage from '../modules/quotation/QuotationPage'
 import QuotationCreatePage from '../modules/quotation/QuotationCreatePage'
+import { canManageQuotations } from '../modules/quotation/quotationAccess'
+import WorkOrderPage from '../modules/work-order/WorkOrderPage'
+import WorkOrderCreatePage from '../modules/work-order/WorkOrderCreatePage'
 
 const moduleRoutes = {
-  companies: CompanyPage,
-  services: ServicePage,
-  items: ItemPage,
-  quotations: QuotationPage,
-  quotation: QuotationPage,
+  '/referensi/companies': CompanyPage,
+  '/referensi/services': ServicePage,
+  '/referensi/items': ItemPage,
 }
 
-function AppRoute({ pathname = window.location.pathname, navigate, fallback = null }) {
+function AppRoute({ currentUser, pathname = window.location.pathname, navigate, fallback = null }) {
+  const readOnly = !canManageQuotations(currentUser)
   const path = pathname.replace(/\/+$/, '')
-  if (/\/(quotations|quotation)\/create$/.test(path)) {
-    return <QuotationCreatePage onBack={() => navigate(path.slice(0, -7))} />
+  if (/^\/field-service\/work-orders?(\/create)?$/.test(path)) {
+    return path.endsWith('/create')
+      ? <WorkOrderCreatePage key={path} currentUser={currentUser} onBack={() => navigate(path.slice(0, -7))} />
+      : <WorkOrderPage key={path} currentUser={currentUser} onCreate={() => navigate(`${path}/create`)} />
   }
-  const moduleKey = pathname.replace(/\/+$/, '').split('/').filter(Boolean).at(-1) || ''
-  const Module = moduleRoutes[moduleKey]
+  const isQuotationCreate = /^\/marketing\/(quotations|quotation)\/create$/.test(path)
+  if (isQuotationCreate || /^\/marketing\/(quotations|quotation)$/.test(path)) {
+    return <div key={`${path}-${readOnly}`} className={`quotation-route quotation-route--${isQuotationCreate && !readOnly ? 'create' : 'browse'}`}>
+      {isQuotationCreate
+        ? <QuotationCreatePage currentUser={currentUser} onBack={() => navigate(path.slice(0, -7))} />
+        : <QuotationPage currentUser={currentUser} onCreate={readOnly ? undefined : () => navigate(`${path}/create`)} />}
+    </div>
+  }
+  const Module = moduleRoutes[path]
 
-  return Module ? <Module onCreate={() => navigate(`${path}/create`)} /> : fallback
+  return Module ? <Module currentUser={currentUser} onCreate={() => navigate(`${path}/create`)} /> : fallback
 }
 
 export default AppRoute

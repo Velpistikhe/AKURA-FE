@@ -21,7 +21,7 @@ import '../menu/MenuPage.css'
 
 const DEFAULT_PAGE_SIZE = 20
 const ROLES = ['USER', 'ADMIN', 'APP_MANAGER']
-const SECTIONS = ['ACCOUNTING', 'HRD_MANAGEMENT', 'MARKETING', 'FIELD_SERVICE']
+const SECTIONS = ['FINANCE', 'HRD_MANAGEMENT', 'MARKETING', 'FIELD_SERVICE']
 const SECTION_OPTIONS = [
   { value: 'ALL', label: 'No section' },
   ...SECTIONS.map((section) => ({ value: section, label: section })),

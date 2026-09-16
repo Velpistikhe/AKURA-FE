@@ -297,12 +297,13 @@ function ServiceCatalogPage({
 
   const deleteRecord = async (record) => {
     try {
-      await service.remove(record.id)
+      await service.remove(record.id, record.version)
       message.success(`${entityLabel} deleted successfully.`)
       if (records.length === 1 && page > 1) setPage((current) => current - 1)
       else await loadRecords()
     } catch (error) {
       message.error(error.message)
+      if (error.status === 409) await loadRecords()
     }
   }
 

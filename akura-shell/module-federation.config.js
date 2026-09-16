@@ -1,10 +1,16 @@
 import { createModuleFederationConfig } from '@module-federation/vite'
 
-export function createShellFederationConfig(appManagerEntry, marketingEntry) {
+export function createShellFederationConfig(appManagerEntry, marketingEntry, financeEntry, fieldServiceEntry) {
   return createModuleFederationConfig({
     name: 'akura_shell',
     dts: false,
     remotes: {
+      akuraFieldService: { type: 'module', name: 'akura_fieldservice', entry: fieldServiceEntry },
+      akuraFinance: {
+        type: 'module',
+        name: 'akura_finance',
+        entry: financeEntry,
+      },
       akuraAppManager: {
         type: 'module',
         name: 'akura_app_manager',

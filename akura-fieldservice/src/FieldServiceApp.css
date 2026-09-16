@@ -1,0 +1,4 @@
+.fieldservice-workspace { width: min(100%, 1480px); margin-inline: auto; color: var(--text-primary, #1a2e5e); }
+.fieldservice-overview-card { position: relative; overflow: hidden; border-radius: 24px; background: linear-gradient(135deg, var(--surface-card, #fff), var(--surface-secondary, #eef3ff)); }
+.fieldservice-overview-card > .ant-card-body { padding: clamp(24px, 4vw, 48px); }
+.fieldservice-eyebrow { display: block; margin-bottom: 12px; color: var(--text-secondary, #687998); font-weight: 600; }
