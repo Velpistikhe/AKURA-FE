@@ -172,6 +172,7 @@ function DashboardLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768)
   const [openMenuKeys, setOpenMenuKeys] = useState([])
+  const [popupMenuKeys, setPopupMenuKeys] = useState([])
   const [loggingOut, setLoggingOut] = useState(false)
 
   const navigate = useNavigate()
@@ -180,6 +181,11 @@ function DashboardLayout() {
   const { menus, menuError, loadMenus } = useMenu()
   const notify = useNotification()
   const menuItems = useMemo(() => mapMenus(menus), [menus])
+  const isCollapsedMenu = collapsed && !isMobile
+
+  useEffect(() => {
+    setPopupMenuKeys([])
+  }, [isCollapsedMenu])
 
   useEffect(() => {
     const onResize = () => {
@@ -282,15 +288,15 @@ function DashboardLayout() {
               theme="dark"
               mode="inline"
               selectedKeys={[location.pathname]}
-              openKeys={visibleOpenMenuKeys}
+              openKeys={isCollapsedMenu ? popupMenuKeys : visibleOpenMenuKeys}
               items={menuItems}
-              onOpenChange={setOpenMenuKeys}
+              onOpenChange={isCollapsedMenu ? setPopupMenuKeys : setOpenMenuKeys}
               onClick={({ key }) => {
                 setMobileOpen(false)
                 navigate(key)
               }}
               className="sider-menu"
-              inlineCollapsed={collapsed && !isMobile}
+              inlineCollapsed={isCollapsedMenu}
             />
           )}
         </div>
