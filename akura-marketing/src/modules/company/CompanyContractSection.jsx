@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { App, Button, DeleteOutlined, EditOutlined, EyeOutlined, Form, Input, Modal, Select, Table, Tag, Typography, UploadOutlined, useSaveConfirmation } from '../../components/global'
+import { App, Button, DeleteOutlined, EditOutlined, EyeOutlined, Form, Input, Modal, Table, TableSearchFilter, Tag, Typography, UploadOutlined, useSaveConfirmation } from '../../components/global'
 import { contractService } from '../../services/contractService'
 import CompanyContractUpload from './CompanyContractUpload'
 import PendingContracts from './PendingContracts'
@@ -33,6 +33,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
   const [priceList, setPriceList] = useState({ prices: [], pagination: { total: 0 } })
   const [priceListLoading, setPriceListLoading] = useState(false)
   const [pricePage, setPricePage] = useState(1)
+  const [priceQuery, setPriceQuery] = useState({ search: '', isActive: '', sortBy: '', sortOrder: '' })
   const [contractHistoryVisible, setContractHistoryVisible] = useState(false)
 
   const loadContracts = useCallback(async () => {
@@ -58,11 +59,11 @@ export default function CompanyContractSection({ company, currentUser, onChanged
     let active = true
     setPriceListLoading(true)
     setPriceList({ prices: [], pagination: { total: 0 } })
-    contractService.listPrices({ contractId: priceListContract.id, page: pricePage, limit: 20 }).then((response) => {
+    contractService.listPrices({ contractId: priceListContract.id, page: pricePage, limit: 20, ...priceQuery }).then((response) => {
       if (active) setPriceList(response.data || { prices: [], pagination: { total: 0 } })
     }).catch((error) => { if (active) message.error(error.message) }).finally(() => { if (active) setPriceListLoading(false) })
     return () => { active = false }
-  }, [message, priceListContract, pricePage])
+  }, [message, priceListContract, pricePage, priceQuery])
 
   const refreshCompanyDetail = async () => {
     setPendingRevision((value) => value + 1)
@@ -178,26 +179,28 @@ export default function CompanyContractSection({ company, currentUser, onChanged
     </div>
     <div className={`company-contract-history-content${contractHistoryVisible ? ' is-visible' : ''}`} aria-hidden={!contractHistoryVisible}>
       <div className="company-contract-history-content-inner">
-        <div className="company-history-controls">
-          <Select value={historyStatus || undefined} placeholder="All statuses" allowClear onChange={(value) => { setHistoryStatus(value || ''); setHistoryPage(1) }} options={['CREATE', 'ACTIVE', 'EXPIRED', 'TERMINATED'].map((value) => ({ value, label: value }))} />
-          <Select value={historyActive || undefined} placeholder="All activity" allowClear onChange={(value) => { setHistoryActive(value || ''); setHistoryPage(1) }} options={[{ value: 'true', label: 'Active' }, { value: 'false', label: 'Inactive' }]} />
-        </div>
-        {!loading && !contracts.length && <Typography.Text tone="secondary">No contract history is available.</Typography.Text>}
-        <div className="company-contract-list" aria-busy={loading}>
-          {contracts.map((contract) => <div className="company-contract-card company-contract-history-card" key={contract.id}>
-            <Tag color={contract.isActive ? 'success' : 'default'}>{contract.status}</Tag>
-            <div><span>Contract number</span><strong>{contract.contractNumber || '-'}</strong></div>
-            <div><span>Contract date</span><strong>{formatContractDate(contract.contractDate)}</strong></div>
-            <div><span>Effective from</span><strong>{formatContractDate(contract.effectiveFrom)}</strong></div>
-            <div><span>Effective until</span><strong>{formatContractDate(contract.effectiveUntil)}</strong></div>
-          </div>)}
-        </div>
-        <div className="company-history-pagination">
-          <Button disabled={loading || pagination.page <= 1} onClick={() => setHistoryPage((page) => page - 1)}>Previous</Button>
-          <span>Page {pagination.page || historyPage} of {pagination.totalPages || 1} · {pagination.total || 0} contracts</span>
-          <Select value={historyLimit} onChange={(value) => { setHistoryLimit(value); setHistoryPage(1) }} options={[10, 20, 50, 100].map((value) => ({ value, label: `${value} / page` }))} />
-          <Button disabled={loading || (pagination.page || historyPage) >= (pagination.totalPages || 1)} onClick={() => setHistoryPage((page) => page + 1)}>Next</Button>
-        </div>
+        <Table rowKey="id" loading={loading} dataSource={contracts} scroll={{ x: 1000 }}
+          columns={[
+            { title: 'Contract Number', dataIndex: 'contractNumber' },
+            { title: 'Contract Date', dataIndex: 'contractDate', render: formatContractDate },
+            { title: 'Effective From', dataIndex: 'effectiveFrom', render: formatContractDate },
+            { title: 'Effective Until', dataIndex: 'effectiveUntil', render: formatContractDate },
+            { title: 'Status', dataIndex: 'status', render: (value) => <Tag>{value}</Tag>,
+              filters: ['CREATE', 'ACTIVE', 'EXPIRED', 'TERMINATED'].map((value) => ({ text: value, value })),
+              filterMultiple: false, filteredValue: historyStatus ? [historyStatus] : null },
+            { title: 'Activity', dataIndex: 'isActive', render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag>,
+              filters: [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }],
+              filterMultiple: false, filteredValue: historyActive ? [historyActive] : null },
+          ]}
+          onChange={(_, filters, _sorter, extra) => {
+            if (extra.action !== 'filter') return
+            setHistoryStatus(filters.status?.[0] || '')
+            setHistoryActive(filters.isActive?.[0] || '')
+            setHistoryPage(1)
+          }}
+          pagination={{ current: historyPage, pageSize: historyLimit, total: pagination.total || 0,
+            showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100],
+            onChange: (page, limit) => { setHistoryPage(limit !== historyLimit ? 1 : page); setHistoryLimit(limit) } }} />
       </div>
     </div>
   </section>
@@ -208,7 +211,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
     <section className="company-view-section company-contract-section">
     {confirmation}
     <div className="company-view-section-heading">
-      <div><h3>Active Contract</h3><Typography.Text tone="secondary">The current active contract returned by the company-detail endpoint.</Typography.Text></div>
+      <div><h3>{activeContract ? 'Active Contract' : 'Contracts'}</h3>{activeContract && <Typography.Text tone="secondary">The current active contract returned by the company-detail endpoint.</Typography.Text>}</div>
       <div className="company-contract-actions">
         <Button variant="primary" onClick={openCreate}>Add Contract</Button>
       </div>
@@ -227,7 +230,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
           {canAdminister && <Button variant="text" isDanger icon={<DeleteOutlined />} title="Terminate Contract" onClick={() => { terminationForm.resetFields(); setTerminationContract(activeContract) }} />}
         </div>
       </div>
-    </div> : <Typography.Text tone="secondary">No contract is currently active for this company.</Typography.Text>}
+    </div> : null}
 
     <Modal title={`Add Contract: ${company.name}`} visible={createOpen} busy={saving} okText="Create" onOk={createContract}
       onCancel={() => { if (!saving) setCreateOpen(false) }} closable={!saving} keyboard={!saving} mask={{ closable: !saving }} cancelButtonProps={{ disabled: saving }} unmountOnClose>
@@ -265,13 +268,25 @@ export default function CompanyContractSection({ company, currentUser, onChanged
     </Modal>
     <Modal title={`Price List: ${priceListContract?.contractNumber || ''}`} visible={Boolean(priceListContract)} footer={null} width={1000} onCancel={() => setPriceListContract(null)} unmountOnClose>
       <Table rowKey="id" busy={priceListLoading} dataSource={priceList.prices || []} scroll={{ x: 850 }} pagination={{ current: pricePage, total: priceList.pagination?.total || 0, pageSize: 20, showSizeChanger: false, onChange: setPricePage, hideOnSinglePage: true }}
+        onChange={(_, filters, sorter, extra) => {
+          if (extra.action === 'paginate') return
+          setPricePage(1)
+          setPriceQuery({ search: (filters.search?.[0] || '').trim(), isActive: filters.isActive?.[0] || '',
+            sortBy: sorter.order ? sorter.field : '', sortOrder: sorter.order ? (sorter.order === 'ascend' ? 'asc' : 'desc') : '' })
+        }}
         columns={[
           { title: 'Service', render: (_, row) => row.catalogSnapshot?.serviceName || '-' },
-          { title: 'Item', render: (_, row) => row.catalogSnapshot?.itemName || '-' },
+          { title: 'Item', key: 'search', filteredValue: priceQuery.search ? [priceQuery.search] : null,
+            filterDropdown: (props) => <TableSearchFilter {...props} placeholder="Search item or size" maxLength={200} />,
+            render: (_, row) => row.catalogSnapshot?.itemName || '-' },
           { title: 'Size', render: (_, row) => row.catalogSnapshot?.size || '-' },
-          { title: 'Service Price', dataIndex: 'priceService', render: (value) => value ?? '-' },
-          { title: 'Maintenance Price', dataIndex: 'priceMaintenance', render: (value) => value ?? '-' },
-          { title: 'Status', dataIndex: 'isActive', render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Tag> },
+          { title: 'Service Price', dataIndex: 'priceService', sorter: true,
+            sortOrder: priceQuery.sortBy === 'priceService' ? (priceQuery.sortOrder === 'asc' ? 'ascend' : 'descend') : null, render: (value) => value ?? '-' },
+          { title: 'Maintenance Price', dataIndex: 'priceMaintenance', sorter: true,
+            sortOrder: priceQuery.sortBy === 'priceMaintenance' ? (priceQuery.sortOrder === 'asc' ? 'ascend' : 'descend') : null, render: (value) => value ?? '-' },
+          { title: 'Status', dataIndex: 'isActive', filterMultiple: false, filteredValue: priceQuery.isActive ? [priceQuery.isActive] : null,
+            filters: [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }],
+            render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Tag> },
         ]} />
     </Modal>
     <PendingContracts companyId={company.id} currentUser={currentUser} revision={pendingRevision} onChanged={refreshCompanyDetail} onUpload={setUploadContract} />

@@ -9,7 +9,7 @@ export default function PendingContracts({ companyId, currentUser, revision, onC
   const [page, setPage] = useState(1)
   const [retry, setRetry] = useState(0)
   const [data, setData] = useState({ contracts: [], pagination: {} })
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(null)
   const lock = useRef(false)
@@ -34,6 +34,7 @@ export default function PendingContracts({ companyId, currentUser, revision, onC
     } catch (err) { message.error(err.message) }
     finally { lock.current = false; setBusy(null); setRetry((value) => value + 1) }
   }
+  if (!loading && !error && !data.contracts.length) return null
   return <div style={{ marginTop: 20 }}>
     <div className="company-view-section-heading"><div><h3>Pending Contracts</h3><Typography.Text tone="secondary">Contracts awaiting administrator approval.</Typography.Text></div></div>
     {error && <div role="alert">{error} <Button onClick={() => setRetry((value) => value + 1)}>Retry</Button></div>}

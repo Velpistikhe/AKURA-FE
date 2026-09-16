@@ -1,4 +1,4 @@
-import { Button, Input, Space } from './AntdComponents'
+import { Button, Input, Space } from 'antd'
 
 function TableSearchFilter({ selectedKeys, setSelectedKeys, confirm, clearFilters, onSearch, placeholder = 'Search name or address', maxLength = 100 }) {
   const apply = () => {
@@ -26,7 +26,7 @@ function TableSearchFilter({ selectedKeys, setSelectedKeys, confirm, clearFilter
         onPressEnter={apply}
       />
       <Space>
-        <Button size="small" variant="primary" onClick={apply}>Apply</Button>
+        <Button size="small" type="primary" onClick={apply}>Apply</Button>
         <Button size="small" onClick={reset}>Reset</Button>
       </Space>
     </div>

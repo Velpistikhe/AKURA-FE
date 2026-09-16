@@ -1,5 +1,6 @@
+import TableSearchFilter from '../../components/global/TableSearchFilter'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, App, Card, Form, Input, Popconfirm, Select, Space, Table, Tag, Typography } from 'antd'
+import { Alert, App, Card, Form, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd'
 import { EyeOutlined, HistoryOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Button, Modal } from '../../components/FinanceControls'
 import { documentService, getQuotationReference } from '../../services/documentService'
@@ -90,17 +91,16 @@ export default function DocumentPage({ kind, title }) {
   return <section className="finance-page">
     <div className="finance-heading"><div><Typography.Title level={2}>{title}</Typography.Title><Typography.Text type="secondary">Manage documents created from customer quotations.</Typography.Text></div>
       <Space wrap><Button icon={<ReloadOutlined />} onClick={() => setReload((value) => value + 1)} disabled={busy}>Refresh</Button><Button icon={<PlusOutlined />} type="primary" onClick={() => edit()} disabled={busy}>Add {title}</Button></Space></div>
-    <Space wrap className="finance-toolbar">
-      <Input.Search aria-label="Search documents" placeholder="Search number or title" maxLength={100} allowClear onSearch={(search) => setQuery((value) => ({ ...value, search: search.trim(), page: 1 }))} />
-      <Select aria-label="Document status" placeholder="All statuses" allowClear style={{ width: 160 }} options={['DRAFT', 'FINAL'].map((value) => ({ value, label: value }))} onChange={(status) => setQuery((value) => ({ ...value, status, page: 1 }))} />
-    </Space>
     {error && <Alert className="finance-error" type="error" showIcon title="Unable to load documents" description={error} />}
     <Card><Table rowKey="id" loading={loading} dataSource={data.documents} scroll={{ x: 1100 }} columns={[
-      { title: 'Number', dataIndex: 'number' }, { title: 'Title', dataIndex: 'title' },
+      { title: 'Number', dataIndex: 'number', key: 'search', filteredValue: query.search ? [query.search] : null,
+        filterDropdown: (props) => <TableSearchFilter {...props} placeholder="Search number or title" /> }, { title: 'Title', dataIndex: 'title' },
       { title: 'Date', dataIndex: 'date', render: dateValue }, { title: 'Due Date', dataIndex: 'dueDate', render: (value) => dateValue(value) || '-' },
-      { title: 'Status', dataIndex: 'status', render: (value) => <Tag>{value}</Tag> }, { title: 'Total', dataIndex: 'total', render: money },
+      { title: 'Status', dataIndex: 'status', filters: ['DRAFT', 'FINAL'].map((value) => ({ text: value, value })), filterMultiple: false, filteredValue: query.status ? [query.status] : null, render: (value) => <Tag>{value}</Tag> }, { title: 'Total', dataIndex: 'total', render: money },
       { title: 'Actions', width: 130, fixed: 'right', render: (_, record) => <Space><Button type="text" icon={<EyeOutlined />} aria-label={`View ${record.number}`} disabled={busy} onClick={() => open(record)} /><Button type="text" icon={<HistoryOutlined />} aria-label={`History ${record.number}`} disabled={busy} onClick={() => { setHistoryPage(1); setHistory(record) }} /></Space> },
-    ]} pagination={{ current: query.page, pageSize: query.limit, total: data.pagination.total || 0, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100], onChange: (page, limit) => setQuery((value) => ({ ...value, page: limit !== value.limit ? 1 : page, limit })) }} /></Card>
+     ]} onChange={(_, filters, _sorter, extra) => {
+      if (extra.action === 'filter') setQuery((current) => ({ ...current, page: 1, search: (filters.search?.[0] || '').trim(), status: filters.status?.[0] }))
+    }} pagination={{ current: query.page, pageSize: query.limit, total: data.pagination.total || 0, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100], onChange: (page, limit) => setQuery((value) => ({ ...value, page: limit !== value.limit ? 1 : page, limit })) }} /></Card>
     <Modal title={`${editor?.record ? 'Edit' : 'Add'} ${title}`} open={Boolean(editor)} onCancel={() => { if (!busy) setEditor(null) }} onOk={() => form.submit()} confirmLoading={busy} okButtonProps={{ disabled: stale }} cancelButtonProps={{ disabled: busy }} closable={!busy} mask={{ closable: !busy }} destroyOnHidden>
       <Form form={form} layout="vertical" onFinish={save} disabled={busy || stale}>
         {!editor?.record && <Form.Item name="quotationId" label="Quotation ID" extra="Use the ID of an active, approved quotation." rules={[{ required: true }, uuidRule]}><Input /></Form.Item>}

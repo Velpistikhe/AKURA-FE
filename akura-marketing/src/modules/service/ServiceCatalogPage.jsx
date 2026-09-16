@@ -25,7 +25,7 @@ import './ServiceCatalogPage.css'
 import ServiceHistory from './ServiceHistory'
 
 const DEFAULT_PAGE_SIZE = 20
-const SERVICE_TYPES = ['TUBULAR', 'OCTG']
+const SERVICE_TYPES = ['TUBULAR', 'OCTG', 'OTHER']
 
 function getSortOrder(column, sortBy, sortOrder) {
   if (sortBy !== column) return null
@@ -459,7 +459,7 @@ function ServiceCatalogPage({
             label="Type"
             rules={[
               { required: true, message: 'Service type is required.' },
-              { type: 'enum', enum: SERVICE_TYPES, message: 'Select TUBULAR or OCTG.' },
+              { type: 'enum', enum: SERVICE_TYPES, message: 'Select TUBULAR, OCTG, or OTHER.' },
             ]}
           >
             <Select placeholder="Select service type" options={SERVICE_TYPES.map((type) => ({ label: type, value: type }))} />

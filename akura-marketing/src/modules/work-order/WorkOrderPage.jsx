@@ -1,5 +1,6 @@
+import TableSearchFilter from '../../components/global/TableSearchFilter'
 import { useEffect, useState } from 'react'
-import { Button, Card, EyeOutlined, Input, Modal, PlusOutlined, Result, Select, Table, Tag, Typography } from '../../components/global'
+import { Button, Card, EyeOutlined, Modal, PlusOutlined, Result, Table, Tag, Typography } from '../../components/global'
 import { workOrderService } from '../../services/workOrderService'
 import { displayEnum } from '../quotation/quotationModel'
 import { canAccessWorkOrders, WORK_ORDER_STATUSES } from './workOrderModel'
@@ -40,22 +41,26 @@ function WorkOrderList({ onCreate }) {
       <Button variant="primary" icon={<PlusOutlined />} onClick={onCreate}>Create Work Order</Button>
     </div>
     <Card>
-      <div className="work-order-toolbar">
-        <Input allowClear placeholder="Search work orders" aria-label="Search work orders" value={query.search} maxLength={100} onChange={(event) => setQuery({ ...query, page: 1, search: event.target.value })} />
-        <Select aria-label="Work order status" value={query.status} options={WORK_ORDER_STATUSES.map((value) => ({ value, label: displayEnum(value) }))} onChange={(status) => setQuery({ ...query, page: 1, status })} />
-        <Select aria-label="Revocation status" value={query.revoked ? 'revoked' : 'active'} options={[{ value: 'active', label: 'Active' }, { value: 'revoked', label: 'Revoked' }]} onChange={(value) => setQuery({ ...query, page: 1, revoked: value === 'revoked' })} />
-      </div>
       {error && <div role="alert">{error} <Button onClick={() => setRetry((value) => value + 1)}>Retry</Button></div>}
       <Table rowKey="id" busy={loading} dataSource={data.workOrders} scroll={{ x: 1000 }}
         columns={[
-          { title: 'Number', dataIndex: 'number' },
+          { title: 'Number', dataIndex: 'number', key: 'search', filteredValue: query.search ? [query.search] : null,
+            filterDropdown: (props) => <TableSearchFilter {...props} placeholder="Search number or summary" /> },
           { title: 'Company', render: (_, row) => companyName(row) },
           { title: 'Date', dataIndex: 'date', render: date },
           { title: 'Start Date', dataIndex: 'startDate', render: date },
           { title: 'End Date', dataIndex: 'endDate', render: date },
-          { title: 'Status', dataIndex: 'status', render: (value) => <Tag>{displayEnum(value)}</Tag> },
+          { title: 'Status', dataIndex: 'status', filteredValue: query.status ? [query.status] : null, filterMultiple: false,
+            filters: WORK_ORDER_STATUSES.map((value) => ({ text: displayEnum(value), value })), render: (value) => <Tag>{displayEnum(value)}</Tag> },
+          { title: 'Activity', dataIndex: 'revoked', filteredValue: query.revoked == null ? null : [String(query.revoked)], filterMultiple: false,
+            filters: [{ text: 'Active', value: 'false' }, { text: 'Revoked', value: 'true' }], render: (value) => <Tag>{value ? 'Revoked' : 'Active'}</Tag> },
           { title: 'Actions', key: 'actions', width: 90, render: (_, row) => <Button variant="text" icon={<EyeOutlined />} title="View Work Order" onClick={() => setSelectedId(row.id)} /> },
         ]}
+        onChange={(_, filters, _sorter, extra) => {
+          if (extra.action === 'filter') setQuery((current) => ({ ...current, page: 1,
+            search: (filters.search?.[0] || '').trim(), status: filters.status?.[0],
+            revoked: filters.revoked?.length ? filters.revoked[0] === 'true' : undefined }))
+        }}
         pagination={{ current: query.page, pageSize: query.limit, total: data.pagination.total, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100], onChange: (page, limit) => setQuery({ ...query, page: limit === query.limit ? page : 1, limit }) }} />
     </Card>
     {selectedId && <WorkOrderDetail id={selectedId} onClose={() => setSelectedId(null)} />}
