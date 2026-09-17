@@ -157,6 +157,7 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
           <dl className="company-detail-grid">
             <div><dt>Service</dt><dd>{item.service?.name || '-'}</dd></div>
             <div><dt>Name</dt><dd>{item.name}</dd></div>
+            <div><dt>UOM</dt><dd>{item.uom || '-'}</dd></div>
             <div><dt>Status</dt><dd><Tag color={item.isActive ? 'success' : 'default'}>{item.isActive ? 'Active' : 'Inactive'}</Tag></dd></div>
             <div><dt>Maintenance</dt><dd>{hasMaintenance ? 'Yes' : 'No'}</dd></div>
             <div><dt>Created By</dt><dd>{item.createdByName || '-'}</dd></div>

@@ -104,7 +104,8 @@ export default function ItemPage() {
     if (mutationRef.current || editor?.item?.isActive === false) return
     const item = editor.item
     const name = values.name.trim()
-    if (item && labelKey(name) === labelKey(item.name)) {
+    const uom = values.uom.trim()
+    if (item && labelKey(name) === labelKey(item.name) && uom === item.uom) {
       message.warning('No changes were made.')
       return
     }
@@ -112,9 +113,9 @@ export default function ItemPage() {
     try {
       if (!await confirmSave('item')) return
       setSaving(true)
-      if (item) await itemService.update(item.id, { version: item.version, name })
+      if (item) await itemService.update(item.id, { version: item.version, name, uom })
       else await itemService.create({
-        serviceId: values.serviceId, name,
+        serviceId: values.serviceId, name, uom,
         sizes: (values.sizes || []).map((size) => ({ size: size.size.trim() })),
       })
       message.success(`Item ${item ? 'updated' : 'created'} successfully.`)
@@ -215,7 +216,7 @@ export default function ItemPage() {
       busy={saving} okText={editor?.item ? 'Save' : 'Add'} onOk={() => form.submit()} onCancel={() => setEditor(null)}
       cancelButtonProps={{ disabled: saving }} closable={!saving} keyboard={!saving} mask={{ closable: !saving }} unmountOnClose>
       {editor && <Form key={editor.item?.id || 'create'} form={form} layout="vertical" preserve={false} clearOnDestroy
-        initialValues={{ name: editor.item?.name || '', sizes: [] }} onFinish={save} disabled={saving}>
+        initialValues={{ name: editor.item?.name || '', uom: editor.item?.uom || '', sizes: [] }} onFinish={save} disabled={saving}>
         {!editor.item && <>
           {servicesError && <div role="alert" className="item-error">{servicesError} <Button onClick={loadServices}>Retry</Button></div>}
           <Form.Item name="serviceId" label="Service" rules={[{ required: true, message: 'Service is required.' }]}>
@@ -225,6 +226,9 @@ export default function ItemPage() {
         </>}
         <Form.Item name="name" label="Name" rules={[{ required: true, whitespace: true, message: 'Name is required.' }, { max: 200 }]}>
           <Input maxLength={200} placeholder="Item name" />
+        </Form.Item>
+        <Form.Item name="uom" label="UOM (Unit of Measure)" rules={[{ required: true, whitespace: true, message: 'UOM is required.' }, { max: 50 }]}>
+          <Input maxLength={50} placeholder="e.g. JOINT" />
         </Form.Item>
         {!editor.item && <Form.List name="sizes" rules={[{ validator: async (_, sizes = []) => {
           if (sizes.length > 100) throw new Error('A maximum of 100 sizes is allowed.')
