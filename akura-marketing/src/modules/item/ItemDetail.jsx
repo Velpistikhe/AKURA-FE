@@ -181,22 +181,22 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
                 filteredValue: query.size ? [query.size] : null,
                 filterDropdown: (props) => <TableSearchFilter {...props} placeholder="Search size"
                   onSearch={(value) => setQuery((current) => ({ ...current, size: value.trim(), page: 1 }))} />,
-                render: (value) => <Tag>{value}</Tag> },
+                render: (value) => <Tag>{value ?? 'Without size'}</Tag> },
               { title: 'Price Status', dataIndex: 'priceStatus', width: 130, render: (value) =>
                 <Tag color={value === 'AVAILABLE' ? 'success' : 'default'}>{value === 'AVAILABLE' ? 'Available' : 'Unavailable'}</Tag> },
               ...visiblePrices.map(([key, title]) => ({ title, dataIndex: key, width: 170, render: formatPrice })),
               { title: 'Actions', key: 'actions', width: 260, fixed: 'right', render: (_, row) => <Space wrap size={4}>
                 <Button variant="text" icon={readOnly || row.isActive === false ? <EyeOutlined /> : <EditOutlined />} busy={busy === row.id} disabled={Boolean(busy)}
                   title={readOnly || row.isActive === false ? 'View Price' : row.priceStatus === 'AVAILABLE' ? 'Edit Price' : 'Set Price'}
-                  aria-label={`${readOnly || row.isActive === false ? 'View price' : row.priceStatus === 'AVAILABLE' ? 'Edit price' : 'Set price'} for size ${row.size}`}
+                  aria-label={`${readOnly || row.isActive === false ? 'View price' : row.priceStatus === 'AVAILABLE' ? 'Edit price' : 'Set price'} for ${row.size ?? 'Without size'}`}
                   onClick={() => openEditor(row)} />
                 {!readOnly && row.isActive !== false && <>
-                <Button variant="text" icon={<HistoryOutlined />} title="Size History" aria-label={`History for size ${row.size}`}
-                  onClick={() => setHistory({ id: row.id, name: row.size, scope: 'size' })} />
+                <Button variant="text" icon={<HistoryOutlined />} title="Size History" aria-label={`History for ${row.size ?? 'Without size'}`}
+                  onClick={() => setHistory({ id: row.id, name: row.size ?? 'Without size', scope: 'size' })} />
                 <Popconfirm title="Delete size?" description="This size and its standard and contract prices will be deactivated."
                   okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }}
                   onConfirm={() => mutate(row.id, () => itemService.removeSize(row.id, row.version), 'Item size deleted successfully.')}>
-                  <Button variant="text" isDanger icon={<DeleteOutlined />} disabled={Boolean(busy)} aria-label={`Delete size ${row.size}`} />
+                  <Button variant="text" isDanger icon={<DeleteOutlined />} disabled={Boolean(busy)} aria-label={`Delete size ${row.size ?? 'Without size'}`} />
                 </Popconfirm>
                 </>}
               </Space> },
@@ -213,12 +213,12 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
         <ItemHistory record={item} revision={refresh} />
       </div>
     </Modal>
-    <Modal title={`Standard Price: ${editor?.size.size || ''}`}
+    <Modal title={`Standard Price: ${editor ? editor.size.size ?? 'Without size' : ''}`}
       visible={Boolean(editor)} width={680} onCancel={() => setEditor(null)} busy={busy === 'save'}
       closable={!busy} keyboard={!busy} mask={{ closable: !busy }} unmountOnClose
       footer={<Space wrap>
         {editor && <>
-          <Button icon={<HistoryOutlined />} onClick={() => setHistory({ id: editor.size.id, name: editor.size.size, scope: 'price' })}>Price History</Button>
+          <Button icon={<HistoryOutlined />} onClick={() => setHistory({ id: editor.size.id, name: editor.size.size ?? 'Without size', scope: 'price' })}>Price History</Button>
           {!editorReadOnly && editor.price?.isActive && <Popconfirm title="Delete standard price?" description="The size remains available. Its standard price will be deactivated."
             okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }} onConfirm={() =>
               mutate('save', () => itemService.removePrice(editor.size.id, editor.price.version), 'Standard price deleted successfully.', () => setEditor(null))}>

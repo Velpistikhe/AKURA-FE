@@ -7,6 +7,7 @@ import { itemService } from '../../services/itemService'
 import { serviceService } from '../../services/serviceService'
 import { downloadFile } from '../../services/downloadFile'
 import ItemDetail from './ItemDetail'
+import { createItemPayload } from './itemModel'
 import '../company/CompanyPage.css'
 import '../service/ServiceCatalogPage.css'
 import './ItemPage.css'
@@ -17,6 +18,7 @@ export default function ItemPage() {
   const { message } = App.useApp()
   const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = Form.useForm()
+  const sizeValues = Form.useWatch('sizes', form) || []
   const [items, setItems] = useState([])
   const [services, setServices] = useState([])
   const [servicesLoading, setServicesLoading] = useState(false)
@@ -114,10 +116,7 @@ export default function ItemPage() {
       if (!await confirmSave('item')) return
       setSaving(true)
       if (item) await itemService.update(item.id, { version: item.version, name, uom })
-      else await itemService.create({
-        serviceId: values.serviceId, name, uom,
-        sizes: (values.sizes || []).map((size) => ({ size: size.size.trim() })),
-      })
+      else await itemService.create(createItemPayload(values))
       message.success(`Item ${item ? 'updated' : 'created'} successfully.`)
       setEditor(null)
       reload()
@@ -232,18 +231,24 @@ export default function ItemPage() {
         </Form.Item>
         {!editor.item && <Form.List name="sizes" rules={[{ validator: async (_, sizes = []) => {
           if (sizes.length > 100) throw new Error('A maximum of 100 sizes is allowed.')
-          const names = sizes.map((size) => labelKey(size?.size || ''))
+          const names = sizes.map((size) => size?.size === null ? null : labelKey(size?.size || ''))
           if (new Set(names).size !== names.length) throw new Error('Size names must be unique.')
         } }]}>
           {(fields, { add, remove: removeSize }, { errors }) => <div className="catalog-scopes">
             <div className="catalog-scopes-heading">
               <Typography.Text strong>Sizes</Typography.Text>
-              <Button variant="dashed" icon={<PlusOutlined />} disabled={fields.length >= 100} onClick={() => add({ size: '' })}>Add Size</Button>
+              <Space wrap>
+                <Button variant="dashed" icon={<PlusOutlined />} disabled={fields.length >= 100 || sizeValues.some((value) => value?.size === null)}
+                  onClick={() => add({ size: null })}>Add Without Size</Button>
+                <Button variant="dashed" icon={<PlusOutlined />} disabled={fields.length >= 100} onClick={() => add({ size: '' })}>Add Size</Button>
+              </Space>
             </div>
-            <p><Typography.Text tone="secondary">Sizes are optional. Standard prices can be added from the item detail.</Typography.Text></p>
+            <p><Typography.Text tone="secondary">Leave this list empty to create one variant without a size. You can also combine named sizes with one variant without a size. Set standard prices from the item detail.</Typography.Text></p>
             {fields.map(({ key, ...field }) => <div className="catalog-scope-row" key={key}>
-              <Form.Item {...field} name={[field.name, 'size']} rules={[{ required: true, whitespace: true, message: 'Size is required.' }, { max: 100 }]}>
-                <Input maxLength={100} placeholder="Size" />
+              <Form.Item {...field} name={[field.name, 'size']} getValueProps={(value) => ({ value: value ?? '' })}
+                rules={sizeValues[field.name]?.size === null ? [] : [{ required: true, whitespace: true, message: 'Size is required.' }, { max: 100 }]}>
+                <Input maxLength={100} disabled={sizeValues[field.name]?.size === null}
+                  placeholder={sizeValues[field.name]?.size === null ? 'Without size' : 'Size'} />
               </Form.Item>
               <Button variant="text" isDanger icon={<DeleteOutlined />} onClick={() => removeSize(field.name)} aria-label="Delete size" />
             </div>)}

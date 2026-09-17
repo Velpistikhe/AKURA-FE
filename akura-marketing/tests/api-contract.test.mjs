@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
+import { createItemPayload } from '../src/modules/item/itemModel.js'
 import { canApproveQuotation, quotationNumber, quotationChanges, quotationFormValues, quotationPayload, quotationOptionValues, TEXT_FIELDS, QUANTITY_PATTERN } from '../src/modules/quotation/quotationModel.js'
 
 const swagger = process.env.SWAGGER_FILE ? JSON.parse(await readFile(process.env.SWAGGER_FILE, 'utf8')) : await fetch(process.env.SWAGGER_URL || 'http://localhost:5000/api-docs.json').then((response) => {
@@ -9,6 +10,33 @@ const swagger = process.env.SWAGGER_FILE ? JSON.parse(await readFile(process.env
 })
 const resolve = (schema) => schema?.$ref ? resolve(swagger.components.schemas[schema.$ref.split('/').pop()]) : schema
 const uuid = '00000000-0000-4000-8000-000000000001'
+
+test('Create item supports automatic sizeless variants and requires UOM', async () => {
+  const service = await loadService('itemService')
+  for (const sizes of [undefined, []]) {
+    const request = service.create(createItemPayload({ serviceId: uuid, name: ' Pipe ', uom: ' JOINT ', sizes }))
+    const body = JSON.parse(request.body)
+    const schema = resolve(operation(request).requestBody.content['application/json'].schema)
+    assert.equal(request.method, 'POST')
+    assertBody(schema, body)
+    assert.ok(schema.required.includes('uom'))
+    assert.deepEqual(body, { serviceId: uuid, name: 'Pipe', uom: 'JOINT', sizes: [] })
+    assert.equal(schema.properties.sizes.minItems || 0, 0)
+  }
+})
+
+test('Create item preserves explicit null sizes alongside named sizes without sending prices', async () => {
+  const service = await loadService('itemService')
+  const request = service.create(createItemPayload({ serviceId: uuid, name: 'Pipe', uom: 'JOINT',
+    sizes: [{ size: null, priceServicePrimary: '100' }, { size: ' 2 inch ', id: uuid }] }))
+  const body = JSON.parse(request.body)
+  const schema = resolve(operation(request).requestBody.content['application/json'].schema)
+  assertBody(schema, body)
+  const sizeSchema = resolve(schema.properties.sizes.items)
+  assert.equal(sizeSchema.properties.size.nullable, true)
+  assert.deepEqual(body.sizes, [{ size: null }, { size: '2 inch' }])
+  for (const size of body.sizes) assertBody(sizeSchema, size)
+})
 
 test('Draft numbering and approval eligibility follow the quotation lifecycle', () => {
   assert.equal(quotationNumber({ no: null, numberYear: null, revision: 0 }), 'Draft')
