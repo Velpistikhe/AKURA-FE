@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  App, Button, DeleteOutlined, EditOutlined, Form, HistoryOutlined, Input, PriceInput,
+  App, Button, DeleteOutlined, EditOutlined, EyeOutlined, Form, HistoryOutlined, Input, PriceInput,
   Modal, PlusOutlined, Popconfirm, Space, Table, TableSearchFilter, Tag, Typography, useSaveConfirmation,
 } from '../../components/global'
 import { itemService } from '../../services/itemService'
@@ -35,16 +35,18 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
   const [busy, setBusy] = useState('')
   const [history, setHistory] = useState(null)
   const lock = useRef(false)
+  const readOnly = item?.isActive === false
+  const editorReadOnly = readOnly || editor?.size.isActive === false || editor?.size.item?.isActive === false || editor?.price?.isActive === false
   const itemId = item?.id
 
   useEffect(() => {
-    if (!editor) return
+    if (!editor || editorReadOnly) return
     // Reset explicitly on each open; preserve values during StrictMode's simulated unmount.
     editForm.resetFields()
     editForm.setFieldsValue(Object.fromEntries(
       priceFields.map(([key]) => [key, decimalPrice(editor.price?.[key])]),
     ))
-  }, [editor, editForm])
+  }, [editor, editorReadOnly, editForm])
 
   useEffect(() => {
     if (!itemId || !visible) return
@@ -81,7 +83,7 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
   }
 
   const mutate = async (key, action, success, after) => {
-    if (lock.current) return
+    if (readOnly || lock.current) return
     lock.current = true
     setBusy(key)
     try {
@@ -103,7 +105,7 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
   }
 
   const addSize = async (values) => {
-    if (lock.current || !await confirmSave('item size')) return
+    if (readOnly || lock.current || !await confirmSave('item size')) return
     await mutate('add', () => itemService.addSize({ itemId, itemVersion: item.version, size: values.size.trim() }),
       'Item size added successfully.', () => sizeForm.resetFields())
   }
@@ -125,14 +127,14 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
   }
 
   const save = async (values) => {
-    if (lock.current) return
+    if (editorReadOnly || lock.current) return
     const { size, price } = editor
     const hasMaintenance = Boolean(size.item?.service?.hasMaintenance ?? item.service?.hasMaintenance)
     if (!await confirmSave('standard price')) return
     await mutate('save', () => {
       const payload = Object.fromEntries(priceFields.map(([key], index) => [key, index > 1 && !hasMaintenance ? null : String(values[key])]))
       return price
-        ? itemService.updatePrice(size.id, { ...payload, version: price.version, ...(!price.isActive ? { isActive: true } : {}) })
+        ? itemService.updatePrice(size.id, { ...payload, version: price.version })
         : itemService.createPrice(size.id, payload)
     }, 'Standard price saved successfully.', () => setEditor(null))
   }
@@ -147,7 +149,7 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
     <Modal title={`Item Detail: ${item.name}`} visible={visible} width={1180} onCancel={onClose} afterClose={afterClose}
       closable={!busy} keyboard={!busy} mask={{ closable: !busy }}
       footer={<Space><Button disabled={Boolean(busy)} onClick={onClose}>Close</Button>
-        <Button variant="primary" icon={<EditOutlined />} disabled={Boolean(busy)} onClick={() => onUpdate(item)}>Update Item</Button>
+        {!readOnly && <Button variant="primary" icon={<EditOutlined />} disabled={Boolean(busy)} onClick={() => onUpdate(item)}>Update Item</Button>}
       </Space>} unmountOnClose>
       <div className="item-detail">
         <section className="company-view-section">
@@ -165,10 +167,10 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
           <div className="company-view-section-heading">
             <div><h3>Sizes and Standard Prices</h3><Typography.Text tone="secondary">Add sizes and manage their standard prices.</Typography.Text></div>
           </div>
-          <Form form={sizeForm} className="item-add-size-form" onFinish={addSize} disabled={Boolean(busy)} preserve={false} clearOnDestroy>
+          {!readOnly && <Form form={sizeForm} className="item-add-size-form" onFinish={addSize} disabled={Boolean(busy)} preserve={false} clearOnDestroy>
             <Form.Item name="size" rules={sizeRules}><Input maxLength={100} placeholder="Enter a new size" aria-label="New size" /></Form.Item>
             <Button variant="primary" icon={<PlusOutlined />} htmlType="submit" busy={busy === 'add'}>Add Size</Button>
-          </Form>
+          </Form>}
           {error && <div className="item-error" role="alert">{error} <Button onClick={() => setRefresh((value) => value + 1)}>Retry</Button></div>}
           <Table className="item-size-table" rowKey="id" busy={loading} dataSource={data.sizes}
             tableLayout="fixed" scroll={{ x: hasMaintenance ? 1280 : 940 }}
@@ -183,10 +185,11 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
                 <Tag color={value === 'AVAILABLE' ? 'success' : 'default'}>{value === 'AVAILABLE' ? 'Available' : 'Unavailable'}</Tag> },
               ...visiblePrices.map(([key, title]) => ({ title, dataIndex: key, width: 170, render: formatPrice })),
               { title: 'Actions', key: 'actions', width: 260, fixed: 'right', render: (_, row) => <Space wrap size={4}>
-                <Button variant="text" icon={<EditOutlined />} busy={busy === row.id} disabled={Boolean(busy)}
-                  title={row.priceStatus === 'AVAILABLE' ? 'Edit Price' : 'Set Price'}
-                  aria-label={`${row.priceStatus === 'AVAILABLE' ? 'Edit price' : 'Set price'} for size ${row.size}`}
+                <Button variant="text" icon={readOnly || row.isActive === false ? <EyeOutlined /> : <EditOutlined />} busy={busy === row.id} disabled={Boolean(busy)}
+                  title={readOnly || row.isActive === false ? 'View Price' : row.priceStatus === 'AVAILABLE' ? 'Edit Price' : 'Set Price'}
+                  aria-label={`${readOnly || row.isActive === false ? 'View price' : row.priceStatus === 'AVAILABLE' ? 'Edit price' : 'Set price'} for size ${row.size}`}
                   onClick={() => openEditor(row)} />
+                {!readOnly && row.isActive !== false && <>
                 <Button variant="text" icon={<HistoryOutlined />} title="Size History" aria-label={`History for size ${row.size}`}
                   onClick={() => setHistory({ id: row.id, name: row.size, scope: 'size' })} />
                 <Popconfirm title="Delete size?" description="This size and its standard and contract prices will be deactivated."
@@ -194,6 +197,7 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
                   onConfirm={() => mutate(row.id, () => itemService.removeSize(row.id, row.version), 'Item size deleted successfully.')}>
                   <Button variant="text" isDanger icon={<DeleteOutlined />} disabled={Boolean(busy)} aria-label={`Delete size ${row.size}`} />
                 </Popconfirm>
+                </>}
               </Space> },
             ]}
             onChange={(next, filters, sorter) => setQuery((current) => ({
@@ -214,22 +218,26 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
       footer={<Space wrap>
         {editor && <>
           <Button icon={<HistoryOutlined />} onClick={() => setHistory({ id: editor.size.id, name: editor.size.size, scope: 'price' })}>Price History</Button>
-          {editor.price?.isActive && <Popconfirm title="Delete standard price?" description="The size remains available. Its standard price will be deactivated."
+          {!editorReadOnly && editor.price?.isActive && <Popconfirm title="Delete standard price?" description="The size remains available. Its standard price will be deactivated."
             okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }} onConfirm={() =>
               mutate('save', () => itemService.removePrice(editor.size.id, editor.price.version), 'Standard price deleted successfully.', () => setEditor(null))}>
             <Button isDanger disabled={Boolean(busy)} icon={<DeleteOutlined />}>Delete Price</Button>
           </Popconfirm>}
         </>}
         <Button disabled={Boolean(busy)} onClick={() => setEditor(null)}>Cancel</Button>
-        <Button variant="primary" busy={busy === 'save'} onClick={() => editForm.submit()}>
-          {editor?.price && !editor.price.isActive ? 'Reactivate Price' : 'Save'}
-        </Button>
+        {!editorReadOnly && <Button variant="primary" busy={busy === 'save'} onClick={() => editForm.submit()}>
+          Save
+        </Button>}
       </Space>}>
-      {editor && <Form key={editor.size.id} form={editForm} layout="vertical"
+      {editor && editorReadOnly && <dl className="company-detail-grid">
+        {priceFields.filter((_, index) => index < 2 || editorHasMaintenance).map(([key, label]) =>
+          <div key={key}><dt>{label}</dt><dd>{formatPrice(editor.price?.[key])}</dd></div>)}
+      </dl>}
+      {editor && !editorReadOnly && <Form key={editor.size.id} form={editForm} layout="vertical"
         onFinish={save} disabled={Boolean(busy)}>
         {<>
           <p><Typography.Text tone="secondary">
-            {editor.price && !editor.price.isActive ? 'This standard price is inactive. Review the amounts to reactivate it.' : 'Enter the standard prices for this size. Zero is allowed.'}
+            Enter the standard prices for this size. Zero is allowed.
           </Typography.Text></p>
           <div className="item-price-grid">
             {priceFields.filter((_, index) => index < 2 || editorHasMaintenance).map(([key, label]) =>

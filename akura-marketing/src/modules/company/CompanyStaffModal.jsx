@@ -5,6 +5,7 @@ import {
   Button,
   DeleteOutlined,
   EditOutlined,
+  EyeOutlined,
   HistoryOutlined,
   Form,
   Input,
@@ -36,6 +37,8 @@ function StaffContainer({ embedded, children, ...props }) {
 }
 
 function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = false }) {
+  const readOnly = company?.revoked === true
+  const [viewStaff, setViewStaff] = useState(null)
   const { message } = App.useApp()
   const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = Form.useForm()
@@ -96,6 +99,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = fa
   }, [company?.id, visible])
 
   const openAdd = () => {
+    if (readOnly) return
     setEditingStaff(null)
     form.resetFields()
     form.setFieldsValue({ name: '', title: 'mr', telp: '', email: '' })
@@ -103,11 +107,13 @@ function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = fa
   }
 
   const openEdit = async (staff) => {
+    if (readOnly || staff.revoked === true) return
     setLoadingDetailId(staff.id)
     try {
       const response = await companyStaffService.get(staff.id)
       const detail = response.data?.staff || response.data
       if (!detail?.id) throw new Error('Invalid staff detail data.')
+      if (detail.revoked === true) { setViewStaff(detail); return }
 
       setEditingStaff(detail)
       form.resetFields()
@@ -126,6 +132,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = fa
   }
 
   const saveStaff = async () => {
+    if (readOnly || editingStaff?.revoked === true) return
     const currentValues = form.getFieldsValue(true)
     if (editingStaff
       && (currentValues.name || '').trim() === (editingStaff.name || '').trim()
@@ -174,6 +181,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = fa
   }
 
   const deleteStaff = async (staff) => {
+    if (readOnly || staff.revoked === true) return
     try {
       await companyStaffService.remove(staff.id, staff.version)
       message.success('Staff member deactivated successfully.')
@@ -247,6 +255,8 @@ function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = fa
       fixed: 'right',
       render: (_, staff) => (
         <Space>
+          <Button variant="text" icon={<EyeOutlined />} title="View Staff" onClick={() => setViewStaff(staff)} />
+          {!readOnly && staff.revoked !== true && <>
           <Button variant="text" icon={<HistoryOutlined />} title="View Staff History" onClick={() => setHistoryStaff(staff)} />
           <Button
             variant="text"
@@ -264,6 +274,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = fa
           >
             <Button isDanger variant="text" icon={<DeleteOutlined />} title="Deactivate Staff" />
           </Popconfirm>
+          </>}
         </Space>
       ),
     },
@@ -283,7 +294,7 @@ function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = fa
         unmountOnClose
       >
         <div className="staff-modal-action">
-          <Button variant="primary" icon={<PlusOutlined />} onClick={openAdd}>Add Staff</Button>
+          {!readOnly && <Button variant="primary" icon={<PlusOutlined />} onClick={openAdd}>Add Staff</Button>}
         </div>
         <Table
           className="company-staff-table"
@@ -303,6 +314,12 @@ function CompanyStaffModal({ company, visible, onClose, onChanged, embedded = fa
           }}
         />
       </StaffContainer>
+
+      <Modal title="Staff Details" visible={Boolean(viewStaff)} onCancel={() => setViewStaff(null)} footer={<Button onClick={() => setViewStaff(null)}>Close</Button>} unmountOnClose>
+        {viewStaff && <dl className="company-detail-grid">
+          {Object.entries({ Name: viewStaff.name, Title: viewStaff.title, Phone: viewStaff.telp, Email: viewStaff.email }).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || '-'}</dd></div>)}
+        </dl>}
+      </Modal>
 
       {visible && historyStaff && <CompanyHistoryModal record={historyStaff} staff onClose={() => setHistoryStaff(null)} />}
 

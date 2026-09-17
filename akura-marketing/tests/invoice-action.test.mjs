@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFile } from 'node:fs/promises'
 import * as marketing from '../src/modules/quotation/invoiceActionModel.js'
 import * as finance from '../../akura-finance/src/modules/quotation/invoiceActionModel.js'
 
@@ -13,10 +14,13 @@ for (const [name, model] of Object.entries({ marketing, finance })) {
     assert.equal(model.canCreateInvoice({ section: 'FINANCE' }, { ...quotation, invoiceStatus: 'DRAFT' }), false)
     assert.equal(model.canCreateInvoice(undefined, quotation), false)
   })
-  test(`${name}: invoice body matches local Swagger and uses refreshed quotation version`, async () => {
-    const response = await fetch('http://localhost:5000/api-docs.json')
-    assert.equal(response.status, 200)
-    const swagger = await response.json()
+  test(`${name}: invoice body matches Swagger and uses refreshed quotation version`, async () => {
+    const swagger = process.env.SWAGGER_FILE
+      ? JSON.parse(await readFile(process.env.SWAGGER_FILE, 'utf8'))
+      : await fetch(process.env.SWAGGER_URL || 'http://localhost:5000/api-docs.json').then((response) => {
+        assert.equal(response.status, 200)
+        return response.json()
+      })
     const schema = swagger.components.schemas.InvoiceCreate
     const body = model.invoicePayload({ number: ' INV-001 ', title: ' Inspection ', date: '2026-09-14', tax: 99 }, quotation)
     for (const key of schema.required) assert.notEqual(body[key], undefined)

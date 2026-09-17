@@ -4,7 +4,7 @@ import { App, Button, Popconfirm, Table, Typography, UploadOutlined } from '../.
 import { contractService } from '../../services/contractService'
 import { canApproveContract } from './contractAccess'
 
-export default function PendingContracts({ companyId, currentUser, revision, onChanged, onUpload }) {
+export default function PendingContracts({ companyId, currentUser, revision, onChanged, onUpload, readOnly = false }) {
   const { message } = App.useApp()
   const [page, setPage] = useState(1)
   const [retry, setRetry] = useState(0)
@@ -23,7 +23,7 @@ export default function PendingContracts({ companyId, currentUser, revision, onC
     return () => { active = false }
   }, [companyId, page, retry, revision])
   const approve = async (record) => {
-    if (lock.current || !canApproveContract(currentUser, record)) return
+    if (readOnly || lock.current || !canApproveContract(currentUser, record)) return
     lock.current = true; setBusy(record.id)
     try {
       const { data: latest } = await contractService.get(record.id)
@@ -42,8 +42,8 @@ export default function PendingContracts({ companyId, currentUser, revision, onC
       { title: 'Contract Number', dataIndex: 'contractNumber' },
       { title: 'Effective From', dataIndex: 'effectiveFrom' }, { title: 'Effective Until', dataIndex: 'effectiveUntil' },
       { title: 'Actions', render: (_, record) => <>
-        <Button variant="text" icon={<UploadOutlined />} title="Upload Price List" disabled={Boolean(busy)} onClick={() => onUpload(record)} />
-        {canApproveContract(currentUser, record) && <Popconfirm title="Approve contract?" description="The contract will become ACTIVE." onConfirm={() => approve(record)}>
+        {!readOnly && record.isActive !== false && <Button variant="text" icon={<UploadOutlined />} title="Upload Price List" disabled={Boolean(busy)} onClick={() => onUpload(record)} />}
+        {!readOnly && canApproveContract(currentUser, record) && <Popconfirm title="Approve contract?" description="The contract will become ACTIVE." onConfirm={() => approve(record)}>
           <Button variant="text" icon={<CheckOutlined />} title="Approve Contract" busy={busy === record.id} disabled={Boolean(busy)} />
         </Popconfirm>}
       </> },

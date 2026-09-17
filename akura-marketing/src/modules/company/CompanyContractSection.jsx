@@ -10,7 +10,8 @@ function formatContractDate(value) {
 }
 
 export default function CompanyContractSection({ company, currentUser, onChanged, historyOnly = false }) {
-  const canAdminister = canAdministerContracts(currentUser)
+  const readOnly = company.revoked === true
+  const canAdminister = !readOnly && canAdministerContracts(currentUser)
   const [pendingRevision, setPendingRevision] = useState(0)
   const { message } = App.useApp()
   const [form] = Form.useForm()
@@ -72,13 +73,14 @@ export default function CompanyContractSection({ company, currentUser, onChanged
   }
 
   const openCreate = () => {
+    if (readOnly) return
     form.resetFields()
     form.setFieldsValue({ contractNumber: '', contractDate: '', effectiveFrom: '', effectiveUntil: '' })
     setCreateOpen(true)
   }
 
   const openUpdate = (contract) => {
-    if (!canAdminister) return
+    if (!canAdminister || contract.isActive === false) return
     form.resetFields()
     form.setFieldsValue({
       contractNumber: contract.contractNumber,
@@ -90,6 +92,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
   }
 
   const createContract = async () => {
+    if (readOnly) return
     const values = await form.validateFields()
     const effectiveFrom = new Date(values.effectiveFrom)
     const effectiveUntil = new Date(values.effectiveUntil)
@@ -118,7 +121,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
   }
 
   const updateContract = async () => {
-    if (!canAdminister) return
+    if (!canAdminister || editingContract?.isActive === false) return
     const values = await form.validateFields()
     if (new Date(values.effectiveUntil) <= new Date(values.effectiveFrom)) {
       form.setFields([{ name: 'effectiveUntil', errors: ['End date must be after the start date.'] }])
@@ -145,7 +148,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
   }
 
   const terminateContract = async () => {
-    if (!canAdminister) return
+    if (!canAdminister || terminationContract?.isActive === false) return
     const { terminatedAt } = await terminationForm.validateFields()
     const contract = terminationContract
     if (terminatedAt <= formatContractDate(contract.effectiveFrom)) {
@@ -213,7 +216,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
     <div className="company-view-section-heading">
       <div><h3>{activeContract ? 'Active Contract' : 'Contracts'}</h3>{activeContract && <Typography.Text tone="secondary">The current active contract returned by the company-detail endpoint.</Typography.Text>}</div>
       <div className="company-contract-actions">
-        <Button variant="primary" onClick={openCreate}>Add Contract</Button>
+        {!readOnly && <Button variant="primary" onClick={openCreate}>Add Contract</Button>}
       </div>
     </div>
     {activeContract ? <div className="company-contract-list">
@@ -225,9 +228,9 @@ export default function CompanyContractSection({ company, currentUser, onChanged
         <div><span>Effective until</span><strong>{formatContractDate(activeContract.effectiveUntil)}</strong></div>
         <div className="company-contract-row-actions">
           {activeContract.hasList && <Button variant="text" icon={<EyeOutlined />} title="View Price List" onClick={() => { setPricePage(1); setPriceListContract(activeContract) }} />}
-          <Button variant="text" icon={<UploadOutlined />} title="Upload Price List" onClick={() => setUploadContract(activeContract)} />
-          {canAdminister && <Button variant="text" icon={<EditOutlined />} title="Update Contract" onClick={() => openUpdate(activeContract)} />}
-          {canAdminister && <Button variant="text" isDanger icon={<DeleteOutlined />} title="Terminate Contract" onClick={() => { terminationForm.resetFields(); setTerminationContract(activeContract) }} />}
+          {!readOnly && activeContract.isActive !== false && <Button variant="text" icon={<UploadOutlined />} title="Upload Price List" onClick={() => setUploadContract(activeContract)} />}
+          {canAdminister && activeContract.isActive !== false && <Button variant="text" icon={<EditOutlined />} title="Update Contract" onClick={() => openUpdate(activeContract)} />}
+          {canAdminister && activeContract.isActive !== false && <Button variant="text" isDanger icon={<DeleteOutlined />} title="Terminate Contract" onClick={() => { terminationForm.resetFields(); setTerminationContract(activeContract) }} />}
         </div>
       </div>
     </div> : null}
@@ -289,8 +292,8 @@ export default function CompanyContractSection({ company, currentUser, onChanged
             render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Tag> },
         ]} />
     </Modal>
-    <PendingContracts companyId={company.id} currentUser={currentUser} revision={pendingRevision} onChanged={refreshCompanyDetail} onUpload={setUploadContract} />
-    {uploadContract && <CompanyContractUpload company={company} contract={uploadContract} onClose={() => setUploadContract(null)} onChanged={refreshCompanyDetail} />}
+    <PendingContracts readOnly={readOnly} companyId={company.id} currentUser={currentUser} revision={pendingRevision} onChanged={refreshCompanyDetail} onUpload={setUploadContract} />
+    {!readOnly && uploadContract && uploadContract.isActive !== false && <CompanyContractUpload company={company} contract={uploadContract} onClose={() => setUploadContract(null)} onChanged={refreshCompanyDetail} />}
     </section>
   </>
 }

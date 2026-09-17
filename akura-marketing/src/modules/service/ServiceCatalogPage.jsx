@@ -147,8 +147,10 @@ function ServiceCatalogPage({
   }
 
   const openEdit = async (record) => {
+    if (record.isActive === false) return
     const detail = await getDetail(record)
     if (!detail) return
+    if (detail.isActive === false) { setDetailRecord(detail); return }
 
     setEditingRecord(detail)
     setDetailRecord(null)
@@ -162,6 +164,7 @@ function ServiceCatalogPage({
   }
 
   const saveScope = async (values) => {
+    if (detailRecord?.isActive === false) return
     if (!await confirmSave('inspection scope')) return
     setScopeSaving(true)
     try {
@@ -177,6 +180,7 @@ function ServiceCatalogPage({
   }
 
   const deleteScope = async (scope) => {
+    if (detailRecord?.isActive === false || scope.isActive === false) return
     setDeletingScopeId(scope.id)
     try {
       await service.removeInspectionScope(detailRecord.id, scope.id)
@@ -190,6 +194,7 @@ function ServiceCatalogPage({
   }
 
   const saveMaintenanceScope = async (values) => {
+    if (detailRecord?.isActive === false) return
     if (!await confirmSave('maintenance scope')) return
     setMaintenanceScopeSaving(true)
     try {
@@ -205,6 +210,7 @@ function ServiceCatalogPage({
   }
 
   const deleteMaintenanceScope = async (scope) => {
+    if (detailRecord?.isActive === false || scope.isActive === false) return
     setDeletingMaintenanceScopeId(scope.id)
     try {
       await service.removeMaintenanceScope(detailRecord.id, scope.id)
@@ -218,6 +224,7 @@ function ServiceCatalogPage({
   }
 
   const saveRecord = async () => {
+    if (editingRecord?.isActive === false) return
     const currentValues = form.getFieldsValue(true)
     if (editingRecord
       && (currentValues.name || '').trim() === editingRecord.name.trim()
@@ -296,6 +303,7 @@ function ServiceCatalogPage({
   }
 
   const deleteRecord = async (record) => {
+    if (record.isActive === false) return
     try {
       await service.remove(record.id, record.version)
       message.success(`${entityLabel} deleted successfully.`)
@@ -400,7 +408,7 @@ function ServiceCatalogPage({
             title={`View ${entityLabel}`}
             aria-label={`View ${record.name}`}
           />
-          {canDelete && (
+          {canDelete && record.isActive !== false && (
             <Popconfirm title={`Delete ${entityLabelLower}?`} okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }} onConfirm={() => deleteRecord(record)}>
               <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Delete ${record.name}`} />
             </Popconfirm>
@@ -533,14 +541,14 @@ function ServiceCatalogPage({
         footer={detailRecord ? (
           <Space>
           <Button onClick={() => setDetailRecord(null)}>Close</Button>
-          <Button
+          {detailRecord.isActive !== false && <Button
             variant="primary"
             icon={<EditOutlined />}
             busy={loadingDetailId === detailRecord.id}
             onClick={() => openEdit(detailRecord)}
           >
             Update {entityLabel}
-          </Button>
+          </Button>}
           </Space>
         ) : null}
         onCancel={() => setDetailRecord(null)}
@@ -578,7 +586,7 @@ function ServiceCatalogPage({
                         {detailRecord.maintenanceScopes.map((scope) => (
                           <div className="catalog-detail-scope" key={scope.id}>
                             <Typography.Text title={scope.scope}>{scope.scope}</Typography.Text>
-                            {canDeleteScope && detailRecord.isActive && (
+                            {canDeleteScope && detailRecord.isActive && scope.isActive !== false && (
                               <Popconfirm
                                 title="Delete maintenance scope?"
                                 description="The scope will be deactivated for this service."
@@ -623,7 +631,7 @@ function ServiceCatalogPage({
                     {(detailRecord.inspectionScopes || []).map((scope) => (
                       <div className="catalog-detail-scope" key={scope.id}>
                         <Typography.Text title={scope.inspectionScope}>{scope.inspectionScope}</Typography.Text>
-                        {canDeleteScope && detailRecord.isActive && (
+                        {canDeleteScope && detailRecord.isActive && scope.isActive !== false && (
                           <Popconfirm
                             title="Delete inspection scope?"
                             description="The scope will be deactivated for this service."

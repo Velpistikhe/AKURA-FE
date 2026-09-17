@@ -111,11 +111,13 @@ function CompanyPage({ currentUser }) {
   }
 
   const openEdit = async (company) => {
+    if (company.revoked === true) return
     setLoadingDetailId(company.id)
     try {
       const response = await companyService.get(company.id)
       const detail = response.data?.company || response.data
       if (!detail?.id) throw new Error('Invalid company detail data.')
+      if (detail.revoked === true) { setViewCompany(detail); return }
 
       setEditingCompany(detail)
       form.resetFields()
@@ -135,6 +137,7 @@ function CompanyPage({ currentUser }) {
   }
 
   const saveCompany = async () => {
+    if (editingCompany?.revoked === true) return
     const currentValues = form.getFieldsValue(true)
     if (editingCompany
       && (currentValues.name || '').trim() === (editingCompany.name || '').trim()
@@ -185,6 +188,7 @@ function CompanyPage({ currentUser }) {
   }
 
   const deleteCompany = async (company) => {
+    if (company.revoked === true) return
     try {
       await companyService.remove(company.id, company.version)
       setViewCompany((current) => current?.id === company.id ? null : current)
@@ -269,7 +273,7 @@ function CompanyPage({ currentUser }) {
       fixed: 'right',
       render: (_, company) => (
         <Space>
-          <Button variant="text" icon={<HistoryOutlined />} title="View Company History" onClick={() => setHistoryCompany(company)} />
+          {company.revoked !== true && <Button variant="text" icon={<HistoryOutlined />} title="View Company History" onClick={() => setHistoryCompany(company)} />}
           <Button
             variant="text"
             icon={<EyeOutlined />}
@@ -277,7 +281,7 @@ function CompanyPage({ currentUser }) {
             onClick={() => openView(company)}
             title="View Company"
           />
-          <Popconfirm
+          {company.revoked !== true && <Popconfirm
             title="Deactivate company?"
             description="The company and all its active staff will be deactivated."
             okText="Deactivate"
@@ -286,7 +290,7 @@ function CompanyPage({ currentUser }) {
             onConfirm={() => deleteCompany(company)}
           >
             <Button isDanger variant="text" icon={<DeleteOutlined />} title="Deactivate Company" />
-          </Popconfirm>
+          </Popconfirm>}
         </Space>
       ),
     },

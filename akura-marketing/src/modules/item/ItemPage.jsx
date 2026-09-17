@@ -95,12 +95,13 @@ export default function ItemPage() {
   }
 
   const openEditor = (item = null) => {
+    if (item?.isActive === false) return
     if (item) setDetailOpen(false)
     setEditor({ item })
   }
 
   const save = async (values) => {
-    if (mutationRef.current) return
+    if (mutationRef.current || editor?.item?.isActive === false) return
     const item = editor.item
     const name = values.name.trim()
     if (item && labelKey(name) === labelKey(item.name)) {
@@ -135,7 +136,7 @@ export default function ItemPage() {
   }
 
   const remove = async (item) => {
-    if (mutationRef.current) return
+    if (mutationRef.current || item.isActive === false) return
     mutationRef.current = true
     setDeletingId(item.id)
     try {
@@ -196,10 +197,10 @@ export default function ItemPage() {
           { title: 'Actions', key: 'actions', width: 150, fixed: 'right', render: (_, item) => <Space>
             <Button variant="text" icon={<EyeOutlined />} busy={loadingDetailId === item.id} title="View Item"
               aria-label={`View ${item.name}`} onClick={() => openDetail(item)} />
-            <Popconfirm title="Delete item?" description="The item, its sizes and their prices will be deactivated."
+            {item.isActive !== false && <Popconfirm title="Delete item?" description="The item, its sizes and their prices will be deactivated."
               okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }} onConfirm={() => remove(item)}>
               <Button variant="text" isDanger icon={<DeleteOutlined />} busy={deletingId === item.id} aria-label={`Delete ${item.name}`} />
-            </Popconfirm>
+            </Popconfirm>}
           </Space> },
         ]}
         onChange={(next, filters, sorter) => setQuery((current) => ({

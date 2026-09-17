@@ -22,7 +22,7 @@ export default function CompanyView({ company, currentUser, onClose, onEdit, onC
     closable={!editing} mask={{ closable: !editing }} keyboard={!editing}>
     <section className="company-view-section">
       <div className="company-view-heading"><h3>Company Profile</h3>
-        <Button icon={<EditOutlined />} busy={editing} onClick={() => onEdit(company)}>Edit Company</Button>
+        {company.revoked !== true && <Button icon={<EditOutlined />} busy={editing} onClick={() => onEdit(company)}>Edit Company</Button>}
       </div>
       <dl className="company-detail-grid">
         {Object.entries({ Name: company.name, Type: company.type, Address: company.address, NPWP: company.npwp,
