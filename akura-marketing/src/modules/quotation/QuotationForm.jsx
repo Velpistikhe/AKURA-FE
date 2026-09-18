@@ -91,12 +91,12 @@ export default function QuotationForm({ form, record, saving, onFinish, onLoadin
               locale={{ emptyText: 'No quotation items yet. Click Add Item to select an item size.' }}
               columns={[
                 { title: 'No.', width: 60, render: (_, field) => field.name + 1 },
-                { title: 'Service', width: 190, render: (_, field) => form.getFieldValue(['items', field.name, 'serviceName']) || '-' },
+                { title: 'Service', width: 190, render: (_, field) => form.getFieldValue(['items', field.name, 'serviceName']) || 'Standalone' },
                 { title: 'Item', width: 230, render: (_, { name, key: _key, ...rest }) => <div className="quotation-selected-item">
                   {['id', 'itemSizeId', 'itemName', 'serviceName', 'serviceType', 'size', 'priceInspection', 'priceMaintenance'].map((property) => <Form.Item {...rest} key={property} name={[name, property]} hidden><Input /></Form.Item>)}
                   <Typography.Text strong>{form.getFieldValue(['items', name, 'itemName']) || '-'}</Typography.Text>
                 </div> },
-                { title: 'Size', width: 120, render: (_, field) => form.getFieldValue(['items', field.name, 'size']) || '-' },
+                { title: 'Size', width: 120, render: (_, field) => form.getFieldValue(['items', field.name, 'size']) ?? 'Without size' },
                 ...[['quantityInspection', 'Inspection Quantity', 'priceInspection'], ['quantityMaintenance', 'Maintenance Quantity', 'priceMaintenance']].map(([property, label, price]) => ({
                   title: label, width: 180, render: (_, { name, key: _key, ...rest }) => <Form.Item {...rest} name={[name, property]} rules={[
                     { required: true, message: 'Enter quantity.' },

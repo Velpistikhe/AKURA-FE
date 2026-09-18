@@ -2,6 +2,20 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { decimalPrice, formatPriceInput, parsePriceInput } from '../src/components/global/priceFormat.js'
 import { canAdministerContracts, canApproveContract } from '../src/modules/company/contractAccess.js'
+import { activeScopes, canViewInactiveCatalog } from '../src/modules/catalogAccess.js'
+
+test('Inactive catalog visibility is reserved for ADMIN, including when APP_MANAGER can approve', () => {
+  assert.equal(canViewInactiveCatalog({ role: 'ADMIN' }), true)
+  for (const user of [undefined, { role: 'APP_MANAGER' }, { role: 'USER', section: 'MARKETING' }]) {
+    assert.equal(canViewInactiveCatalog(user), false)
+  }
+})
+
+test('Scope lists use revoked rather than the catalog isActive flag', () => {
+  const scopes = [{ id: 'active', revoked: false }, { id: 'deleted', revoked: true, isActive: true }]
+  assert.deepEqual(activeScopes(scopes), [scopes[0]])
+  assert.deepEqual(activeScopes(), [])
+})
 
 test('Catalog price input preserves fractional and large decimal strings without rounding', () => {
   for (const value of ['0', '0.01', '100.25', '9999999999999999.99']) {

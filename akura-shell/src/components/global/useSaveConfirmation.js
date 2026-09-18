@@ -1,42 +1,59 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { createElement, useCallback, useEffect, useRef, useState } from 'react'
 import { Modal } from './AntdComponents'
 
 export function useSaveConfirmation() {
-  const [modal, contextHolder] = Modal.useModal()
+  const [dialog, setDialog] = useState(null)
   const pendingRef = useRef(null)
+  const timerRef = useRef(null)
 
   useEffect(() => () => {
+    clearTimeout(timerRef.current)
     const pending = pendingRef.current
-    if (pending) {
-      pending.finish(false)
-      pending.dialog.destroy()
-    }
+    pendingRef.current = null
+    pending?.resolve(false)
   }, [])
 
-  const confirmSave = useCallback((entity = 'data') => {
-    // Ignore repeated Save clicks while a confirmation is already open.
+  const complete = useCallback(() => {
+    clearTimeout(timerRef.current)
+    const pending = pendingRef.current
+    if (!pending) return
+    pendingRef.current = null
+    setDialog(null)
+    pending.resolve(pending.confirmed === true)
+  }, [])
+
+  const finish = useCallback((confirmed) => {
+    const pending = pendingRef.current
+    if (!pending || pending.closing) return
+    pending.closing = true
+    pending.confirmed = confirmed
+    setDialog(current => ({ ...current, open: false }))
+    // Allow the 180ms exit motion, but always remove the owned portal if a
+    // browser animation event is lost. Save starts only after cleanup.
+    timerRef.current = setTimeout(complete, 500)
+  }, [complete])
+
+  const confirmSave = useCallback((name = 'data') => {
     if (pendingRef.current) return Promise.resolve(false)
     return new Promise((resolve) => {
-      const pending = {
-        finish(confirmed) {
-          if (pendingRef.current !== pending) return
-          pendingRef.current = null
-          resolve(confirmed)
-        },
-      }
-      pendingRef.current = pending
-      pending.dialog = modal.confirm({
-        title: 'Confirm save',
-        content: `Are you sure you want to save this ${entity}?`,
-        okText: 'Save',
-        cancelText: 'Cancel',
-        focusable: { autoFocusButton: 'cancel' },
-        onOk: () => pending.finish(true),
-        onCancel: () => pending.finish(false),
-        afterClose: () => pending.finish(false),
-      })
+      pendingRef.current = { resolve }
+      setDialog({ name, open: true })
     })
-  }, [modal])
+  }, [])
 
-  return [confirmSave, contextHolder]
+  const confirmation = dialog ? createElement(Modal, {
+    open: dialog.open,
+    className: 'akura-save-confirmation',
+    title: 'Confirm save',
+    okText: 'Save',
+    cancelText: 'Cancel',
+    mask: { closable: false },
+    focusable: { autoFocusButton: 'cancel' },
+    destroyOnHidden: true,
+    onOk: () => finish(true),
+    onCancel: () => finish(false),
+    afterClose: complete,
+  }, 'Are you sure you want to save this ' + dialog.name + '?') : null
+
+  return [confirmSave, confirmation]
 }

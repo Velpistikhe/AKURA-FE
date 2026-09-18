@@ -1,13 +1,17 @@
-/* Keep the dialog and its backdrop visible until the close motion completes. */
-@media (prefers-reduced-motion: no-preference) {
-  .ant-modal-root .ant-modal.ant-zoom-leave {
-    animation: akura-modal-close 180ms ease-in both !important;
-    pointer-events: none;
-  }
+/* Ant Design attaches motion-end listeners in the active phase. Keep the
+   animation paused until then, including when rendering takes longer than 180ms. */
+.ant-modal-root .ant-modal.ant-zoom-leave {
+  animation: akura-modal-close 180ms ease-in both paused !important;
+  pointer-events: none;
+}
 
-  .ant-modal-root .ant-modal-mask.ant-fade-leave {
-    animation: akura-modal-mask-close 180ms ease-in both !important;
-  }
+.ant-modal-root .ant-modal-mask.ant-fade-leave {
+  animation: akura-modal-mask-close 180ms ease-in both paused !important;
+}
+
+.ant-modal-root .ant-modal.ant-zoom-leave.ant-zoom-leave-active,
+.ant-modal-root .ant-modal-mask.ant-fade-leave.ant-fade-leave-active {
+  animation-play-state: running !important;
 }
 
 @keyframes akura-modal-close {
@@ -18,4 +22,12 @@
 @keyframes akura-modal-mask-close {
   from { opacity: 1; }
   to { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Preserve animationend so the dialog releases its wrapper and scroll lock. */
+  .ant-modal-root .ant-modal.ant-zoom-leave,
+  .ant-modal-root .ant-modal-mask.ant-fade-leave {
+    animation-duration: 0.01ms !important;
+  }
 }

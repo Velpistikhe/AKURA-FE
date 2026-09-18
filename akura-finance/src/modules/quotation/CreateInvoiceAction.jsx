@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
-import { App, Alert, Button, Form, Input, Modal, Popconfirm, Tooltip } from 'antd'
+import { App, Alert, Button, Form, Input, Popconfirm, Tooltip } from 'antd'
+import { Modal } from '../../components/FinanceControls'
 import { FileAddOutlined } from '@ant-design/icons'
 import { apiRequest } from '../../services/api'
 import { canCreateInvoice, invoicePayload } from './invoiceActionModel'

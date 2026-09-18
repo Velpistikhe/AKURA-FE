@@ -6,12 +6,15 @@ import QuotationSkeleton from './QuotationSkeleton'
 import CreateInvoiceAction from './CreateInvoiceAction'
 import { loadQuotationPdf } from './quotationPdfPreview'
 import { canManageQuotations } from './quotationAccess'
+import { canViewInactiveCatalog } from '../catalogAccess'
 import { TEXT_FIELDS, canApproveQuotation, dateValue, displayEnum, money, quotationChanges, quotationNumber } from './quotationModel'
 import '../company/CompanyPage.css'
 import './QuotationPage.css'
 
 export default function QuotationPage({ onCreate, currentUser }) {
   const readOnly = !canManageQuotations(currentUser)
+  const canViewInactive = canViewInactiveCatalog(currentUser)
+  const [activeFilter, setActiveFilter] = useState('')
   const { message } = App.useApp()
   const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = Form.useForm()
@@ -56,7 +59,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
     setLoading(true)
     setLoadError(false)
     try {
-      const response = await quotationService.list({ page, limit: pageSize })
+      const response = await quotationService.list({ page, limit: pageSize, isActive: canViewInactive ? activeFilter : 'true' })
       if (request !== requestRef.current) return
       setRecords(response.data?.quotations || [])
       setTotal(response.data?.pagination?.total || 0)
@@ -65,7 +68,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
     } finally {
       if (request === requestRef.current) setLoading(false)
     }
-  }, [page, pageSize, message])
+  }, [page, pageSize, message, canViewInactive, activeFilter])
   useEffect(() => { load(); return () => { requestRef.current++ } }, [load])
 
   const view = async (record, edit = false) => {
@@ -164,10 +167,10 @@ export default function QuotationPage({ onCreate, currentUser }) {
 
   const itemColumns = [
     { title: 'State', dataIndex: 'isActive', width: 110, render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag> },
-    { title: 'Service', dataIndex: 'serviceName', width: 240 },
-    { title: 'Type', dataIndex: 'serviceType', width: 100 },
+    { title: 'Service', dataIndex: 'serviceName', width: 240, render: (value) => value || 'Standalone' },
+    { title: 'Type', dataIndex: 'serviceType', width: 100, render: (value) => value || '-' },
     { title: 'Item', dataIndex: 'itemName', width: 220 },
-    { title: 'Size', dataIndex: 'size', width: 120 },
+    { title: 'Size', dataIndex: 'size', width: 120, render: (value) => value ?? 'Without size' },
     { title: 'Inspection Quantity', dataIndex: 'quantityInspection', width: 160 },
     { title: 'Maintenance Quantity', dataIndex: 'quantityMaintenance', width: 170 },
     { title: 'Inspection Price', dataIndex: 'priceInspection', width: 150, render: money },
@@ -182,7 +185,9 @@ export default function QuotationPage({ onCreate, currentUser }) {
     { title: 'Customer Contact', dataIndex: 'customerSnapshot', width: 200 },
     { title: 'Status', dataIndex: 'status', width: 200, render: (value) => <Tag>{displayEnum(value)}</Tag> },
     { title: 'Invoice Status', dataIndex: 'invoiceStatus', width: 170, render: (value) => <Tag>{displayEnum(value)}</Tag> },
-    { title: 'State', dataIndex: 'isActive', width: 110, render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag> },
+    { title: 'State', dataIndex: 'isActive', width: 110, render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag>,
+      filters: canViewInactive ? [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }] : undefined,
+      filterMultiple: false, filteredValue: canViewInactive && activeFilter ? [activeFilter] : null },
     { title: 'Total', dataIndex: 'total', width: 150, render: money },
     { title: 'Actions', key: 'actions', width: 140, fixed: 'right', render: (_, record) => <Space>
       <Button variant="text" icon={<EyeOutlined />} title="View Quotation" aria-label={`View quotation ${quotationNumber(record)}`} busy={openingId === record.id} onClick={() => view(record)} />
@@ -216,6 +221,8 @@ export default function QuotationPage({ onCreate, currentUser }) {
     </div> : <Table className="quotation-content-ready" rowKey="id" columns={columns} dataSource={records} scroll={{ x: 1260 }} pagination={{
       current: page, pageSize, total, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100], showTotal: (count) => `${count} quotations`,
       onChange: (next, size) => { setPage(size !== pageSize ? 1 : next); setPageSize(size) },
+    }} onChange={(_, filters, _sorter, extra) => {
+      if (extra.action === 'filter') { setActiveFilter(filters.isActive?.[0] || ''); setPage(1) }
     }} />}</Card>
     <Modal title={editing ? `Edit Quotation ${quotationNumber(editing)}` : 'Edit Quotation'} visible={!readOnly && open} width={1080}
       okText="Save" cancelText="Cancel" busy={saving} onOk={() => form.submit()} okButtonProps={{ disabled: stale || editingLoading }}

@@ -57,7 +57,7 @@ export function quotationFormValues(record) {
       quantityInspection: decimal(item.quantityInspection), quantityMaintenance: decimal(item.quantityMaintenance ?? '0'),
       priceInspection: item.priceInspection, priceMaintenance: item.priceMaintenance,
       itemName: item.itemName, serviceName: item.serviceName, serviceType: item.serviceType, size: item.size,
-      catalogLabel: `${item.size} - ${item.itemName} / ${item.serviceName}`,
+      catalogLabel: `${item.size ?? 'Without size'} - ${item.itemName} / ${item.serviceName || 'Standalone'}`,
     })),
   } : { inquiryMethod: 'EMAIL', items: [] }
 }

@@ -18,6 +18,7 @@ export default function ItemPage() {
   const { message } = App.useApp()
   const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = Form.useForm()
+  const serviceId = Form.useWatch('serviceId', form)
   const sizeValues = Form.useWatch('sizes', form) || []
   const [items, setItems] = useState([])
   const [services, setServices] = useState([])
@@ -172,7 +173,7 @@ export default function ItemPage() {
     title, key, dataIndex: key, width: 280, sorter: true,
     sortOrder: query.sortBy === key ? (query.sortOrder === 'asc' ? 'ascend' : 'descend') : null,
     filteredValue: query[key] ? [query[key]] : null,
-    filterDropdown: (props) => <TableSearchFilter {...props} placeholder={`Search ${title.toLowerCase()}`}
+    filterDropdown: (props) => <TableSearchFilter {...props} placeholder={`Search ${title.toLowerCase()}`} maxLength={200}
       onSearch={(value) => setQuery((current) => ({ ...current, [key]: value.trim(), page: 1 }))} />,
     render,
   })
@@ -205,7 +206,7 @@ export default function ItemPage() {
         ]}
         onChange={(next, filters, sorter) => setQuery((current) => ({
           ...current, page: next.pageSize !== current.limit ? 1 : next.current || 1, limit: next.pageSize,
-          name: filters.name?.[0] || '', serviceName: filters.serviceName?.[0] || '',
+          name: (filters.name?.[0] || '').trim(), serviceName: (filters.serviceName?.[0] || '').trim(),
           sortBy: sorter.order ? sorter.columnKey : '', sortOrder: sorter.order ? (sorter.order === 'ascend' ? 'asc' : 'desc') : '',
         }))}
         pagination={{ current: query.page, pageSize: query.limit, total: pagination.total, showSizeChanger: true,
@@ -215,11 +216,11 @@ export default function ItemPage() {
       busy={saving} okText={editor?.item ? 'Save' : 'Add'} onOk={() => form.submit()} onCancel={() => setEditor(null)}
       cancelButtonProps={{ disabled: saving }} closable={!saving} keyboard={!saving} mask={{ closable: !saving }} unmountOnClose>
       {editor && <Form key={editor.item?.id || 'create'} form={form} layout="vertical" preserve={false} clearOnDestroy
-        initialValues={{ name: editor.item?.name || '', uom: editor.item?.uom || '', sizes: [] }} onFinish={save} disabled={saving}>
+        initialValues={{ name: editor.item?.name || '', uom: editor.item?.uom || '', sizes: [], inspectionScopes: [], maintenanceScopes: [] }} onFinish={save} disabled={saving}>
         {!editor.item && <>
           {servicesError && <div role="alert" className="item-error">{servicesError} <Button onClick={loadServices}>Retry</Button></div>}
-          <Form.Item name="serviceId" label="Service" rules={[{ required: true, message: 'Service is required.' }]}>
-            <Select placeholder="Select a service" showSearch optionFilterProp="label" loading={servicesLoading}
+          <Form.Item name="serviceId" label="Service (optional)" extra="Leave empty to create a standalone item with its own scopes.">
+            <Select placeholder="Select a service (optional)" allowClear showSearch optionFilterProp="label" loading={servicesLoading}
               options={services.map((service) => ({ value: service.id, label: service.name }))} />
           </Form.Item>
         </>}
@@ -229,8 +230,31 @@ export default function ItemPage() {
         <Form.Item name="uom" label="UOM (Unit of Measure)" rules={[{ required: true, whitespace: true, message: 'UOM is required.' }, { max: 50 }]}>
           <Input maxLength={50} placeholder="e.g. JOINT" />
         </Form.Item>
+        {!editor.item && !serviceId && [
+          ['inspectionScopes', 'Inspection Scopes', 'Inspection scope'],
+          ['maintenanceScopes', 'Maintenance Scopes', 'Maintenance scope'],
+        ].map(([name, title, label]) => <Form.List key={name} name={name} rules={[{ validator: async (_, scopes = []) => {
+          if (scopes.length > 100) throw new Error('A maximum of 100 scopes is allowed.')
+          const names = scopes.map((scope) => labelKey(scope || ''))
+          if (new Set(names).size !== names.length) throw new Error('Scopes must be unique.')
+        } }]}>
+          {(fields, { add, remove: removeScope }, { errors }) => <div className="catalog-scopes">
+            <div className="catalog-scopes-heading">
+              <Typography.Text strong>{title}</Typography.Text>
+              <Button variant="dashed" icon={<PlusOutlined />} disabled={fields.length >= 100} onClick={() => add('')}>Add {label}</Button>
+            </div>
+            {fields.map(({ key, ...field }) => <div className="catalog-scope-row" key={key}>
+              <Form.Item {...field} rules={[{ required: true, whitespace: true, message: `${label} is required.` }, { max: 500 }]}>
+                <Input maxLength={500} placeholder={label} aria-label={`${label} ${field.name + 1}`} />
+              </Form.Item>
+              <Button variant="text" isDanger icon={<DeleteOutlined />} onClick={() => removeScope(field.name)} aria-label={`Delete ${label.toLowerCase()} ${field.name + 1}`} />
+            </div>)}
+            <Form.ErrorList errors={errors} />
+          </div>}
+        </Form.List>)}
         {!editor.item && <Form.List name="sizes" rules={[{ validator: async (_, sizes = []) => {
           if (sizes.length > 100) throw new Error('A maximum of 100 sizes is allowed.')
+          if (sizes.length > 1 && sizes.some((size) => size?.size === null)) throw new Error('A variant without a size cannot be combined with other sizes.')
           const names = sizes.map((size) => size?.size === null ? null : labelKey(size?.size || ''))
           if (new Set(names).size !== names.length) throw new Error('Size names must be unique.')
         } }]}>
@@ -238,12 +262,12 @@ export default function ItemPage() {
             <div className="catalog-scopes-heading">
               <Typography.Text strong>Sizes</Typography.Text>
               <Space wrap>
-                <Button variant="dashed" icon={<PlusOutlined />} disabled={fields.length >= 100 || sizeValues.some((value) => value?.size === null)}
+                <Button variant="dashed" icon={<PlusOutlined />} disabled={fields.length > 0}
                   onClick={() => add({ size: null })}>Add Without Size</Button>
-                <Button variant="dashed" icon={<PlusOutlined />} disabled={fields.length >= 100} onClick={() => add({ size: '' })}>Add Size</Button>
+                <Button variant="dashed" icon={<PlusOutlined />} disabled={fields.length >= 100 || sizeValues.some((value) => value?.size === null)} onClick={() => add({ size: '' })}>Add Size</Button>
               </Space>
             </div>
-            <p><Typography.Text tone="secondary">Leave this list empty to create one variant without a size. You can also combine named sizes with one variant without a size. Set standard prices from the item detail.</Typography.Text></p>
+            <p><Typography.Text tone="secondary">Leave this list empty to create one variant without a size, or add named sizes. A variant without a size cannot be combined with other sizes. Set standard prices from the item detail.</Typography.Text></p>
             {fields.map(({ key, ...field }) => <div className="catalog-scope-row" key={key}>
               <Form.Item {...field} name={[field.name, 'size']} getValueProps={(value) => ({ value: value ?? '' })}
                 rules={sizeValues[field.name]?.size === null ? [] : [{ required: true, whitespace: true, message: 'Size is required.' }, { max: 100 }]}>

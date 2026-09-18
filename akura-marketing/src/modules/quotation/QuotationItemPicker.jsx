@@ -38,9 +38,9 @@ export default function QuotationItemPicker({ visible, companyId, selectedSizeId
     filterDropdown: (props) => <TableSearchFilter {...props} placeholder={`Search ${label}`} maxLength={key === 'size' ? 100 : 200} />,
   })
   const columns = [
-    { title: 'Service', ...searchColumn('serviceName', 'service name'), render: (_, row) => row.catalogSnapshot?.serviceName ?? row.item?.service?.name },
+    { title: 'Service', ...searchColumn('serviceName', 'service name'), render: (_, row) => (row.catalogSnapshot?.serviceName ?? row.item?.service?.name) || 'Standalone' },
     { title: 'Item', ...searchColumn('itemName', 'item name'), render: (_, row) => row.catalogSnapshot?.itemName ?? row.item?.name },
-    { title: 'Size', ...searchColumn('size', 'size'), sorter: true, sortOrder, render: (_, row) => row.catalogSnapshot?.size ?? row.size },
+    { title: 'Size', ...searchColumn('size', 'size'), sorter: true, sortOrder, render: (_, row) => (row.catalogSnapshot ? row.catalogSnapshot.size : row.size) ?? 'Without size' },
     { title: 'Inspection Estimate', render: (_, row) => money(row.priceInspection ?? row.priceService) },
     { title: 'Maintenance Estimate', dataIndex: 'priceMaintenance', render: money },
     { title: 'Select', key: 'action', render: (_, row) => <Button variant="primary" disabled={disabled || !quotationOptionValues(row)} onClick={() => onSelect(row)}>Select Item</Button> },

@@ -34,10 +34,14 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
   const [editor, setEditor] = useState(null)
   const [busy, setBusy] = useState('')
   const [history, setHistory] = useState(null)
+  const [sizeEligibility, setSizeEligibility] = useState(null)
   const lock = useRef(false)
   const readOnly = item?.isActive === false
   const editorReadOnly = readOnly || editor?.size.isActive === false || editor?.size.item?.isActive === false || editor?.price?.isActive === false
   const itemId = item?.id
+  const canAddSize = Boolean(itemId) && !readOnly
+    && !loading && !error
+    && sizeEligibility?.itemId === itemId && sizeEligibility?.allowed === true
 
   useEffect(() => {
     if (!editor || editorReadOnly) return
@@ -58,6 +62,11 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
         const response = await itemService.listSizes({ itemId, ...query })
         if (!active) return
         const result = response.data
+        // Reuse the table response; the backend prohibits mixing size modes.
+        // An empty search result does not change the last known mode.
+        if (result.sizes.length || !query.size) {
+          setSizeEligibility({ itemId, allowed: !result.sizes.some(({ size }) => size === null) })
+        }
         if (!result.sizes.length && query.page > 1) {
           setQuery((current) => ({ ...current, page: Math.max(1, result.pagination.totalPages || 1) }))
         } else setData(result)
@@ -105,7 +114,7 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
   }
 
   const addSize = async (values) => {
-    if (readOnly || lock.current || !await confirmSave('item size')) return
+    if (!canAddSize || lock.current || !await confirmSave('item size')) return
     await mutate('add', () => itemService.addSize({ itemId, itemVersion: item.version, size: values.size.trim() }),
       'Item size added successfully.', () => sizeForm.resetFields())
   }
@@ -163,12 +172,21 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
             <div><dt>Created By</dt><dd>{item.createdByName || '-'}</dd></div>
             <div><dt>Updated By</dt><dd>{item.updatedByName || '-'}</dd></div>
           </dl>
+          {!item.serviceId && !item.service && [
+            ['inspectionScopes', 'Inspection Scopes', 'inspectionScope'],
+            ['maintenanceScopes', 'Maintenance Scopes', 'scope'],
+          ].map(([key, title, field]) => <div key={key}>
+            <h4>{title}</h4>
+            {item[key]?.some((scope) => scope.revoked !== true) ? <ul>
+              {item[key].filter((scope) => scope.revoked !== true).map((scope) => <li key={scope.id}>{scope[field]}</li>)}
+            </ul> : <Typography.Text tone="secondary">No scopes</Typography.Text>}
+          </div>)}
         </section>
         <section className="company-view-section">
           <div className="company-view-section-heading">
             <div><h3>Sizes and Standard Prices</h3><Typography.Text tone="secondary">Add sizes and manage their standard prices.</Typography.Text></div>
           </div>
-          {!readOnly && <Form form={sizeForm} className="item-add-size-form" onFinish={addSize} disabled={Boolean(busy)} preserve={false} clearOnDestroy>
+          {canAddSize && <Form form={sizeForm} className="item-add-size-form" onFinish={addSize} disabled={Boolean(busy)} preserve={false} clearOnDestroy>
             <Form.Item name="size" rules={sizeRules}><Input maxLength={100} placeholder="Enter a new size" aria-label="New size" /></Form.Item>
             <Button variant="primary" icon={<PlusOutlined />} htmlType="submit" busy={busy === 'add'}>Add Size</Button>
           </Form>}
@@ -190,9 +208,9 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
                   title={readOnly || row.isActive === false ? 'View Price' : row.priceStatus === 'AVAILABLE' ? 'Edit Price' : 'Set Price'}
                   aria-label={`${readOnly || row.isActive === false ? 'View price' : row.priceStatus === 'AVAILABLE' ? 'Edit price' : 'Set price'} for ${row.size ?? 'Without size'}`}
                   onClick={() => openEditor(row)} />
+                <Button variant="text" icon={<HistoryOutlined />} title="Price History" aria-label={`Price history for ${row.size ?? 'Without size'}`}
+                  onClick={() => setHistory({ id: row.id, name: row.size ?? 'Without size', scope: 'price' })} />
                 {!readOnly && row.isActive !== false && <>
-                <Button variant="text" icon={<HistoryOutlined />} title="Size History" aria-label={`History for ${row.size ?? 'Without size'}`}
-                  onClick={() => setHistory({ id: row.id, name: row.size ?? 'Without size', scope: 'size' })} />
                 <Popconfirm title="Delete size?" description="This size and its standard and contract prices will be deactivated."
                   okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }}
                   onConfirm={() => mutate(row.id, () => itemService.removeSize(row.id, row.version), 'Item size deleted successfully.')}>
@@ -217,14 +235,6 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
       visible={Boolean(editor)} width={680} onCancel={() => setEditor(null)} busy={busy === 'save'}
       closable={!busy} keyboard={!busy} mask={{ closable: !busy }} unmountOnClose
       footer={<Space wrap>
-        {editor && <>
-          <Button icon={<HistoryOutlined />} onClick={() => setHistory({ id: editor.size.id, name: editor.size.size ?? 'Without size', scope: 'price' })}>Price History</Button>
-          {!editorReadOnly && editor.price?.isActive && <Popconfirm title="Delete standard price?" description="The size remains available. Its standard price will be deactivated."
-            okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }} onConfirm={() =>
-              mutate('save', () => itemService.removePrice(editor.size.id, editor.price.version), 'Standard price deleted successfully.', () => setEditor(null))}>
-            <Button isDanger disabled={Boolean(busy)} icon={<DeleteOutlined />}>Delete Price</Button>
-          </Popconfirm>}
-        </>}
         <Button disabled={Boolean(busy)} onClick={() => setEditor(null)}>Cancel</Button>
         {!editorReadOnly && <Button variant="primary" busy={busy === 'save'} onClick={() => editForm.submit()}>
           Save

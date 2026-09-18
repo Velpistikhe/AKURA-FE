@@ -25,17 +25,49 @@ test('Create item supports automatic sizeless variants and requires UOM', async 
   }
 })
 
-test('Create item preserves explicit null sizes alongside named sizes without sending prices', async () => {
+test('Create item preserves named sizes without sending prices', async () => {
   const service = await loadService('itemService')
   const request = service.create(createItemPayload({ serviceId: uuid, name: 'Pipe', uom: 'JOINT',
-    sizes: [{ size: null, priceServicePrimary: '100' }, { size: ' 2 inch ', id: uuid }] }))
+    sizes: [{ size: ' 1 inch ', priceServicePrimary: '100' }, { size: ' 2 inch ', id: uuid }] }))
   const body = JSON.parse(request.body)
   const schema = resolve(operation(request).requestBody.content['application/json'].schema)
   assertBody(schema, body)
   const sizeSchema = resolve(schema.properties.sizes.items)
   assert.equal(sizeSchema.properties.size.nullable, true)
-  assert.deepEqual(body.sizes, [{ size: null }, { size: '2 inch' }])
+  assert.deepEqual(body.sizes, [{ size: '1 inch' }, { size: '2 inch' }])
   for (const size of body.sizes) assertBody(sizeSchema, size)
+})
+
+test('Create standalone item omits service and sends optional trimmed scopes', async () => {
+  const service = await loadService('itemService')
+  for (const serviceId of [undefined, null, '']) {
+    const request = service.create(createItemPayload({ serviceId, name: ' Pipe ', uom: ' JOINT ',
+      inspectionScopes: [' Visual inspection '], maintenanceScopes: [' Cleaning '], sizes: [{ size: null }] }))
+    const body = JSON.parse(request.body)
+    assertBody(operation(request).requestBody.content['application/json'].schema, body)
+    assert.deepEqual(body, { name: 'Pipe', uom: 'JOINT', inspectionScopes: ['Visual inspection'], maintenanceScopes: ['Cleaning'], sizes: [{ size: null }] })
+  }
+  const request = service.create(createItemPayload({ name: 'Pipe', uom: 'JOINT' }))
+  const body = JSON.parse(request.body)
+  assertBody(operation(request).requestBody.content['application/json'].schema, body)
+  assert.deepEqual(body, { name: 'Pipe', uom: 'JOINT', inspectionScopes: [], maintenanceScopes: [], sizes: [] })
+  const schema = swagger.components.schemas.CreateItemRequest
+  assert.equal(schema.required.includes('serviceId'), false)
+  for (const key of ['inspectionScopes', 'maintenanceScopes']) {
+    assert.equal(schema.properties[key].maxItems, 100)
+    assert.equal(schema.properties[key].items.maxLength, 500)
+    assert.equal(schema.properties[key].uniqueItems, true)
+  }
+})
+
+test('Selecting a service excludes previously entered standalone scopes', () => {
+  assert.deepEqual(createItemPayload({ serviceId: uuid, name: 'Pipe', uom: 'JOINT',
+    inspectionScopes: ['Visual inspection'], maintenanceScopes: ['Cleaning'] }),
+  { serviceId: uuid, name: 'Pipe', uom: 'JOINT', sizes: [] })
+})
+
+test('Create item rejects a direct-price variant combined with other sizes', () => {
+  assert.throws(() => createItemPayload({ name: 'Pipe', uom: 'JOINT', sizes: [{ size: null }, { size: '2 inch' }] }), /cannot be combined/)
 })
 
 test('Draft numbering and approval eligibility follow the quotation lifecycle', () => {
@@ -118,6 +150,32 @@ test('Service deletion and contract termination send required concurrency and da
   assert.deepEqual(JSON.parse(contracts.remove(uuid, 3, '2026-09-11').body), { version: 3, terminatedAt: '2026-09-11' })
 })
 
+test('Item history endpoints send only documented pagination and use size IDs for prices', async () => {
+  const service = await loadService('itemService')
+  for (const [method, path] of [
+    ['history', `/marketing/items/${uuid}/history`],
+    ['sizeHistory', `/marketing/items/sizes/${uuid}/history`],
+    ['priceHistory', `/marketing/items/sizes/${uuid}/price/history`],
+  ]) {
+    const request = service[method](uuid, { page: 2, limit: 50, search: 'ignored', sortBy: 'version' })
+    const url = new URL(request.path, 'http://localhost')
+    assert.equal(url.pathname, path)
+    assert.deepEqual([...url.searchParams], [['page', '2'], ['limit', '50']])
+    const query = operation(request).parameters.filter((parameter) => parameter.in === 'query')
+    assert.deepEqual(query.map((parameter) => parameter.name).sort(), ['limit', 'page'])
+    assert.equal(query.find((parameter) => parameter.name === 'page').schema.minimum, 1)
+    assert.equal(query.find((parameter) => parameter.name === 'limit').schema.maximum, 100)
+    assert.equal(service[method](uuid).path, `${path}?page=1&limit=20`)
+  }
+  const response = resolve(operation(service.priceHistory(uuid)).responses['200'].content['application/json'].schema)
+  const data = resolve(response.properties.data)
+  assert.equal(data.properties.history.type, 'array')
+  assert.equal(data.properties.history.minItems || 0, 0)
+  const pagination = resolve(data.properties.pagination)
+  assert.ok(pagination.properties.total)
+  assert.ok(pagination.properties.totalPages)
+})
+
 test('Item exclusions use Swagger comma-separated query format and omit empty arrays', async () => {
   const items = await loadService('itemService')
   assert.equal(new URL(items.listSizes({ notIn: [] }).path, 'http://localhost').searchParams.has('notIn'), false)
@@ -146,6 +204,25 @@ test('Create quotation sends only allowed item fields and omits client prices an
     assert.equal(QUANTITY_PATTERN.test(value), false)
     assert.equal(apiQuantityPattern.test(value), false)
   }
+})
+
+test('Quotation activity filters preserve false and omit an unselected filter', async () => {
+  const service = await loadService('quotationService')
+  for (const isActive of [true, false, 'true', 'false', undefined, '']) {
+    const request = service.list({ page: 2, limit: 50, isActive })
+    const params = new URL(request.path, 'http://localhost').searchParams
+    assert.equal(params.get('page'), '2')
+    assert.equal(params.get('limit'), '50')
+    assert.equal(params.get('isActive'), isActive === undefined || isActive === '' ? null : String(isActive))
+    assert.deepEqual(operation(request).parameters.find((parameter) => parameter.name === 'isActive').schema.enum, ['true', 'false'])
+  }
+})
+
+test('Standalone quotation items preserve null size without sending display labels', () => {
+  const values = quotationFormValues({ ...record, items: [{ ...record.items[0], itemName: 'Inspection', serviceName: null, size: null }] })
+  assert.equal(values.items[0].catalogLabel, 'Without size - Inspection / Standalone')
+  assert.equal(values.items[0].size, null)
+  assert.equal(Object.hasOwn(quotationPayload(values).items[0], 'catalogLabel'), false)
 })
 
 test('Quotation date is server-managed and never enters create or update requests', async () => {

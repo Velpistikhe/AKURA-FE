@@ -34,7 +34,7 @@ export default function CompanyView({ company, currentUser, onClose, onEdit, onC
       <h3>Company Staff</h3>
       <CompanyStaffModal key={company.id} company={company} visible embedded onChanged={handleStaffChanged} />
     </section>
-    <CompanyContractSection company={company} historyOnly />
+    <CompanyContractSection company={company} currentUser={currentUser} historyOnly />
     <section className="company-view-section">
       <div className="company-staff-history-heading">
         <h3>Staff History</h3>

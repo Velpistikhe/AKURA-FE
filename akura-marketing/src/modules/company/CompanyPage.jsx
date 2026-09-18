@@ -298,7 +298,6 @@ function CompanyPage({ currentUser }) {
 
   return (
     <section className="company-page">
-      {saveConfirmation}
       <div className="company-page-heading">
         <div>
           <Typography.Title level={2}>Company Management</Typography.Title>
@@ -349,6 +348,7 @@ function CompanyPage({ currentUser }) {
         preRender
         unmountOnClose
       >
+        {saveConfirmation}
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item name="type" label="Type" rules={[
             { required: true, message: 'Company type is required.' },

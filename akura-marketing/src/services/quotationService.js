@@ -2,7 +2,9 @@ import { apiRequest } from './api'
 
 const PATH = '/marketing/quotations'
 export const quotationService = {
-  list: ({ page = 1, limit = 20 } = {}) => apiRequest(`${PATH}?${new URLSearchParams({ page, limit })}`),
+  list: ({ page = 1, limit = 20, isActive } = {}) => apiRequest(`${PATH}?${new URLSearchParams({ page, limit,
+    ...(isActive === '' || isActive == null ? {} : { isActive }),
+  })}`),
   get: (id) => apiRequest(`${PATH}/${id}`),
   approve: (id, version) => apiRequest(`${PATH}/${id}/approve`, { method: 'POST', body: JSON.stringify({ version }) }),
   create: (data) => apiRequest(PATH, { method: 'POST', body: JSON.stringify(data) }),

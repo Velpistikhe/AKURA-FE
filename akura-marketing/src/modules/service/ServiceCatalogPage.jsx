@@ -23,6 +23,7 @@ import {
 import '../company/CompanyPage.css'
 import './ServiceCatalogPage.css'
 import ServiceHistory from './ServiceHistory'
+import { activeScopes, canViewInactiveCatalog } from '../catalogAccess'
 
 const DEFAULT_PAGE_SIZE = 20
 const SERVICE_TYPES = ['TUBULAR', 'OCTG', 'OTHER']
@@ -37,6 +38,7 @@ function scopeValues(scopes = [], field = 'scope') {
 }
 
 function ServiceCatalogPage({
+  currentUser,
   entityLabel,
   entityLabelLower,
   dataKey,
@@ -45,6 +47,7 @@ function ServiceCatalogPage({
   canDeleteScope = false,
   supportsMaintenance = false,
 }) {
+  const canViewInactive = canViewInactiveCatalog(currentUser)
   const { message } = App.useApp()
   const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = Form.useForm()
@@ -81,7 +84,7 @@ function ServiceCatalogPage({
         limit: pageSize,
         name: nameFilter,
         type: typeFilter,
-        isActive: activeFilter,
+        isActive: canViewInactive ? activeFilter : 'true',
         sortBy,
         sortOrder,
       })
@@ -93,7 +96,7 @@ function ServiceCatalogPage({
     } finally {
       if (requestId === requestIdRef.current) setLoading(false)
     }
-  }, [activeFilter, dataKey, message, nameFilter, page, pageSize, service, sortBy, sortOrder, typeFilter])
+  }, [activeFilter, dataKey, message, nameFilter, page, pageSize, service, sortBy, sortOrder, typeFilter, canViewInactive])
 
   useEffect(() => {
     const timeoutId = setTimeout(loadRecords, 300)
@@ -180,7 +183,7 @@ function ServiceCatalogPage({
   }
 
   const deleteScope = async (scope) => {
-    if (detailRecord?.isActive === false || scope.isActive === false) return
+    if (detailRecord?.isActive === false || scope.revoked === true) return
     setDeletingScopeId(scope.id)
     try {
       await service.removeInspectionScope(detailRecord.id, scope.id)
@@ -210,7 +213,7 @@ function ServiceCatalogPage({
   }
 
   const deleteMaintenanceScope = async (scope) => {
-    if (detailRecord?.isActive === false || scope.isActive === false) return
+    if (detailRecord?.isActive === false || scope.revoked === true) return
     setDeletingMaintenanceScopeId(scope.id)
     try {
       await service.removeMaintenanceScope(detailRecord.id, scope.id)
@@ -320,7 +323,7 @@ function ServiceCatalogPage({
     const nextTypeFilter = filters.type?.[0] || ''
     setPageSize(nextPageSize)
     setPage(nextPageSize !== pageSize || nextTypeFilter !== typeFilter ? 1 : tablePagination.current || 1)
-    setNameFilter(filters.name?.[0] || '')
+    setNameFilter((filters.name?.[0] || '').trim())
     setTypeFilter(nextTypeFilter)
     setActiveFilter(filters.isActive?.[0] || '')
     setSortBy(sorter.order ? sorter.field : '')
@@ -349,7 +352,7 @@ function ServiceCatalogPage({
       sortOrder: getSortOrder('name', sortBy, sortOrder),
       filteredValue: nameFilter ? [nameFilter] : null,
       filterDropdown: (props) => (
-        <TableSearchFilter {...props} placeholder="Search name" onSearch={(value) => { setNameFilter(value); setPage(1) }} />
+        <TableSearchFilter {...props} placeholder="Search name" maxLength={200} onSearch={(value) => { setNameFilter(value); setPage(1) }} />
       ),
       render: (value) => <Typography.Text className="catalog-service-name" title={value}>{value}</Typography.Text>,
     },
@@ -359,7 +362,7 @@ function ServiceCatalogPage({
       key: 'inspectionScopes',
       width: 340,
       render: (scopes = '') => {
-        const summary = Array.isArray(scopes) ? scopeValues(scopes, 'inspectionScope').join(', ') : String(scopes)
+        const summary = Array.isArray(scopes) ? scopeValues(activeScopes(scopes), 'inspectionScope').join(', ') : String(scopes)
         return summary
           ? <Typography.Text className="catalog-scope-summary" title={summary}>{summary}</Typography.Text>
           : <Typography.Text tone="secondary">No scopes</Typography.Text>
@@ -372,9 +375,9 @@ function ServiceCatalogPage({
       width: 120,
       sorter: true,
       sortOrder: getSortOrder('isActive', sortBy, sortOrder),
-      filters: [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }],
+      filters: canViewInactive ? [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }] : undefined,
       filterMultiple: false,
-      filteredValue: activeFilter ? [activeFilter] : null,
+      filteredValue: canViewInactive && activeFilter ? [activeFilter] : null,
       render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Tag>,
     },
     ...(supportsMaintenance ? [{
@@ -386,7 +389,7 @@ function ServiceCatalogPage({
       render: (maintenanceScopes, record) => {
         if (!record.hasMaintenance) return <Typography.Text tone="secondary">Disabled</Typography.Text>
         const summary = Array.isArray(maintenanceScopes)
-          ? scopeValues(maintenanceScopes).join(', ')
+          ? scopeValues(activeScopes(maintenanceScopes)).join(', ')
           : String(maintenanceScopes || '')
         return summary
           ? <Typography.Text className="catalog-scope-summary" title={summary}>{summary}</Typography.Text>
@@ -581,12 +584,12 @@ function ServiceCatalogPage({
                         <Button variant="primary" icon={<PlusOutlined />} htmlType="submit" busy={maintenanceScopeSaving}>Add</Button>
                       </Form>
                     )}
-                    {(detailRecord.maintenanceScopes || []).length ? (
+                    {activeScopes(detailRecord.maintenanceScopes).length ? (
                       <div className="catalog-detail-scopes">
-                        {detailRecord.maintenanceScopes.map((scope) => (
+                        {activeScopes(detailRecord.maintenanceScopes).map((scope) => (
                           <div className="catalog-detail-scope" key={scope.id}>
                             <Typography.Text title={scope.scope}>{scope.scope}</Typography.Text>
-                            {canDeleteScope && detailRecord.isActive && scope.isActive !== false && (
+                            {canDeleteScope && detailRecord.isActive && scope.revoked !== true && (
                               <Popconfirm
                                 title="Delete maintenance scope?"
                                 description="The scope will be deactivated for this service."
@@ -626,12 +629,12 @@ function ServiceCatalogPage({
                     <Button variant="primary" icon={<PlusOutlined />} htmlType="submit" busy={scopeSaving}>Add</Button>
                   </Form>
                 )}
-                {(detailRecord.inspectionScopes || []).length ? (
+                {activeScopes(detailRecord.inspectionScopes).length ? (
                   <div className="catalog-detail-scopes">
-                    {(detailRecord.inspectionScopes || []).map((scope) => (
+                    {activeScopes(detailRecord.inspectionScopes).map((scope) => (
                       <div className="catalog-detail-scope" key={scope.id}>
                         <Typography.Text title={scope.inspectionScope}>{scope.inspectionScope}</Typography.Text>
-                        {canDeleteScope && detailRecord.isActive && scope.isActive !== false && (
+                        {canDeleteScope && detailRecord.isActive && scope.revoked !== true && (
                           <Popconfirm
                             title="Delete inspection scope?"
                             description="The scope will be deactivated for this service."

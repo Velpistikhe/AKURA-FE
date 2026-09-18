@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Button, Card, EyeOutlined, Modal, Table, Tag } from '../../components/global'
 import { itemService } from '../../services/itemService'
+import { loadSizeHistory } from './itemHistoryModel'
 
 function formatValue(value) {
   if (value === null || value === undefined || value === '') return '-'
@@ -20,20 +21,32 @@ export default function ItemHistory({ record, scope = 'item', expanded = false, 
   const [retry, setRetry] = useState(0)
   const [selected, setSelected] = useState(null)
   const [detailOpen, setDetailOpen] = useState(false)
-  const [priceHistoryOpen, setPriceHistoryOpen] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const visible = expanded || showHistory
-  const priceReferenceOnly = selected?.entityType === 'ITEM_SIZE'
-    && selected.action === 'PRICE_UPDATE' && !selected.changes?.length
+  const requestPage = scope === 'size' ? 1 : page
+  const requestLimit = scope === 'size' ? 100 : limit
 
   useEffect(() => {
     if (!visible) return
     let active = true
     setLoading(true)
     setError('')
-    const readHistory = scope === 'price' ? itemService.priceHistory : scope === 'size' ? itemService.sizeHistory : itemService.history
-    readHistory(record.id, { page, limit }).then((response) => {
-      if (active) setData(response.data)
+    const request = scope === 'size'
+      ? loadSizeHistory(record.id, itemService.sizeHistory, () => active)
+      : (scope === 'price' ? itemService.priceHistory : itemService.history)(record.id, { page: requestPage, limit: requestLimit }).then((response) => response.data)
+    request.then((result) => {
+      if (!active) return
+      if (scope === 'size') {
+        setData(result)
+        setPage(1)
+        return
+      }
+      const lastPage = Math.max(1, result.pagination.totalPages)
+      if (requestPage > lastPage) {
+        setPage(lastPage)
+        return
+      }
+      setData(result)
     }).catch((err) => {
       if (active) {
         setError(err.message)
@@ -41,7 +54,7 @@ export default function ItemHistory({ record, scope = 'item', expanded = false, 
       }
     }).finally(() => { if (active) setLoading(false) })
     return () => { active = false }
-  }, [record.id, record.version, scope, page, limit, retry, visible, revision])
+  }, [record.id, record.version, scope, requestPage, requestLimit, retry, visible, revision])
 
   return <section className="company-view-section catalog-history">
     <div className="catalog-history-heading">
@@ -67,8 +80,9 @@ export default function ItemHistory({ record, scope = 'item', expanded = false, 
                   aria-label={`View history version ${row.version}`} onClick={() => { setSelected(row); setDetailOpen(true) }} />
               ) },
             ]}
-            locale={{ emptyText: error ? 'Unable to load history.' : 'No history available.' }}
+            locale={{ emptyText: error ? 'Unable to load history.' : scope === 'price' ? 'No standard price history for this size yet.' : `No ${title.toLowerCase()} history available.` }}
             pagination={{ current: page, pageSize: limit, total: data.pagination?.total || 0, showSizeChanger: true, responsive: true,
+              hideOnSinglePage: data.pagination?.total === 0,
               pageSizeOptions: [10, 20, 50, 100], onChange: (next, size) => { setPage(size !== limit ? 1 : next); setLimit(size) } }}
           />
         </div>
@@ -94,11 +108,6 @@ export default function ItemHistory({ record, scope = 'item', expanded = false, 
         </dl>
         </Card>
         <Card title="Field Changes">
-        {priceReferenceOnly ? <div role="status">
-          <p>This entry records a size version update after a price change. The before and after amounts are recorded separately in the price history.</p>
-          <p>Standard prices appear under ITEM_PRICE; contract prices appear under COMPANY_CONTRACT_PRICE in Size History.</p>
-          <Button icon={<EyeOutlined />} title="View Standard Price History" onClick={() => setPriceHistoryOpen(true)} />
-        </div> :
         <Table rowKey="field" dataSource={selected?.changes || []} pagination={false} scroll={{ x: 550 }}
           columns={[
             { title: 'Field', dataIndex: 'label' },
@@ -106,14 +115,9 @@ export default function ItemHistory({ record, scope = 'item', expanded = false, 
             { title: 'After', dataIndex: 'after', render: formatValue },
           ]}
           locale={{ emptyText: 'No changes recorded.' }}
-        />}
+        />
         </Card>
       </div>
     </Modal>
-    {priceHistoryOpen && <Modal title={`Price History: ${record.name}`} visible width={1000}
-      onCancel={() => setPriceHistoryOpen(false)}
-      footer={<Button onClick={() => setPriceHistoryOpen(false)}>Close</Button>} unmountOnClose>
-      <ItemHistory record={record} scope="price" expanded revision={revision} />
-    </Modal>}
   </section>
 }

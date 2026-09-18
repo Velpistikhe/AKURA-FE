@@ -4,6 +4,7 @@ import { contractService } from '../../services/contractService'
 import CompanyContractUpload from './CompanyContractUpload'
 import PendingContracts from './PendingContracts'
 import { canAdministerContracts } from './contractAccess'
+import { canViewInactiveCatalog } from '../catalogAccess'
 
 function formatContractDate(value) {
   return value ? String(value).slice(0, 10) : '-'
@@ -11,6 +12,7 @@ function formatContractDate(value) {
 
 export default function CompanyContractSection({ company, currentUser, onChanged, historyOnly = false }) {
   const readOnly = company.revoked === true
+  const canViewInactive = canViewInactiveCatalog(currentUser)
   const canAdminister = !readOnly && canAdministerContracts(currentUser)
   const [pendingRevision, setPendingRevision] = useState(0)
   const { message } = App.useApp()
@@ -40,7 +42,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
   const loadContracts = useCallback(async () => {
     setLoading(true)
     try {
-      const response = await contractService.list({ companyId: company.id, page: historyPage, limit: historyLimit, status: historyStatus, isActive: historyActive })
+      const response = await contractService.list({ companyId: company.id, page: historyPage, limit: historyLimit, status: historyStatus, isActive: canViewInactive ? historyActive : 'true' })
       setContracts(response.data?.contracts || [])
       setPagination(response.data?.pagination || { page: historyPage, total: 0, totalPages: 1 })
     } catch (error) {
@@ -49,7 +51,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
     } finally {
       setLoading(false)
     }
-  }, [company.id, historyActive, historyLimit, historyPage, historyStatus, message])
+  }, [company.id, historyActive, historyLimit, historyPage, historyStatus, message, canViewInactive])
 
   useEffect(() => {
     if (contractHistoryVisible) loadContracts()
@@ -60,11 +62,11 @@ export default function CompanyContractSection({ company, currentUser, onChanged
     let active = true
     setPriceListLoading(true)
     setPriceList({ prices: [], pagination: { total: 0 } })
-    contractService.listPrices({ contractId: priceListContract.id, page: pricePage, limit: 20, ...priceQuery }).then((response) => {
+    contractService.listPrices({ contractId: priceListContract.id, page: pricePage, limit: 20, ...priceQuery, isActive: canViewInactive ? priceQuery.isActive : 'true' }).then((response) => {
       if (active) setPriceList(response.data || { prices: [], pagination: { total: 0 } })
     }).catch((error) => { if (active) message.error(error.message) }).finally(() => { if (active) setPriceListLoading(false) })
     return () => { active = false }
-  }, [message, priceListContract, pricePage, priceQuery])
+  }, [message, priceListContract, pricePage, priceQuery, canViewInactive])
 
   const refreshCompanyDetail = async () => {
     setPendingRevision((value) => value + 1)
@@ -192,8 +194,8 @@ export default function CompanyContractSection({ company, currentUser, onChanged
               filters: ['CREATE', 'ACTIVE', 'EXPIRED', 'TERMINATED'].map((value) => ({ text: value, value })),
               filterMultiple: false, filteredValue: historyStatus ? [historyStatus] : null },
             { title: 'Activity', dataIndex: 'isActive', render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag>,
-              filters: [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }],
-              filterMultiple: false, filteredValue: historyActive ? [historyActive] : null },
+              filters: canViewInactive ? [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }] : undefined,
+              filterMultiple: false, filteredValue: canViewInactive && historyActive ? [historyActive] : null },
           ]}
           onChange={(_, filters, _sorter, extra) => {
             if (extra.action !== 'filter') return
@@ -287,8 +289,8 @@ export default function CompanyContractSection({ company, currentUser, onChanged
             sortOrder: priceQuery.sortBy === 'priceService' ? (priceQuery.sortOrder === 'asc' ? 'ascend' : 'descend') : null, render: (value) => value ?? '-' },
           { title: 'Maintenance Price', dataIndex: 'priceMaintenance', sorter: true,
             sortOrder: priceQuery.sortBy === 'priceMaintenance' ? (priceQuery.sortOrder === 'asc' ? 'ascend' : 'descend') : null, render: (value) => value ?? '-' },
-          { title: 'Status', dataIndex: 'isActive', filterMultiple: false, filteredValue: priceQuery.isActive ? [priceQuery.isActive] : null,
-            filters: [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }],
+          { title: 'Status', dataIndex: 'isActive', filterMultiple: false, filteredValue: canViewInactive && priceQuery.isActive ? [priceQuery.isActive] : null,
+            filters: canViewInactive ? [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }] : undefined,
             render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Tag> },
         ]} />
     </Modal>

@@ -2,9 +2,10 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 
-const response = await fetch(process.env.SWAGGER_URL || 'http://localhost:5000/api-docs.json')
-assert.equal(response.status, 200)
-const swagger = await response.json()
+const swagger = process.env.SWAGGER_FILE ? JSON.parse(await readFile(process.env.SWAGGER_FILE, 'utf8')) : await fetch(process.env.SWAGGER_URL || 'http://localhost:5000/api-docs.json').then(async (response) => {
+  assert.equal(response.status, 200)
+  return response.json()
+})
 const id = '00000000-0000-4000-8000-000000000001'
 const resolve = (schema) => schema?.$ref ? resolve(swagger.components.schemas[schema.$ref.split('/').pop()]) : schema
 function validate(schema, value, path = 'body') {
@@ -176,7 +177,7 @@ test('Marketing contract lifecycle, prices, company and staff requests match Swa
   check(contracts.list({ companyId: id, status: 'CREATE', isActive: 'true', page: 1, limit: 20 }))
   check(contracts.listPrices({ contractId: id, page: 1, limit: 20 }))
   const items = await service('akura-marketing', 'itemService')
-  check(items.create({ serviceId: id, name: 'Pipe', sizes: [{ size: '2 inch' }] }))
+  check(items.create({ serviceId: id, name: 'Pipe', uom: 'JOINT', sizes: [{ size: '2 inch' }] }))
   check(items.addSize({ itemId: id, itemVersion: 0, size: '3 inch' }))
   const prices = { priceServicePrimary: '100.25', priceServiceSisterCompany: '99.99', priceMaintenancePrimary: null, priceMaintenanceSisterCompany: null }
   check(items.createPrice(id, prices)); check(items.updatePrice(id, { ...prices, version: 0 }))

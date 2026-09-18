@@ -114,6 +114,7 @@ html[data-theme='dark'] .landing-logo { padding: 5px 8px; border-radius: 8px; ba
 }
 @media (prefers-reduced-motion: reduce) {
   html *, html *::before, html *::after {
-    animation: none !important; transition: none !important; scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important; scroll-behavior: auto !important;
   }
 }
