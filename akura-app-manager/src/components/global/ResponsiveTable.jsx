@@ -31,7 +31,8 @@ export const Table = forwardRef(({ columns, busy, loading, ...props }, ref) => {
         const style = getComputedStyle(cell)
         const padding = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
         const key = node.dataset.actionColumn
-        next[key] = Math.max(next[key] || 0, Math.ceil(node.getBoundingClientRect().width + padding + 2))
+        // Modal transforms affect bounding rectangles, but not layout widths.
+        next[key] = Math.max(next[key] || 0, Math.ceil(node.offsetWidth + padding + 2))
       })
       setWidths((previous) => JSON.stringify(previous) === JSON.stringify(next) ? previous : next)
     }

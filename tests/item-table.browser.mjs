@@ -21,7 +21,7 @@ window.fetch = async (url, options = {}) => {
   if (options.method === 'PATCH') { window.writes.push(JSON.parse(options.body)); Object.assign(item, JSON.parse(options.body)); }
   if (path.endsWith('/items/item-1')) data = item;
   else if (path.endsWith('/items')) data = { items: [{ ...item, name: 'List name' }], pagination: { total: 1 } };
-  else if (path.endsWith('/sizes')) data = { sizes: [], pagination: { total: 0 } };
+  else if (path.endsWith('/sizes')) data = { sizes: [{ id: 'size-1', size: 'Large', isActive: true, version: 1, priceStatus: 'AVAILABLE', priceServicePrimary: '100', priceServiceSisterCompany: '90' }], pagination: { total: 1 } };
   else if (path.endsWith('/services')) data = { services: [], pagination: { totalPages: 1 } };
   else data = { history: [], pagination: { total: 0 } };
   return new Response(JSON.stringify({ success: true, data }), { headers: { 'content-type': 'application/json' } });
@@ -98,7 +98,32 @@ test('Item edit uses detail values, skips unchanged saves, and action columns re
     console.log('Responsive actions verified')
     await click('Add Item')
     await click('Cancel')
+    // Simulate measuring content during a modal's scale animation. Removing the
+    // transform does not trigger ResizeObserver because its layout size is unchanged.
+    await evaluate(`window.motionStyle = document.createElement('style'); motionStyle.textContent = '.ant-modal { transform: scale(.5) !important; animation: none !important; }'; document.head.append(motionStyle)`)
     await evaluate(`document.querySelector('[aria-label="View List name"]').click()`)
+    await until(() => evaluate(`!!document.querySelector('.item-size-table td.akura-actions-cell button')`))
+    await evaluate(`new Promise(resolve => setTimeout(resolve, 500))`)
+    await evaluate(`motionStyle.remove()`)
+    await evaluate(`new Promise(resolve => setTimeout(resolve, 300))`)
+    const sizeDimensions = await evaluate(`(() => {
+      const cell = document.querySelector('.item-size-table td.akura-actions-cell');
+      const content = cell.querySelector('.akura-actions-content');
+      return { cell: cell.offsetWidth, content: content.offsetWidth };
+    })()`)
+    assert.ok(sizeDimensions.cell >= sizeDimensions.content + 30, JSON.stringify(sizeDimensions))
+    await viewport(535)
+    await until(() => evaluate(`getComputedStyle(document.querySelector('.item-size-table td.akura-actions-cell')).position !== 'sticky'`))
+    const bounds = await evaluate(`(() => {
+      const table = document.querySelector('.item-size-table');
+      table.querySelector('.ant-table-content').scrollLeft = 10000;
+      const header = table.querySelector('th.akura-actions-cell').getBoundingClientRect();
+      const cell = table.querySelector('td.akura-actions-cell').getBoundingClientRect();
+      return { header: header.width, cell: cell.width, buttons: [...table.querySelectorAll('td.akura-actions-cell button')].every(button => { const box = button.getBoundingClientRect(); return box.left >= cell.left && box.right <= cell.right; }) };
+    })()`)
+    assert.equal(bounds.header, bounds.cell)
+    assert.equal(bounds.buttons, true)
+    await viewport(1280)
     await click('Update Item')
     await until(() => evaluate(`!!document.querySelector('input[placeholder="Item name"]')`))
     await until(() => evaluate(`document.querySelector('input[placeholder="Item name"]')?.value === 'Detail name'`))
