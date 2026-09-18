@@ -1,0 +1,15 @@
+.akura-responsive-table { min-width: 0; }
+.akura-actions-cell { text-align: center !important; }
+.akura-actions-content {
+  display: inline-flex;
+  width: max-content;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.akura-actions-content > .ant-space {
+  flex-wrap: nowrap !important;
+  justify-content: center;
+}
+

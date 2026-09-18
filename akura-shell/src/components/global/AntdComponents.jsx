@@ -23,7 +23,6 @@ import {
   Row as AntRow,
   Spin as AntSpin,
   Statistic as AntStatistic,
-  Table as AntTable,
   Tag as AntTag,
   Tooltip as AntTooltip,
 } from 'antd'
@@ -184,9 +183,6 @@ export const Statistic = createAdapter(AntStatistic, 'GlobalStatistic', ({
     content: contentStyle ?? styles?.content ?? valueStyle,
   },
 }))
-export const Table = createAdapter(AntTable, 'GlobalTable', ({ busy, loading, ...props }) => ({
-  ...props,
-  loading: busy ?? loading,
-}))
+export { Table } from './ResponsiveTable'
 export const Tag = createAdapter(AntTag, 'GlobalTag')
 export const Tooltip = createAdapter(AntTooltip, 'GlobalTooltip')

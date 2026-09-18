@@ -103,12 +103,23 @@ export default function ItemPage() {
     setEditor({ item })
   }
 
+  const initializeEditor = (open) => {
+    if (!open || !editor) return
+    form.resetFields()
+    form.setFieldsValue({
+      name: editor.item?.name ?? '',
+      uom: editor.item?.uom ?? '',
+      serviceId: undefined,
+      sizes: [], inspectionScopes: [], maintenanceScopes: [],
+    })
+  }
+
   const save = async (values) => {
     if (mutationRef.current || editor?.item?.isActive === false) return
     const item = editor.item
     const name = values.name.trim()
     const uom = values.uom.trim()
-    if (item && labelKey(name) === labelKey(item.name) && uom === item.uom) {
+    if (item && name === (item.name ?? '').trim() && uom === (item.uom ?? '').trim()) {
       message.warning('No changes were made.')
       return
     }
@@ -213,6 +224,7 @@ export default function ItemPage() {
           pageSizeOptions: [10, 20, 50, 100], showTotal: (total) => `${total} item` }} />
     </Card>
     <Modal title={editor?.item ? 'Edit Item' : 'Add Item'} visible={Boolean(editor)} width={680}
+      afterOpenChange={initializeEditor}
       busy={saving} okText={editor?.item ? 'Save' : 'Add'} onOk={() => form.submit()} onCancel={() => setEditor(null)}
       cancelButtonProps={{ disabled: saving }} closable={!saving} keyboard={!saving} mask={{ closable: !saving }} unmountOnClose>
       {editor && <Form key={editor.item?.id || 'create'} form={form} layout="vertical" preserve={false} clearOnDestroy
@@ -262,8 +274,6 @@ export default function ItemPage() {
             <div className="catalog-scopes-heading">
               <Typography.Text strong>Sizes</Typography.Text>
               <Space wrap>
-                <Button variant="dashed" icon={<PlusOutlined />} disabled={fields.length > 0}
-                  onClick={() => add({ size: null })}>Add Without Size</Button>
                 <Button variant="dashed" icon={<PlusOutlined />} disabled={fields.length >= 100 || sizeValues.some((value) => value?.size === null)} onClick={() => add({ size: '' })}>Add Size</Button>
               </Space>
             </div>

@@ -14,7 +14,6 @@ import {
   Select as AntSelect,
   Space as AntSpace,
   Switch as AntSwitch,
-  Table as AntTable,
   Tabs as AntTabs,
   Tag as AntTag,
   Tooltip as AntTooltip,
@@ -158,10 +157,7 @@ export const Switch = createAdapter(AntSwitch, 'GlobalSwitch', ({ activeLabel, i
   checkedChildren: activeLabel,
   unCheckedChildren: inactiveLabel,
 }))
-export const Table = createAdapter(AntTable, 'GlobalTable', ({ busy, loading, ...props }) => ({
-  ...props,
-  loading: busy ?? loading,
-}))
+export { Table } from './ResponsiveTable'
 export const Tabs = createAdapter(AntTabs, 'GlobalTabs', ({ initialKey, defaultActiveKey, ...props }) => ({
   ...props,
   defaultActiveKey: initialKey ?? defaultActiveKey,

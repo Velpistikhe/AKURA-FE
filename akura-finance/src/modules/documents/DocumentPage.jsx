@@ -1,6 +1,7 @@
 import TableSearchFilter from '../../components/global/TableSearchFilter'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, App, Card, Form, Input, Popconfirm, Space, Table, Tag, Typography } from 'antd'
+import { Alert, App, Card, Form, Input, Popconfirm, Space, Tag, Typography } from 'antd'
+import { Table } from '../../components/ResponsiveTable'
 import { EyeOutlined, HistoryOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons'
 import { Button, Modal } from '../../components/FinanceControls'
 import { documentService, getQuotationReference } from '../../services/documentService'

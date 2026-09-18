@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Alert, Card, Space, Table, Tag, Typography } from 'antd'
+import { Alert, Card, Space, Tag, Typography } from 'antd'
+import { Table } from '../../components/ResponsiveTable'
 import { Button, Modal } from '../../components/FinanceControls'
 import { EyeOutlined, ReloadOutlined } from '@ant-design/icons'
 import { quotationService } from '../../services/quotationService'

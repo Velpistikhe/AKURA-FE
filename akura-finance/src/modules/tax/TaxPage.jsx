@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Alert, App, Card, Form, Input, Popconfirm, Space, Table, Tabs, Tag, Typography } from 'antd'
+import { Alert, App, Card, Form, Input, Popconfirm, Space, Tabs, Tag, Typography } from 'antd'
+import { Table } from '../../components/ResponsiveTable'
 import { PlusOutlined, ReloadOutlined, SyncOutlined } from '@ant-design/icons'
 import { Button, Modal } from '../../components/FinanceControls'
 import { taxService } from '../../services/taxService'
