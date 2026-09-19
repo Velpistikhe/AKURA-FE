@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { App, Button, Modal, Select, Typography, useSaveConfirmation } from '../../components/global'
+import { App, Button, Modal, Typography, useSaveConfirmation } from '../../components/global'
 import { contractService } from '../../services/contractService'
 import { loadAll } from '../quotation/quotationModel'
+import { selectImportContract } from './contractPriceModel'
 
 export function validateWorkbook(file) {
   if (!file) return 'Select an Excel file.'
@@ -10,7 +11,7 @@ export function validateWorkbook(file) {
   return ''
 }
 
-export default function CompanyContractUpload({ company, contract = null, onClose, onChanged }) {
+export default function CompanyContractUpload({ company, onClose, onChanged }) {
   const [closing, setClosing] = useState(false)
   const { message } = App.useApp()
   const [confirmSave, confirmation] = useSaveConfirmation()
@@ -28,18 +29,17 @@ export default function CompanyContractUpload({ company, contract = null, onClos
     setLoading(true)
     setContractId(undefined)
     try {
-      const rows = contract ? [(await contractService.get(contract.id)).data]
-        : await loadAll(contractService.list, 'contracts', { companyId: company.id })
+      const rows = await loadAll(contractService.list, 'contracts', { companyId: company.id, status: 'ACTIVE', isActive: 'true' })
       if (requestId !== requestRef.current) return
-      setContracts(rows.filter((row) => row.isActive && ['CREATE', 'ACTIVE'].includes(row.status)
-        && (!row.effectiveUntil || new Date(row.effectiveUntil).getTime() > Date.now())))
-      if (contract) setContractId(contract.id)
+      const target = selectImportContract(rows)
+      setContracts(target ? [target] : [])
+      setContractId(target?.id)
     } catch (err) {
       if (requestId === requestRef.current) { setError(err.message); setContracts([]) }
     } finally {
       if (requestId === requestRef.current) setLoading(false)
     }
-  }, [company.id, contract])
+  }, [company.id])
   useEffect(() => {
     loadContracts()
     return () => { requestRef.current++ }
@@ -59,7 +59,7 @@ export default function CompanyContractUpload({ company, contract = null, onClos
       const response = await contractService.importPrices(selected.id, { companyId: company.id, version: selected.version, file })
       message.success(`${response.data?.imported ?? 0} contract item prices imported successfully.`)
       setClosing(true)
-      onChanged()
+      onChanged?.()
     } catch (err) {
       setError(err.message)
       setDetails(Array.isArray(err.details) ? err.details : [])
@@ -76,15 +76,11 @@ export default function CompanyContractUpload({ company, contract = null, onClos
     cancelButtonProps={{ disabled: saving }} closable={!saving} mask={{ closable: !saving }} keyboard={!saving}>
     {confirmation}
     <div className="contract-upload-fields">
-      <p>Download the Excel template from the Item menu, edit the prices, and choose YA for the rows to import. Keep the hidden columns unchanged. Upload creates new contract prices; existing prices cannot be replaced.</p>
-      {!contract && <>
-      <label htmlFor="contract-upload-contract">Company contract</label>
-      <Select id="contract-upload-contract" placeholder="Select a contract" value={contractId} onChange={setContractId}
-        loading={loading} disabled={loading || saving} options={contracts.map((row) => ({ value: row.id,
-          label: `${row.status} · ${new Date(row.effectiveFrom).toLocaleDateString()} – ${row.effectiveUntil ? new Date(row.effectiveUntil).toLocaleDateString() : 'No end date'} · ${row.id.slice(0, 8)}` }))} />
-      {!loading && !contracts.length && <Typography.Text>No eligible contract found. A CREATE or ACTIVE contract that has not ended is required.</Typography.Text>}
-      <Button disabled={saving || loading} onClick={() => { setError(''); loadContracts() }}>Reload contracts</Button>
-      </>}
+      <p>Download the Excel template from the Item menu, edit Service Price and Maintenance Price. Every item row in the file will be imported, including unchanged rows. Keep the hidden columns unchanged. Upload creates new contract prices; existing prices cannot be replaced.</p>
+      <Typography.Text>The upload uses the currently valid ACTIVE contract, or the earliest future ACTIVE contract when none is currently valid.</Typography.Text>
+      {loading ? <p>Loading target contract...</p> : contracts.length > 0 ? <p>Target contract: <strong>{contracts[0].contractNumber}</strong> ? {contracts[0].effectiveFrom.slice(0, 10)} ? {contracts[0].effectiveUntil.slice(0, 10)}</p>
+        : <p>No eligible contract found. Approve a contract that has not ended before uploading prices.</p>}
+      <Button disabled={saving || loading} onClick={() => { setError(''); loadContracts() }}>Reload contract</Button>
       <label htmlFor="contract-upload-file">Excel file (.xlsx, up to 5 MB)</label>
       <input id="contract-upload-file" type="file" accept=".xlsx" disabled={saving} onChange={(event) => {
         const selected = event.target.files?.[0]

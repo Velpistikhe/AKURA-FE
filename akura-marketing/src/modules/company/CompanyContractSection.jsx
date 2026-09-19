@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
-import { App, Button, DeleteOutlined, EditOutlined, EyeOutlined, Form, Input, Modal, Table, TableSearchFilter, Tag, Typography, UploadOutlined, useSaveConfirmation } from '../../components/global'
+import { App, Button, DeleteOutlined, EditOutlined, EyeOutlined, Form, Input, Modal, Table, Tag, Typography, UploadOutlined, useSaveConfirmation } from '../../components/global'
 import { contractService } from '../../services/contractService'
 import CompanyContractUpload from './CompanyContractUpload'
 import PendingContracts from './PendingContracts'
-import { canAdministerContracts } from './contractAccess'
+import CompanyContractPrices from './CompanyContractPrices'
+import { canAdministerContracts, canManageCompanyContracts } from './contractAccess'
+import { canReceiveContractPrices } from './contractPriceModel'
 import { canViewInactiveCatalog } from '../catalogAccess'
 
 function formatContractDate(value) {
@@ -31,12 +33,9 @@ export default function CompanyContractSection({ company, currentUser, onChanged
   const [terminationContract, setTerminationContract] = useState(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [editingContract, setEditingContract] = useState(null)
-  const [uploadContract, setUploadContract] = useState(null)
+  const [uploadOpen, setUploadOpen] = useState(false)
   const [priceListContract, setPriceListContract] = useState(null)
-  const [priceList, setPriceList] = useState({ prices: [], pagination: { total: 0 } })
-  const [priceListLoading, setPriceListLoading] = useState(false)
-  const [pricePage, setPricePage] = useState(1)
-  const [priceQuery, setPriceQuery] = useState({ search: '', isActive: '', sortBy: '', sortOrder: '' })
+  const [priceListOpen, setPriceListOpen] = useState(false)
   const [contractHistoryVisible, setContractHistoryVisible] = useState(false)
 
   const loadContracts = useCallback(async () => {
@@ -57,17 +56,6 @@ export default function CompanyContractSection({ company, currentUser, onChanged
     if (contractHistoryVisible) loadContracts()
   }, [contractHistoryVisible, loadContracts])
 
-  useEffect(() => {
-    if (!priceListContract) return
-    let active = true
-    setPriceListLoading(true)
-    setPriceList({ prices: [], pagination: { total: 0 } })
-    contractService.listPrices({ contractId: priceListContract.id, page: pricePage, limit: 20, ...priceQuery, isActive: canViewInactive ? priceQuery.isActive : 'true' }).then((response) => {
-      if (active) setPriceList(response.data || { prices: [], pagination: { total: 0 } })
-    }).catch((error) => { if (active) message.error(error.message) }).finally(() => { if (active) setPriceListLoading(false) })
-    return () => { active = false }
-  }, [message, priceListContract, pricePage, priceQuery, canViewInactive])
-
   const refreshCompanyDetail = async () => {
     setPendingRevision((value) => value + 1)
     if (contractHistoryVisible) await loadContracts()
@@ -75,7 +63,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
   }
 
   const openCreate = () => {
-    if (readOnly) return
+    if (readOnly || !canManageCompanyContracts(currentUser)) return
     form.resetFields()
     form.setFieldsValue({ contractNumber: '', contractDate: '', effectiveFrom: '', effectiveUntil: '' })
     setCreateOpen(true)
@@ -94,12 +82,16 @@ export default function CompanyContractSection({ company, currentUser, onChanged
   }
 
   const createContract = async () => {
-    if (readOnly) return
+    if (readOnly || !canManageCompanyContracts(currentUser)) return
     const values = await form.validateFields()
     const effectiveFrom = new Date(values.effectiveFrom)
     const effectiveUntil = new Date(values.effectiveUntil)
     if (effectiveUntil <= effectiveFrom) {
       form.setFields([{ name: 'effectiveUntil', errors: ['End date must be after the start date.'] }])
+      return
+    }
+    if (values.contractDate > values.effectiveFrom) {
+      form.setFields([{ name: 'contractDate', errors: ['Contract date must be on or before the start date.'] }])
       return
     }
     if (!await confirmSave('company contract')) return
@@ -127,6 +119,10 @@ export default function CompanyContractSection({ company, currentUser, onChanged
     const values = await form.validateFields()
     if (new Date(values.effectiveUntil) <= new Date(values.effectiveFrom)) {
       form.setFields([{ name: 'effectiveUntil', errors: ['End date must be after the start date.'] }])
+      return
+    }
+    if (values.contractDate > values.effectiveFrom) {
+      form.setFields([{ name: 'contractDate', errors: ['Contract date must be on or before the start date.'] }])
       return
     }
     if (!await confirmSave('company contract revision')) return
@@ -187,6 +183,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
         <Table rowKey="id" loading={loading} dataSource={contracts} scroll={{ x: 1000 }}
           columns={[
             { title: 'Contract Number', dataIndex: 'contractNumber' },
+            { title: 'Prices', render: (_, row) => <Button variant="text" icon={<EyeOutlined />} title="View Contract Prices" onClick={() => { setPriceListContract(row); setPriceListOpen(true) }} /> },
             { title: 'Contract Date', dataIndex: 'contractDate', render: formatContractDate },
             { title: 'Effective From', dataIndex: 'effectiveFrom', render: formatContractDate },
             { title: 'Effective Until', dataIndex: 'effectiveUntil', render: formatContractDate },
@@ -210,15 +207,20 @@ export default function CompanyContractSection({ company, currentUser, onChanged
     </div>
   </section>
 
-  if (historyOnly) return historySection
+  const pricesModal = priceListOpen && <CompanyContractPrices company={company} currentUser={currentUser} initialContract={priceListContract}
+    onClose={() => setPriceListOpen(false)} onChanged={refreshCompanyDetail} />
+
+  if (historyOnly) return <>{historySection}{pricesModal}</>
 
   return <>
     <section className="company-view-section company-contract-section">
     {confirmation}
     <div className="company-view-section-heading">
-      <div><h3>{activeContract ? 'Active Contract' : 'Contracts'}</h3>{activeContract && <Typography.Text tone="secondary">The current active contract returned by the company-detail endpoint.</Typography.Text>}</div>
+      <div><h3>{activeContract ? 'Active Contract' : 'Contracts'}</h3>{activeContract && <Typography.Text tone="secondary">The company's currently effective contract.</Typography.Text>}</div>
       <div className="company-contract-actions">
-        {!readOnly && <Button variant="primary" onClick={openCreate}>Add Contract</Button>}
+        <Button onClick={() => { setPriceListContract(null); setPriceListOpen(true) }}>View Contract Prices</Button>
+        {!readOnly && canManageCompanyContracts(currentUser) && <Button icon={<UploadOutlined />} onClick={() => setUploadOpen(true)}>Upload Price List</Button>}
+        {!readOnly && canManageCompanyContracts(currentUser) && <Button variant="primary" disabled={Boolean(activeContract)} onClick={openCreate}>Add Contract</Button>}
       </div>
     </div>
     {activeContract ? <div className="company-contract-list">
@@ -229,8 +231,8 @@ export default function CompanyContractSection({ company, currentUser, onChanged
         <div><span>Effective from</span><strong>{formatContractDate(activeContract.effectiveFrom)}</strong></div>
         <div><span>Effective until</span><strong>{formatContractDate(activeContract.effectiveUntil)}</strong></div>
         <div className="company-contract-row-actions">
-          {activeContract.hasList && <Button variant="text" icon={<EyeOutlined />} title="View Price List" onClick={() => { setPricePage(1); setPriceListContract(activeContract) }} />}
-          {!readOnly && activeContract.isActive !== false && <Button variant="text" icon={<UploadOutlined />} title="Upload Price List" onClick={() => setUploadContract(activeContract)} />}
+          <Button variant="text" icon={<EyeOutlined />} title="View Price List" onClick={() => { setPriceListContract(activeContract); setPriceListOpen(true) }} />
+          {!readOnly && canManageCompanyContracts(currentUser) && canReceiveContractPrices(activeContract) && <Button variant="text" icon={<UploadOutlined />} title="Upload Price List" onClick={() => setUploadOpen(true)} />}
           {canAdminister && activeContract.isActive !== false && <Button variant="text" icon={<EditOutlined />} title="Update Contract" onClick={() => openUpdate(activeContract)} />}
           {canAdminister && activeContract.isActive !== false && <Button variant="text" isDanger icon={<DeleteOutlined />} title="Terminate Contract" onClick={() => { terminationForm.resetFields(); setTerminationContract(activeContract) }} />}
         </div>
@@ -240,7 +242,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
     <Modal title={`Add Contract: ${company.name}`} visible={createOpen} busy={saving} okText="Create" onOk={createContract}
       onCancel={() => { if (!saving) setCreateOpen(false) }} closable={!saving} keyboard={!saving} mask={{ closable: !saving }} cancelButtonProps={{ disabled: saving }} unmountOnClose>
       <Form form={form} layout="vertical" preserve={false}>
-        <Typography.Text tone="secondary">This contract will be created for {company.name}. All contract dates use the YYYY-MM-DD format.</Typography.Text>
+        <Typography.Text tone="secondary">This contract will be created for {company.name}. {canAdministerContracts(currentUser) ? 'It will be ACTIVE immediately.' : 'It will await administrator approval.'} Contract date must be on or before the start date.</Typography.Text>
         <Form.Item name="contractNumber" label="Contract Number" rules={[{ required: true, whitespace: true, message: 'Contract number is required.' }, { max: 255 }]}>
           <Input maxLength={255} placeholder="example: KONTRAK/AKR/001/2026" />
         </Form.Item>
@@ -271,31 +273,9 @@ export default function CompanyContractSection({ company, currentUser, onChanged
         <Form.Item name="terminatedAt" label="Termination Date" rules={[{ required: true, message: 'Termination date is required.' }]}><Input type="date" /></Form.Item>
       </Form>
     </Modal>
-    <Modal title={`Price List: ${priceListContract?.contractNumber || ''}`} visible={Boolean(priceListContract)} footer={null} width={1000} onCancel={() => setPriceListContract(null)} unmountOnClose>
-      <Table rowKey="id" busy={priceListLoading} dataSource={priceList.prices || []} scroll={{ x: 850 }} pagination={{ current: pricePage, total: priceList.pagination?.total || 0, pageSize: 20, showSizeChanger: false, onChange: setPricePage, hideOnSinglePage: true }}
-        onChange={(_, filters, sorter, extra) => {
-          if (extra.action === 'paginate') return
-          setPricePage(1)
-          setPriceQuery({ search: (filters.search?.[0] || '').trim(), isActive: filters.isActive?.[0] || '',
-            sortBy: sorter.order ? sorter.field : '', sortOrder: sorter.order ? (sorter.order === 'ascend' ? 'asc' : 'desc') : '' })
-        }}
-        columns={[
-          { title: 'Service', render: (_, row) => row.catalogSnapshot?.serviceName || '-' },
-          { title: 'Item', key: 'search', filteredValue: priceQuery.search ? [priceQuery.search] : null,
-            filterDropdown: (props) => <TableSearchFilter {...props} placeholder="Search item or size" maxLength={200} />,
-            render: (_, row) => row.catalogSnapshot?.itemName || '-' },
-          { title: 'Size', render: (_, row) => row.catalogSnapshot?.size || '-' },
-          { title: 'Service Price', dataIndex: 'priceService', sorter: true,
-            sortOrder: priceQuery.sortBy === 'priceService' ? (priceQuery.sortOrder === 'asc' ? 'ascend' : 'descend') : null, render: (value) => value ?? '-' },
-          { title: 'Maintenance Price', dataIndex: 'priceMaintenance', sorter: true,
-            sortOrder: priceQuery.sortBy === 'priceMaintenance' ? (priceQuery.sortOrder === 'asc' ? 'ascend' : 'descend') : null, render: (value) => value ?? '-' },
-          { title: 'Status', dataIndex: 'isActive', filterMultiple: false, filteredValue: canViewInactive && priceQuery.isActive ? [priceQuery.isActive] : null,
-            filters: canViewInactive ? [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }] : undefined,
-            render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Tag> },
-        ]} />
-    </Modal>
-    <PendingContracts readOnly={readOnly} companyId={company.id} currentUser={currentUser} revision={pendingRevision} onChanged={refreshCompanyDetail} onUpload={setUploadContract} />
-    {!readOnly && uploadContract && uploadContract.isActive !== false && <CompanyContractUpload company={company} contract={uploadContract} onClose={() => setUploadContract(null)} onChanged={refreshCompanyDetail} />}
+    {pricesModal}
+    <PendingContracts readOnly={readOnly} companyId={company.id} currentUser={currentUser} revision={pendingRevision} onChanged={refreshCompanyDetail} onView={(row) => { setPriceListContract(row); setPriceListOpen(true) }} />
+    {!readOnly && canManageCompanyContracts(currentUser) && uploadOpen && <CompanyContractUpload company={company} onClose={() => setUploadOpen(false)} onChanged={refreshCompanyDetail} />}
     </section>
   </>
 }

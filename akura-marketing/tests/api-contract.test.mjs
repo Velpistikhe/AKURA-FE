@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import test from 'node:test'
+import { contractPricePayload } from '../src/modules/company/contractPriceModel.js'
 import { createItemPayload } from '../src/modules/item/itemModel.js'
 import { canApproveQuotation, quotationNumber, quotationChanges, quotationFormValues, quotationPayload, quotationOptionValues, TEXT_FIELDS, QUANTITY_PATTERN } from '../src/modules/quotation/quotationModel.js'
 
@@ -124,6 +125,35 @@ function assertBody(schema, value) {
     for (const key of Object.keys(value)) assert.ok(schema.properties[key], `Unexpected ${key}`)
   }
 }
+
+test('Single contract price POST and PATCH match Swagger and preserve exact prices and price version', async () => {
+  const service = await loadService('contractService')
+  const values = { priceService: '9999999999999999.99', priceMaintenance: '0' }
+  for (const request of [service.createPrice(uuid, contractPricePayload(values, { contractId: uuid })),
+    service.updatePrice(uuid, contractPricePayload(values, { version: 9 }))]) {
+    const body = JSON.parse(request.body)
+    assertBody(operation(request).requestBody.content['application/json'].schema, body)
+    assert.equal(body.priceService, values.priceService)
+    assert.equal(body.priceMaintenance, '0')
+    assert.equal(body.companyId, undefined)
+    if (request.method === 'PATCH') { assert.equal(body.version, 9); assert.equal(body.contractId, undefined) }
+    else { assert.equal(body.contractId, uuid); assert.equal(body.version, undefined) }
+  }
+})
+
+test('Contract list is company-scoped and Excel upload sends only documented multipart fields', async () => {
+  const service = await loadService('contractService')
+  const request = service.listPrices({ companyId: uuid, contractId: uuid, page: 2, limit: 20, isActive: 'true' })
+  const params = new URL(request.path, 'http://localhost').searchParams
+  assert.equal(params.get('companyId'), uuid)
+  for (const key of params.keys()) assert.ok(operation(request).parameters.some((parameter) => parameter.name === key))
+  const upload = service.importPrices(uuid, { companyId: uuid, version: 12, file: new Blob(['test']) })
+  const body = Object.fromEntries(upload.body)
+  assertBody(operation(upload).requestBody.content['multipart/form-data'].schema, body)
+  assert.deepEqual(Object.keys(body).sort(), ['companyId', 'file', 'version'])
+  assert.equal(body.version, '12')
+  assert.equal(upload.headers, undefined, 'Browser must supply multipart boundary')
+})
 
 test('Marketing service methods use documented endpoints and HTTP methods', async () => {
   for (const name of ['companyService', 'companyStaffService', 'itemService', 'serviceService', 'contractService', 'quotationService']) {

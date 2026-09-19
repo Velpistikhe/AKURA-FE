@@ -9,6 +9,8 @@ export const contractService = {
   update: (contractId, data) => apiRequest(`${PATH}/${contractId}`, { method: 'PATCH', body: JSON.stringify(data) }),
   remove: (contractId, version, terminatedAt) => apiRequest(`${PATH}/${contractId}`, { method: 'DELETE', body: JSON.stringify({ version, terminatedAt }) }),
   listPrices: (params = {}) => apiRequest(`/marketing/company-contract-prices?${new URLSearchParams(Object.entries(params).filter(([, value]) => value !== '' && value != null))}`),
+  createPrice: (itemSizeId, data) => apiRequest(`/marketing/items/sizes/${itemSizeId}/contract-prices`, { method: 'POST', body: JSON.stringify(data) }),
+  updatePrice: (contractPriceId, data) => apiRequest(`/marketing/items/contract-prices/${contractPriceId}`, { method: 'PATCH', body: JSON.stringify(data) }),
   importPrices: (contractId, { companyId, version, file }) => {
     const body = new FormData()
     body.append('file', file)
