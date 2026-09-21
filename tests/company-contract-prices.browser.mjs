@@ -13,10 +13,10 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from '/src/components/global';
 import CompanyContractPrices from '/src/modules/company/CompanyContractPrices.jsx';
-const contract = { id: 'contract-1', contractNumber: 'CONTRACT-001', version: 4, status: 'ACTIVE', isActive: true, effectiveFrom: '2020-01-01', effectiveUntil: '2099-01-01' };
+const contract = { id: 'contract-1', contractNumber: 'CONTRACT-001', version: 4, status: 'APPROVED', hasList: true, effectiveFrom: '2020-01-01', effectiveUntil: '2099-01-01' };
 const company = { id: 'company-1', name: 'Test Company', revoked: false };
 let price = { id: 'price-1', contractId: contract.id, itemSizeId: 'size-existing', version: 7, isActive: true, priceService: '100.25', priceMaintenance: '20', contract, catalogSnapshot: { itemName: 'Existing Pipe', size: 'Large', serviceName: 'Inspection', hasMaintenance: true } };
-window.writes = []; window.requests = []; window.conflict = false;
+window.writes = []; window.requests = []; window.conflict = false; window.contractPricesClosed = 0;
 window.fetch = async (url, options = {}) => {
   const path = new URL(url, location.href).pathname; window.requests.push(String(url));
   let data;
@@ -26,14 +26,15 @@ window.fetch = async (url, options = {}) => {
     if (options.method === 'PATCH') price = { ...price, ...body, version: price.version + 1 };
     data = price;
   } else if (path.endsWith('/company-contract-prices')) data = { prices: [price], pagination: { total: 1, totalPages: 1 } };
-  else if (path.endsWith('/company-contracts')) data = { contracts: [contract], pagination: { total: 1, totalPages: 1 } };
-  else if (path.endsWith('/items/sizes')) data = { sizes: [{ id: 'size-new', size: null, isActive: true, item: { name: 'New Pipe', service: { name: 'Inspection', hasMaintenance: true } } }], pagination: { total: 1, totalPages: 1 } };
+  else if (path.endsWith('/company-contracts/contract-1')) data = contract;
+  else if (path.endsWith('/items/sizes/contract-price-options/contract-1')) data = { sizes: [{ id: 'size-new', itemId: 'item-new', version: 0, size: null, itemName: 'New Pipe', serviceName: 'Inspection' }], pagination: { total: 1, totalPages: 1 } };
+  else if (path.endsWith('/items/item-new')) data = { id: 'item-new', name: 'New Pipe', service: { name: 'Inspection', hasMaintenance: true } };
   else throw new Error('Unexpected request: ' + path);
   return new Response(JSON.stringify({ success: true, data }), { headers: { 'content-type': 'application/json' } });
 };
 const root = createRoot(document.getElementById('root'));
 window.mount = (role = 'ADMIN', section = 'MARKETING', revoked = false) => root.render(React.createElement(React.StrictMode, null, React.createElement(App, null,
-  React.createElement(CompanyContractPrices, { key: role + section + revoked, company: { ...company, revoked }, currentUser: { role, section }, initialContract: contract, onClose: () => {}, onChanged: () => {} }))));
+  React.createElement(CompanyContractPrices, { key: role + section + revoked, initialContract: contract, company: { ...company, revoked }, currentUser: { role, section }, onClose: () => { window.contractPricesClosed++; }, onChanged: () => {} }))));
 window.mount();
 `
 
@@ -100,19 +101,25 @@ test('Contract prices use header filters, enforce role access, validate maintena
     await send('Page.navigate', { url: `http://127.0.0.1:${server.httpServer.address().port}/test` })
     await until(() => evaluate(`!!document.querySelector('[aria-label="Edit Contract Price"]')`))
     console.log('Price list loaded')
+    // The viewed contract is the target without another contract selection.
+    await click('Add Contract Price')
+    await until(() => evaluate(`!!document.querySelector('.ant-table-selection-column input[type="radio"]')`))
+    assert.equal(await evaluate(`[...document.querySelectorAll('.ant-modal p')].some(p => p.textContent.includes('Test Company') && p.textContent.includes('CONTRACT-001'))`), true)
+    await until(() => evaluate(`!document.querySelector('.ant-zoom-enter, .ant-zoom-appear')`))
+    await click('Cancel')
+    await until(() => evaluate(`!!document.querySelector('.ant-zoom-leave')`))
+    await until(() => evaluate(`!document.querySelector('.ant-table-selection-column input[type="radio"]')`))
+    await evaluate(`document.querySelector('[aria-label="Edit Contract Price"]').click()`)
+    await until(() => evaluate(`!!document.getElementById('priceService') && !document.querySelector('.ant-zoom-enter, .ant-zoom-appear')`))
+    await click('Cancel')
+    await until(() => evaluate(`!!document.querySelector('.ant-zoom-leave') && !!document.getElementById('priceService')`))
+    await until(() => evaluate(`!document.getElementById('priceService')`))
     assert.equal(await evaluate(`document.querySelectorAll('.company-view-section-heading .ant-select').length`), 0)
-    assert.equal(await evaluate(`document.querySelectorAll('thead .ant-table-filter-trigger').length`), 3)
+    assert.equal(await evaluate(`document.querySelectorAll('thead .ant-table-filter-trigger').length`), 2)
     assert.equal(await evaluate(`window.requests.filter(url => url.includes('company-contract-prices')).every(url => new URL(url, location.href).searchParams.get('companyId') === 'company-1')`), true)
-    // The contract filter is on its column header; clearing it requests all company prices.
-    await evaluate(`document.querySelector('thead .ant-table-filter-trigger').click()`)
-    await click('Reset')
-    await click('OK')
-    await until(() => evaluate(`window.requests.some(url => url.includes('company-contract-prices') && !new URL(url, location.href).searchParams.has('contractId'))`))
-    await evaluate(`document.querySelector('thead .ant-table-filter-trigger').click()`)
-    await until(() => evaluate(`!!document.querySelector('.ant-dropdown input[type="radio"]')`))
-    await evaluate(`document.querySelector('.ant-dropdown input[type="radio"]').click()`)
-    await click('OK')
-    console.log('Contract header filter verified')
+    assert.equal(await evaluate(`window.requests.filter(url => url.includes('company-contract-prices')).every(url => new URL(url, location.href).searchParams.get('contractId') === 'contract-1')`), true)
+    assert.equal(await evaluate(`window.requests.some(url => new URL(url, location.href).pathname.endsWith('/company-contracts'))`), false)
+    console.log('Contract detail requests and fixed contract scope verified')
     await click('Add Contract Price')
     await until(() => evaluate(`!!document.querySelector('.ant-table-selection-column input[type="radio"]')`))
     await evaluate(`document.querySelector('.ant-table-selection-column input[type="radio"]').click()`)
@@ -148,10 +155,16 @@ test('Contract prices use header filters, enforce role access, validate maintena
       await evaluate(`window.mount(${JSON.stringify(role)}, ${JSON.stringify(section)})`)
       await until(() => evaluate(`document.body.textContent.includes('Existing Pipe') && !document.querySelector('[aria-label="Edit Contract Price"]')`))
       assert.equal(await evaluate(`[...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Add Contract Price')`), canCreate)
+      if (canCreate) assert.equal(await evaluate(`[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Add Contract Price').disabled`), true, 'Approved prices require Marketing ADMIN')
     }
     await evaluate(`window.mount('ADMIN', 'MARKETING', true)`)
     await until(() => evaluate(`document.body.textContent.includes('Existing Pipe') && !document.querySelector('[aria-label="Edit Contract Price"]')`))
     assert.equal(await evaluate(`[...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Add Contract Price')`), false)
+    await until(() => evaluate(`!document.querySelector('.ant-zoom-enter, .ant-zoom-appear')`))
+    await evaluate(`document.querySelector('.ant-modal-close').click()`)
+    await until(() => evaluate(`!!document.querySelector('.ant-zoom-leave')`))
+    assert.equal(await evaluate('window.contractPricesClosed'), 0)
+    await until(() => evaluate('window.contractPricesClosed === 1'))
     console.log('Header filters, create/edit, conflict refresh, and permissions verified')
   } catch (error) {
     console.error(error)

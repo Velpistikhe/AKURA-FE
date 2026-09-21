@@ -2,7 +2,7 @@ export const INQUIRY_METHODS = ['EMAIL', 'WHATSAPP', 'VERBAL', 'JOB_ORDER_REQUES
 export const TEXT_FIELDS = [
   ['subject', 'Subject'], ['termOfPayment', 'Term of Payment'], ['validity', 'Validity'],
   ['supplyAkura', 'Akura Supply'], ['supplyCustomer', 'Customer Supply'], ['location', 'Location'],
-  ['accomplished', 'Completion Time'], ['deliveryReports', 'Delivery Reports'],
+  ['accomplished', 'Completion Time'], ['deliveryReports', 'Delivery Reports'], ['deliveryInvoice', 'Delivery Invoice'],
 ]
 export const QUANTITY_PATTERN = /^\d{1,12}(\.\d{1,3})?$/
 export function quotationOptionValues(size) {

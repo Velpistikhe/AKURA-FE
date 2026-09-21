@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { decimalPrice, formatPriceInput, parsePriceInput } from '../src/components/global/priceFormat.js'
-import { canAdministerContracts, canApproveContract } from '../src/modules/company/contractAccess.js'
+import { CONTRACT_STATUSES, canSubmitContract, canRejectContract, canCancelContract, canManageCompanyContracts, blocksContractCreation, canAdministerContracts, canApproveContract, canUpdateContract, canReviseContract, canTerminateContract } from '../src/modules/company/contractAccess.js'
 import { activeScopes, canViewInactiveCatalog } from '../src/modules/catalogAccess.js'
 
-test('Inactive catalog visibility is reserved for ADMIN, including when APP_MANAGER can approve', () => {
+test('Inactive catalog visibility is reserved for ADMIN', () => {
   assert.equal(canViewInactiveCatalog({ role: 'ADMIN' }), true)
   for (const user of [undefined, { role: 'APP_MANAGER' }, { role: 'USER', section: 'MARKETING' }]) {
     assert.equal(canViewInactiveCatalog(user), false)
@@ -27,13 +27,35 @@ test('Catalog price input preserves fractional and large decimal strings without
   assert.equal(decimalPrice(null), '')
 })
 
-test('Only admin roles approve active CREATE contracts', () => {
-  for (const role of ['ADMIN', 'APP_MANAGER']) {
-    assert.equal(canAdministerContracts({ role }), true)
-    assert.equal(canApproveContract({ role }, { status: 'CREATE', isActive: true }), true)
-    for (const status of ['ACTIVE', 'EXPIRED', 'TERMINATED']) assert.equal(canApproveContract({ role }, { status, isActive: true }), false)
-    assert.equal(canApproveContract({ role }, { status: 'CREATE', isActive: false }), false)
+test('Contract actions enforce lifecycle and Marketing roles', () => {
+  for (const role of ['ADMIN', 'APP_MANAGER', 'USER']) {
+    for (const section of ['MARKETING', 'FINANCE', undefined]) {
+      const user = { role, section }
+      const marketing = section === 'MARKETING'
+      const admin = role === 'ADMIN' && marketing
+      assert.equal(canAdministerContracts(user), admin)
+      assert.equal(canManageCompanyContracts(user), marketing && ['USER', 'ADMIN'].includes(role))
+      for (const status of CONTRACT_STATUSES) {
+        const contract = { status, effectiveUntil: '2027-01-01' }
+        assert.equal(canApproveContract(user, contract), admin && status === 'SUBMITTED')
+        assert.equal(canRejectContract(user, contract), admin && status === 'SUBMITTED')
+        assert.equal(canSubmitContract(user, contract), marketing && ['USER', 'ADMIN'].includes(role) && status === 'DRAFT')
+        assert.equal(canUpdateContract(user, contract), marketing && (['DRAFT', 'REJECTED'].includes(status) || (admin && status === 'APPROVED')))
+        assert.equal(canCancelContract(user, contract), marketing && ['DRAFT', 'REJECTED'].includes(status))
+        assert.equal(canTerminateContract(user, contract), admin && status === 'APPROVED')
+        assert.equal(canReviseContract(user, contract, '2026-09-20'), marketing && status === 'APPROVED')
+        for (const action of [canApproveContract, canRejectContract, canSubmitContract, canUpdateContract, canCancelContract, canTerminateContract, canReviseContract]) {
+          assert.equal(action(user, { ...contract, isDeleted: true }), false)
+          assert.equal(action(user, null), false)
+        }
+      }
+    }
   }
-  assert.equal(canApproveContract({ role: 'USER' }, { status: 'CREATE', isActive: true }), false)
-  assert.equal(canAdministerContracts(), false)
+})
+
+test('Draft and rejected contracts block creation; submitted, approved and deleted records do not', () => {
+  for (const status of CONTRACT_STATUSES) {
+    assert.equal(blocksContractCreation({ status }), ['DRAFT', 'REJECTED'].includes(status))
+    assert.equal(blocksContractCreation({ status, isDeleted: true }), false)
+  }
 })

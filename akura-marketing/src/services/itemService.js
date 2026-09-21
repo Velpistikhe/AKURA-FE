@@ -13,6 +13,7 @@ function withQuery(params = {}) {
 export const itemService = {
   list: (params = {}) => apiRequest(`${ITEM_PATH}?${withQuery(params)}`),
   listSizes: (params = {}) => apiRequest(`${ITEM_PATH}/sizes?${withQuery(params)}`),
+  listContractPriceOptions: (contractId, params = {}) => apiRequest(`${ITEM_PATH}/sizes/contract-price-options/${contractId}?${withQuery(params)}`),
   listPrices: (params = {}) => apiRequest(`${ITEM_PATH}/sizes/prices?${withQuery(params)}`),
   download: (params = {}) => apiRequest(`${ITEM_PATH}/sizes/export?${withQuery(params)}`, { responseType: 'blob' }),
   get: (itemId) => apiRequest(`${ITEM_PATH}/${itemId}`),

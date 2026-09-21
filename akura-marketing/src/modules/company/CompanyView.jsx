@@ -29,12 +29,11 @@ export default function CompanyView({ company, currentUser, onClose, onEdit, onC
           'Sister Company': company.isSisterCompany ? 'Yes' : 'No', 'Current Contract': company.contract?.status || 'No active contract' }).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value || '-'}</dd></div>)}
       </dl>
     </section>
-    <CompanyContractSection company={company} currentUser={currentUser} onChanged={onChanged} />
     <section className="company-view-section">
       <h3>Company Staff</h3>
       <CompanyStaffModal key={company.id} company={company} visible embedded onChanged={handleStaffChanged} />
     </section>
-    <CompanyContractSection company={company} currentUser={currentUser} onChanged={onChanged} historyOnly />
+    <CompanyContractSection key={company.id} company={company} currentUser={currentUser} onChanged={onChanged} />
     <section className="company-view-section">
       <div className="company-staff-history-heading">
         <h3>Staff History</h3>

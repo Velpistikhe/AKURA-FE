@@ -1,15 +1,20 @@
-import { useEffect, useState } from 'react'
-import { Button, EditOutlined, Modal, Table, TableSearchFilter, Tag, Typography } from '../../components/global'
+import { useEffect, useRef, useState } from 'react'
+import { App, Button, UploadOutlined, Space, EditOutlined, DeleteOutlined, Popconfirm, Modal, Table, TableSearchFilter, Tag, Typography } from '../../components/global'
 import { formatPriceInput } from '../../components/global/priceFormat'
 import { contractService } from '../../services/contractService'
-import { loadAll } from '../quotation/quotationModel'
 import { canViewInactiveCatalog } from '../catalogAccess'
-import { canCreateContractPrice, canEditContractPrice } from './contractAccess'
+import { canCreateContractPrice, canEditContractPrice, canDeleteContractPrice } from './contractAccess'
 import { canReceiveContractPrices } from './contractPriceModel'
+import CompanyContractUpload from './CompanyContractUpload'
 import CompanyContractPriceEditor from './CompanyContractPriceEditor'
 
 export default function CompanyContractPrices({ company, currentUser, initialContract, onClose, onChanged }) {
-  const [contractId, setContractId] = useState(initialContract?.id)
+  const { message } = App.useApp()
+  const [deletingId, setDeletingId] = useState(null)
+  const deleteLock = useRef(false)
+  const [uploadOpen, setUploadOpen] = useState(false)
+  const [closing, setClosing] = useState(false)
+  const contractId = initialContract?.id
   const [contracts, setContracts] = useState(initialContract ? [initialContract] : [])
   const [contractsLoading, setContractsLoading] = useState(true)
   const [contractsError, setContractsError] = useState('')
@@ -21,22 +26,26 @@ export default function CompanyContractPrices({ company, currentUser, initialCon
   const [editor, setEditor] = useState(null)
   const inactive = canViewInactiveCatalog(currentUser)
   const selectedContract = contracts.find((row) => row.id === contractId)
-  const canCreate = company.revoked !== true && canCreateContractPrice(currentUser)
-  const canEdit = company.revoked !== true && canEditContractPrice(currentUser)
+  const marketingAccess = company.revoked !== true && currentUser?.section === 'MARKETING'
+  const canCreate = marketingAccess && canCreateContractPrice(currentUser, selectedContract)
+  const canEdit = marketingAccess && canEditContractPrice(currentUser, selectedContract)
+  const canDelete = marketingAccess && canDeleteContractPrice(currentUser, selectedContract)
 
   useEffect(() => {
     let active = true
     setContractsLoading(true); setContractsError('')
-    loadAll(contractService.list, 'contracts', { companyId: company.id, isActive: inactive ? '' : 'true' })
-      .then((rows) => { if (active) setContracts(rows) })
+    if (!contractId) { setContracts([]); setContractsLoading(false); return }
+    contractService.get(contractId)
+      .then(({ data: contract }) => { if (active) setContracts([contract]) })
       .catch((err) => { if (active) { setContractsError(err.message); setContracts([]) } })
       .finally(() => { if (active) setContractsLoading(false) })
     return () => { active = false }
-  }, [company.id, inactive, revision])
+  }, [contractId, revision])
 
   useEffect(() => {
     let active = true
     setLoading(true); setError(''); setData({ prices: [], pagination: {} })
+    if (!contractId) { setLoading(false); return }
     contractService.listPrices({ ...query, companyId: company.id, contractId, isActive: inactive ? query.isActive : 'true' })
       .then((response) => {
         if (!active) return
@@ -57,24 +66,45 @@ export default function CompanyContractPrices({ company, currentUser, initialCon
     sortOrder: query.sortBy === field ? (query.sortOrder === 'asc' ? 'ascend' : 'descend') : null,
     render: (value) => value == null ? '-' : formatPriceInput(value) })
 
-  return <Modal title={`Contract Items and Prices: ${company.name}`} visible footer={null} width={1150} onCancel={onClose} unmountOnClose>
-    <div className="company-view-section-heading">
-      {canCreate && <Button variant="primary" disabled={contractsLoading || !canReceiveContractPrices(selectedContract)} onClick={() => setEditor({ price: null, contract: selectedContract })}>Add Contract Price</Button>}
-    </div>
-    {canCreate && !selectedContract && <p>Choose a contract using the Contract column filter to add a single item price.</p>}
-    {canCreate && selectedContract && !canReceiveContractPrices(selectedContract) && <p>Prices can only be added to an ACTIVE contract that has not ended.</p>}
+  const deletePrice = async (row) => {
+    if (deleteLock.current || contractsLoading || !canDelete || row.isActive !== true || row.contractId !== contractId) return
+    deleteLock.current = true
+    setDeletingId(row.id)
+    try {
+      await contractService.removePrice(row.id, row.version)
+      message.success('Contract price deleted.')
+      refresh()
+    } catch (err) {
+      message.error(err.message)
+      if (err.status === 409 || err.status === 404) refresh()
+    } finally {
+      deleteLock.current = false
+      setDeletingId(null)
+    }
+  }
+
+  return <Modal title={`Contract Items and Prices: ${company.name}`} visible={!closing} footer={null} width={1150}
+    onCancel={() => { if (!uploadOpen && !deleteLock.current) setClosing(true) }} afterClose={onClose}
+    closable={!deletingId} keyboard={!deletingId} mask={{ closable: !deletingId }} unmountOnClose>
+    <div className="company-view-section-heading"><Space size={8}>
+      {marketingAccess && <Button icon={<UploadOutlined />} disabled={Boolean(deletingId) || contractsLoading || !selectedContract} onClick={() => setUploadOpen(true)}>Upload Price List</Button>}
+      {marketingAccess && <Button variant="primary" disabled={Boolean(deletingId) || contractsLoading || !canCreate} onClick={() => setEditor({ price: null, contract: selectedContract })}>Add Contract Price</Button>}
+    </Space></div>
+    {marketingAccess && !contractsLoading && !selectedContract && <p>Contract details are unavailable. Reload to manage prices.</p>}
+    {selectedContract && <p>Contract: <strong>{selectedContract.contractNumber}</strong></p>}
+    {marketingAccess && selectedContract && !canCreate && <p>{canReceiveContractPrices(selectedContract)
+      ? 'Adding or editing prices for SUBMITTED and APPROVED contracts requires ADMIN in Marketing.'
+      : 'Prices can only be added or edited for DRAFT, REJECTED, SUBMITTED, or APPROVED contracts that have not been deleted.'}</p>}
     {(error || contractsError) && <div role="alert"><Typography.Text tone="danger">{error || contractsError}</Typography.Text> <Button onClick={() => setRevision((value) => value + 1)}>Retry</Button></div>}
     <Table rowKey="id" loading={loading} dataSource={data.prices} scroll={{ x: 1000 }}
-      pagination={{ current: query.page, pageSize: query.limit, total: data.pagination?.total || 0, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100],
+      pagination={{ disabled: Boolean(deletingId), current: query.page, pageSize: query.limit, total: data.pagination?.total || 0, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100],
         onChange: (page, limit) => setQuery((value) => ({ ...value, page: value.limit === limit ? page : 1, limit })) }}
       onChange={(_, filters, sorter, extra) => {
-        if (extra.action === 'paginate') return
-        setContractId(filters.contractId?.[0])
+        if (deleteLock.current || extra.action === 'paginate') return
         setQuery((value) => ({ ...value, page: 1, search: (filters.search?.[0] || '').trim(), isActive: filters.isActive?.[0] || '',
           sortBy: sorter.order ? sorter.field : '', sortOrder: sorter.order === 'ascend' ? 'asc' : sorter.order ? 'desc' : '' }))
       }} columns={[
-        { title: 'Contract', key: 'contractId', filterMultiple: false, filterSearch: true, filteredValue: contractId ? [contractId] : null,
-          filters: contracts.map((row) => ({ value: row.id, text: `${row.contractNumber} · ${row.status} · ${row.effectiveFrom.slice(0, 10)}` })),
+        { title: 'Contract', key: 'contractId',
           render: (_, row) => row.contract?.contractNumber || contracts.find((contract) => contract.id === row.contractId)?.contractNumber || '-' },
         { title: 'Service', render: (_, row) => row.catalogSnapshot?.serviceName || '-' },
         { title: 'Item', key: 'search', filteredValue: query.search ? [query.search] : null,
@@ -85,9 +115,16 @@ export default function CompanyContractPrices({ company, currentUser, initialCon
         { title: 'Status', dataIndex: 'isActive', filterMultiple: false, filteredValue: inactive && query.isActive ? [query.isActive] : null,
           filters: inactive ? [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }] : undefined,
           render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag> },
-        ...(canEdit ? [{ title: 'Actions', render: (_, row) => row.isActive === true && canReceiveContractPrices(row.contract || contracts.find((contract) => contract.id === row.contractId)) && <Button variant="text" icon={<EditOutlined />} title="Edit Contract Price"
-          onClick={() => setEditor({ price: row, contract: row.contract || contracts.find((contract) => contract.id === row.contractId) })} /> }] : []),
+        ...(canEdit || canDelete ? [{ title: 'Actions', width: 112, render: (_, row) => row.isActive === true && <Space size={4}>
+          {canEdit && <Button variant="text" icon={<EditOutlined />} title="Edit Contract Price" disabled={contractsLoading || Boolean(deletingId)}
+            onClick={() => setEditor({ price: row, contract: selectedContract })} />}
+          {canDelete && <Popconfirm title="Delete contract price?" description={`Remove ${row.catalogSnapshot?.itemName || 'this item'} (${row.catalogSnapshot?.size || 'No size'}) from this contract's active price list?`}
+            okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }} disabled={contractsLoading || Boolean(deletingId)} onConfirm={() => deletePrice(row)}>
+            <Button variant="text" isDanger icon={<DeleteOutlined />} title="Delete Contract Price" busy={deletingId === row.id} disabled={contractsLoading || Boolean(deletingId)} />
+          </Popconfirm>}
+        </Space> }] : []),
       ]} />
+    {uploadOpen && <CompanyContractUpload company={company} contractId={selectedContract?.id} onClose={() => setUploadOpen(false)} onChanged={refresh} />}
     {editor && <CompanyContractPriceEditor {...editor} company={company} currentUser={currentUser} onClose={() => setEditor(null)} onSaved={refresh} onConflict={refresh} />}
   </Modal>
 }

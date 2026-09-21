@@ -133,12 +133,44 @@ test('Single contract price POST and PATCH match Swagger and preserve exact pric
     service.updatePrice(uuid, contractPricePayload(values, { version: 9 }))]) {
     const body = JSON.parse(request.body)
     assertBody(operation(request).requestBody.content['application/json'].schema, body)
+    for (const status of ['DRAFT', 'REJECTED', 'SUBMITTED', 'APPROVED']) assert.ok(operation(request).description.includes(status))
+    assert.match(operation(request).description, /SUBMITTED and APPROVED require ADMIN with MARKETING section/)
     assert.equal(body.priceService, values.priceService)
     assert.equal(body.priceMaintenance, '0')
     assert.equal(body.companyId, undefined)
     if (request.method === 'PATCH') { assert.equal(body.version, 9); assert.equal(body.contractId, undefined) }
     else { assert.equal(body.contractId, uuid); assert.equal(body.version, undefined) }
   }
+})
+
+test('Contract price DELETE sends the price row version to the Swagger endpoint', async () => {
+  const service = await loadService('contractService')
+  const request = service.removePrice(uuid, 7)
+  assert.equal(request.path, `/marketing/items/contract-prices/${uuid}`)
+  assert.equal(request.method, 'DELETE')
+  const body = JSON.parse(request.body)
+  assert.deepEqual(body, { version: 7 })
+  assertBody(operation(request).requestBody.content['application/json'].schema, body)
+  assert.match(operation(request).description, /Soft deletion/)
+})
+
+test('Contract price options use the viewed contract, server pagination, and flat Swagger fields', async () => {
+  const service = await loadService('itemService')
+  const request = service.listContractPriceOptions(uuid, { page: 2, limit: 10, itemName: 'Pipe', serviceName: 'Inspection', size: '' })
+  const url = new URL(request.path, 'http://localhost')
+  assert.equal(url.pathname, `/marketing/items/sizes/contract-price-options/${uuid}`)
+  assert.equal(url.searchParams.has('contractId'), false)
+  assert.ok(operation(request).parameters.some((parameter) => parameter.name === 'contractId' && parameter.in === 'path' && parameter.required))
+  assert.equal(url.searchParams.get('page'), '2')
+  assert.equal(url.searchParams.get('limit'), '10')
+  assert.equal(url.searchParams.get('itemName'), 'Pipe')
+  assert.equal(url.searchParams.get('serviceName'), 'Inspection')
+  assert.equal(url.searchParams.has('size'), false)
+  assert.equal(url.searchParams.has('notIn'), false)
+  for (const key of url.searchParams.keys()) assert.ok(operation(request).parameters.some((parameter) => parameter.name === key))
+  const option = { id: uuid, itemId: uuid, version: 0, size: null, itemName: 'Pipe', serviceName: null }
+  assertBody(swagger.components.schemas.ContractPriceOption, option)
+  assert.equal(swagger.components.schemas.ContractPriceOption.properties.item, undefined)
 })
 
 test('Contract list is company-scoped and Excel upload sends only documented multipart fields', async () => {
@@ -153,6 +185,8 @@ test('Contract list is company-scoped and Excel upload sends only documented mul
   assert.deepEqual(Object.keys(body).sort(), ['companyId', 'file', 'version'])
   assert.equal(body.version, '12')
   assert.equal(upload.headers, undefined, 'Browser must supply multipart boundary')
+  assert.equal(upload.path, `/marketing/company-contracts/${uuid}/prices/import`, 'Upload must address the selected contract')
+  assert.match(operation(upload).description, /DRAFT contracts are supported and remain DRAFT/)
 })
 
 test('Marketing service methods use documented endpoints and HTTP methods', async () => {
@@ -161,6 +195,7 @@ test('Marketing service methods use documented endpoints and HTTP methods', asyn
     for (const [method, invoke] of Object.entries(service)) {
       let request
       if (method === 'importPrices') request = invoke(uuid, { companyId: uuid, version: 0, file: new Blob(['test']) })
+      else if (method === 'listContractPriceOptions') request = invoke(uuid, {})
       else if (/^(list|download)/.test(method)) request = invoke({})
       else if (/history$/i.test(method)) request = invoke(uuid, { page: 1, limit: 20 })
       else request = invoke(uuid, 0, '2026-09-11')
@@ -172,12 +207,12 @@ test('Marketing service methods use documented endpoints and HTTP methods', asyn
 test('Service deletion and contract termination send required concurrency and date fields', async () => {
   const service = await loadService('serviceService')
   const contracts = await loadService('contractService')
-  for (const request of [service.remove(uuid, 0), contracts.remove(uuid, 3, '2026-09-11')]) {
+  for (const request of [service.remove(uuid, 0), contracts.terminate(uuid, 3, '2026-09-11')]) {
     const body = JSON.parse(request.body)
     assertBody(operation(request).requestBody.content['application/json'].schema, body)
     assert.equal(typeof body.version, 'number')
   }
-  assert.deepEqual(JSON.parse(contracts.remove(uuid, 3, '2026-09-11').body), { version: 3, terminatedAt: '2026-09-11' })
+  assert.deepEqual(JSON.parse(contracts.terminate(uuid, 3, '2026-09-11').body), { version: 3, terminatedAt: '2026-09-11' })
 })
 
 test('Item history endpoints send only documented pagination and use size IDs for prices', async () => {
@@ -216,6 +251,26 @@ const record = { ...quotationFormValues(), companySnapshot: { id: uuid, name: 'C
   status: 'CREATED', invoiceStatus: null,
   ...Object.fromEntries(TEXT_FIELDS.map(([key]) => [key, 'Test'])),
   items: [{ id: uuid, itemSizeId: uuid, quantityInspection: '1', quantityMaintenance: '2', priceInspection: '100.00', priceMaintenance: '150.00' }] }
+
+test('Delivery invoice uses required text fields and preserves trimmed values on create and edit', () => {
+  assert.ok(TEXT_FIELDS.some(([key]) => key === 'deliveryInvoice'))
+  for (const name of ['CreateQuotationRequest', 'UpdateQuotationRequest', 'Quotation']) {
+    const schema = swagger.components.schemas[name]
+    assert.equal(schema.properties.deliveryInvoice.maxLength, 255)
+  }
+  for (const deliveryInvoice of [undefined, null, '', '   ']) {
+    assert.equal(quotationFormValues({ ...record, deliveryInvoice }).deliveryInvoice, '')
+  }
+  const original = { ...record, deliveryInvoice: 'Email to billing contact' }
+  const values = quotationFormValues(original)
+  assert.equal(values.deliveryInvoice, original.deliveryInvoice)
+  assert.deepEqual(quotationChanges(values, original), {})
+  assert.deepEqual(quotationChanges({ ...values, deliveryInvoice: '  Send original invoice  ' }, original), { deliveryInvoice: 'Send original invoice' })
+  const changes = quotationChanges({ ...values, deliveryInvoice: 'Courier' }, original)
+  assert.deepEqual(changes, { deliveryInvoice: 'Courier' })
+  assertBody(swagger.components.schemas.UpdateQuotationRequest, { ...changes, version: 0 })
+  assert.equal(quotationPayload({ ...record, deliveryInvoice: '  Email invoice  ' }, { create: true }).deliveryInvoice, 'Email invoice')
+})
 
 test('Create quotation sends only allowed item fields and omits client prices and IDs', () => {
   const values = quotationFormValues(record)
@@ -382,4 +437,40 @@ test('Quotation options send documented exclude and server pagination parameters
   assert.equal(query.get('exclude'), uuid)
   assert.equal(query.get('page'), '2')
   assert.equal(new URL(service.listPrices({ companyId: uuid, exclude: [] }).path, 'http://localhost').searchParams.has('exclude'), false)
+})
+
+
+test('Contract lifecycle uses Swagger statuses, draft PATCH, revision POST and termination POST', async () => {
+  const service = await loadService('contractService')
+  const fields = { version: 3, contractNumber: 'CON-002', contractDate: '2026-09-20', effectiveFrom: '2026-10-01', effectiveUntil: '2027-10-01' }
+  for (const [request, method, schemaName] of [
+    [service.update(uuid, fields), 'PATCH', 'UpdateCompanyContractRequest'],
+    [service.revise(uuid, fields), 'POST', 'ReviseCompanyContractRequest'],
+    [service.terminate(uuid, 3, '2026-10-01'), 'POST', 'TerminateCompanyContractRequest'],
+    [service.approve(uuid, 3), 'POST', 'CatalogVersionRequest'],
+    [service.submit(uuid, 3), 'POST', 'CatalogVersionRequest'],
+    [service.reject(uuid, 3), 'POST', 'CatalogVersionRequest'],
+    [service.cancel(uuid, 3), 'DELETE', 'CatalogVersionRequest'],
+  ]) {
+    assert.equal(request.method, method)
+    const schema = operation(request).requestBody.content['application/json'].schema
+    assert.equal(schema.$ref, `#/components/schemas/${schemaName}`)
+    assertBody(schema, JSON.parse(request.body))
+  }
+  assert.equal(service.terminate(uuid, 3, '2026-10-01').path, `/marketing/company-contracts/${uuid}/terminate`)
+  for (const action of ['approve', 'submit', 'reject']) {
+    assert.equal(service[action](uuid, 3).path, `/marketing/company-contracts/${uuid}/${action}`)
+    assert.deepEqual(JSON.parse(service[action](uuid, 3).body), { version: 3 })
+  }
+  const statuses = ['DRAFT', 'SUBMITTED', 'REJECTED', 'APPROVED', 'TERMINATED', 'REVISED']
+  assert.deepEqual(swagger.components.schemas.CompanyContract.properties.status.enum, statuses)
+  assert.equal(swagger.components.schemas.CompanyContract.properties.isActive, undefined)
+  for (const status of statuses) {
+    const request = service.list({ companyId: uuid, status, page: 1, limit: 20 })
+    const parameters = operation(request).parameters
+    for (const key of new URL(request.path, 'http://localhost').searchParams.keys()) {
+      assert.ok(parameters.some((parameter) => parameter.name === key))
+    }
+    assert.ok(parameters.find((parameter) => parameter.name === 'status').schema.enum.includes(status))
+  }
 })

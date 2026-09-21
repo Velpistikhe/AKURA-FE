@@ -172,9 +172,10 @@ test('Marketing contract lifecycle, prices, company and staff requests match Swa
   check(contracts.create(contract))
   const { companyId, ...revision } = contract
   check(contracts.update(id, { ...revision, version: 0 }))
+  check(contracts.revise(id, { ...revision, version: 0 }))
   check(contracts.approve(id, 0))
-  check(contracts.remove(id, 0, '2026-10-15'))
-  check(contracts.list({ companyId: id, status: 'CREATE', isActive: 'true', page: 1, limit: 20 }))
+  check(contracts.terminate(id, 0, '2026-10-15'))
+  check(contracts.list({ companyId: id, status: 'DRAFT', page: 1, limit: 20 }))
   check(contracts.listPrices({ contractId: id, page: 1, limit: 20 }))
   const items = await service('akura-marketing', 'itemService')
   check(items.create({ serviceId: id, name: 'Pipe', uom: 'JOINT', sizes: [{ size: '2 inch' }] }))

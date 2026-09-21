@@ -9,6 +9,7 @@ import {
   Input as AntInput,
   InputNumber as AntInputNumber,
   Modal as AntModal,
+  Pagination as AntPagination,
   Popconfirm as AntPopconfirm,
   Result as AntResult,
   Select as AntSelect,
@@ -151,6 +152,7 @@ Modal.useModal = AntModal.useModal
 
 export const Popconfirm = createAdapter(AntPopconfirm, 'GlobalPopconfirm')
 export const Select = createAdapter(AntSelect, 'GlobalSelect')
+export const Pagination = createAdapter(AntPagination, 'GlobalPagination')
 export const Space = createAdapter(AntSpace, 'GlobalSpace')
 export const Switch = createAdapter(AntSwitch, 'GlobalSwitch', ({ activeLabel, inactiveLabel, ...props }) => ({
   ...props,
