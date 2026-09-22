@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { App, Button, Pagination, Popconfirm, Space, Tag, Typography, EyeOutlined, EditOutlined, DeleteOutlined, SendOutlined, CloseOutlined } from '../../components/global'
+import { App, Button, Pagination, Popconfirm, Space, Tag, Typography, EyeOutlined, EditOutlined, DeleteOutlined, SendOutlined, CloseOutlined, HistoryOutlined } from '../../components/global'
+import CompanyContractHistory from './CompanyContractHistory'
 import { contractService } from '../../services/contractService'
+import { CheckOutlined, RollbackOutlined, StopOutlined } from '@ant-design/icons'
 import { blocksContractCreation, canApproveContract, canUpdateContract, canReviseContract, canTerminateContract, canSubmitContract, canRejectContract, canCancelContract } from './contractAccess'
 
 export default function PendingContracts({ visible, onCreationBlocked, onEdit, onRevise, onTerminate, companyId, currentUser, revision, onChanged, onView, readOnly = false }) {
@@ -12,6 +14,7 @@ export default function PendingContracts({ visible, onCreationBlocked, onEdit, o
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(null)
+  const [historyContract, setHistoryContract] = useState(null)
   const lock = useRef(false)
   useEffect(() => {
     if (!visible) return
@@ -31,17 +34,27 @@ export default function PendingContracts({ visible, onCreationBlocked, onEdit, o
     return () => { active = false }
   }, [companyId, visible, page, limit, retry, revision, onCreationBlocked])
   const actions = [
-    { key: 'submit', label: 'Submit', icon: <SendOutlined />, allowed: canSubmitContract, description: 'Send this draft for administrator review.' },
-    { key: 'approve', label: 'Approve', allowed: canApproveContract, description: 'Approve this contract. A revision will replace its original contract.' },
-    { key: 'reject', label: 'Reject', allowed: canRejectContract, description: 'Return this contract for correction.' },
+    { key: 'submit', label: 'Submit', icon: <SendOutlined />, allowed: canSubmitContract, description: 'Send this contract for administrator review. A rejected contract will first return to draft with its current details.' },
+    { key: 'approve', label: 'Approve', icon: <CheckOutlined />, allowed: canApproveContract, description: 'Approve this contract. A revision will replace its original contract.' },
+    { key: 'reject', label: 'Reject', icon: <StopOutlined />, allowed: canRejectContract, description: 'Return this contract for correction.' },
     { key: 'cancel', label: 'Cancel', icon: <CloseOutlined />, allowed: canCancelContract, description: 'Remove this draft from the active list. Its audit history is retained.' },
   ]
   const transition = async (record, action) => {
     if (readOnly || lock.current || !action.allowed(currentUser, record)) return
     lock.current = true; setBusy(record.id)
     try {
-      const { data: latest } = await contractService.get(record.id)
+      let { data: latest } = await contractService.get(record.id)
       if (!action.allowed(currentUser, latest)) throw new Error('Contract status has changed. Reload and try again.')
+      if (action.key === 'submit' && latest.status === 'REJECTED') {
+        const { data: draft } = await contractService.update(latest.id, {
+          version: latest.version,
+          contractNumber: latest.contractNumber,
+          contractDate: latest.contractDate?.slice(0, 10),
+          effectiveFrom: latest.effectiveFrom?.slice(0, 10),
+          effectiveUntil: latest.effectiveUntil?.slice(0, 10),
+        })
+        latest = draft
+      }
       await contractService[action.key](latest.id, latest.version)
       message.success('Contract updated successfully.')
       await onChanged?.()
@@ -58,13 +71,14 @@ export default function PendingContracts({ visible, onCreationBlocked, onEdit, o
           <p>{record.companySnapshot?.name || '-'}</p>
         </div>
       <div className="company-contract-row-actions">
-        <Space size={4} wrap>
-        <Button size="small" variant="text" icon={<EyeOutlined />} title="View Contract Prices" disabled={Boolean(busy)} onClick={() => onView(record)}>Prices</Button>
-        {!readOnly && canUpdateContract(currentUser, record) && <Button size="small" variant="text" icon={<EditOutlined />} title="Edit Contract" disabled={Boolean(busy)} onClick={() => onEdit(record)} />}
-        {!readOnly && canReviseContract(currentUser, record) && <Button size="small" variant="text" disabled={Boolean(busy)} onClick={() => onRevise(record)}>Revise</Button>}
-        {!readOnly && canTerminateContract(currentUser, record) && <Button size="small" variant="text" isDanger icon={<DeleteOutlined />} title="Terminate Contract" disabled={Boolean(busy)} onClick={() => onTerminate(record)} />}
+        <Space size={6} wrap>
+        <Button size="small" variant="default" icon={<EyeOutlined />} title="View Contract Prices" disabled={Boolean(busy)} onClick={() => onView(record)} />
+        <Button size="small" variant="default" icon={<HistoryOutlined />} title="View Contract History" disabled={Boolean(busy)} onClick={() => setHistoryContract(record)} />
+        {!readOnly && canUpdateContract(currentUser, record) && <Button size="small" variant="default" icon={<EditOutlined />} title="Edit Contract" disabled={Boolean(busy)} onClick={() => onEdit(record)} />}
+        {!readOnly && canReviseContract(currentUser, record) && <Button size="small" variant="default" icon={<RollbackOutlined />} title="Revise Contract" disabled={Boolean(busy)} onClick={() => onRevise(record)} />}
+        {!readOnly && canTerminateContract(currentUser, record) && <Button size="small" variant="default" isDanger icon={<DeleteOutlined />} title="Terminate Contract" disabled={Boolean(busy)} onClick={() => onTerminate(record)} />}
         {!readOnly && actions.filter((action) => action.allowed(currentUser, record)).map((action) => <Popconfirm key={action.key} title={`${action.label} contract?`} description={action.description} onConfirm={() => transition(record, action)}>
-          <Button size="small" variant="text" icon={action.icon} title={`${action.label} Contract`} isDanger={['reject', 'cancel'].includes(action.key)} busy={busy === record.id} disabled={Boolean(busy)}>{action.icon ? null : action.label}</Button>
+          <Button size="small" variant="default" icon={action.icon} title={`${action.label} Contract`} isDanger={['reject', 'cancel'].includes(action.key)} busy={busy === record.id} disabled={Boolean(busy)} />
         </Popconfirm>)}
       </Space>
       </div>
@@ -81,5 +95,6 @@ export default function PendingContracts({ visible, onCreationBlocked, onEdit, o
     <Pagination className="company-contract-pagination" current={page} pageSize={limit} total={data.pagination?.total || 0}
       disabled={loading || Boolean(busy)} showSizeChanger pageSizeOptions={[5, 10, 20, 50]} showTotal={(total) => `${total} contracts`}
       onChange={(nextPage, nextLimit) => { setPage(nextLimit !== limit ? 1 : nextPage); setLimit(nextLimit) }} />
+    {historyContract && <CompanyContractHistory key={historyContract.id} contract={historyContract} onClose={() => setHistoryContract(null)} />}
   </div>
 }

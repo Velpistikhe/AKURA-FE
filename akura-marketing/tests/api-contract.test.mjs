@@ -291,6 +291,28 @@ test('Create quotation sends only allowed item fields and omits client prices an
   }
 })
 
+test('Quotation item notes follow Swagger and survive creation, editing and clearing', () => {
+  for (const name of ['QuotationItemInput', 'UpdateQuotationItemInput', 'QuotationItem']) {
+    assert.equal(swagger.components.schemas[name].properties.note.maxLength, 2000)
+    assert.equal(swagger.components.schemas[name].properties.note.nullable, true)
+  }
+  const note = 'Inspect welds first.\nReport findings separately.'
+  const original = { ...record, items: [{ ...record.items[0], note }] }
+  const values = quotationFormValues(original)
+  assert.equal(values.items[0].note, note)
+  assert.deepEqual(quotationChanges(values, original), {})
+  const payload = quotationPayload(values, { create: true })
+  assert.equal(payload.items[0].note, note)
+  assertBody(swagger.components.schemas.QuotationItemInput, payload.items[0])
+  for (const nextNote of ['Updated note', 'x'.repeat(2000), '', null]) {
+    const changed = quotationChanges({ ...values, items: [{ ...values.items[0], note: nextNote }] }, original)
+    assert.equal(changed.items[0].note, nextNote || null)
+    assert.equal(changed.items[0].id, uuid)
+    assertBody(swagger.components.schemas.UpdateQuotationItemInput, changed.items[0])
+  }
+  assert.equal(Object.hasOwn(quotationPayload(quotationFormValues(record), { create: true }).items[0], 'note'), false)
+})
+
 test('Quotation activity filters preserve false and omit an unselected filter', async () => {
   const service = await loadService('quotationService')
   for (const isActive of [true, false, 'true', 'false', undefined, '']) {

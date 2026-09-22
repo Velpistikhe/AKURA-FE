@@ -6,7 +6,7 @@ export const canAdministerContracts = (user) => user?.role === 'ADMIN' && user?.
 export const canManageCompanyContracts = (user) => user?.section === 'MARKETING' && ['USER', 'ADMIN'].includes(user.role)
 export const canApproveContract = (user, contract) => canAdministerContracts(user) && available(contract) && contract.status === 'SUBMITTED'
 export const canRejectContract = canApproveContract
-export const canSubmitContract = (user, contract) => canManageCompanyContracts(user) && available(contract) && contract.status === 'DRAFT'
+export const canSubmitContract = (user, contract) => canManageCompanyContracts(user) && available(contract) && ['DRAFT', 'REJECTED'].includes(contract.status)
 export const canUpdateContract = (user, contract) => user?.section === 'MARKETING' && available(contract)
   && (['DRAFT', 'REJECTED'].includes(contract.status) || (contract.status === 'APPROVED' && canAdministerContracts(user)))
 export const canCancelContract = (user, contract) => user?.section === 'MARKETING' && available(contract) && ['DRAFT', 'REJECTED'].includes(contract.status)

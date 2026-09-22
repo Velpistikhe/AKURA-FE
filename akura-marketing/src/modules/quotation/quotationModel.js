@@ -35,6 +35,7 @@ export function quotationPayload(values, { create = false } = {}) {
     staffId: values.staffId || null,
     items: (values.items || []).filter((item) => item.isActive !== false).map((item) => ({
       ...(!create && item.id ? { id: item.id } : {}), itemSizeId: item.itemSizeId,
+      ...(item.note !== undefined ? { note: item.note || null } : {}),
       quantityInspection: decimal(item.quantityInspection),
       quantityMaintenance: decimal(item.quantityMaintenance ?? '0'),
     })),
@@ -54,6 +55,7 @@ export function quotationFormValues(record) {
     ...quotationPayload(record),
     items: record.items.filter((item) => item.isActive !== false).map((item) => ({
       id: item.id, itemSizeId: item.itemSizeId,
+      note: item.note,
       quantityInspection: decimal(item.quantityInspection), quantityMaintenance: decimal(item.quantityMaintenance ?? '0'),
       priceInspection: item.priceInspection, priceMaintenance: item.priceMaintenance,
       itemName: item.itemName, serviceName: item.serviceName, serviceType: item.serviceType, size: item.size,

@@ -39,7 +39,7 @@ test('Contract actions enforce lifecycle and Marketing roles', () => {
         const contract = { status, effectiveUntil: '2027-01-01' }
         assert.equal(canApproveContract(user, contract), admin && status === 'SUBMITTED')
         assert.equal(canRejectContract(user, contract), admin && status === 'SUBMITTED')
-        assert.equal(canSubmitContract(user, contract), marketing && ['USER', 'ADMIN'].includes(role) && status === 'DRAFT')
+        assert.equal(canSubmitContract(user, contract), marketing && ['USER', 'ADMIN'].includes(role) && ['DRAFT', 'REJECTED'].includes(status))
         assert.equal(canUpdateContract(user, contract), marketing && (['DRAFT', 'REJECTED'].includes(status) || (admin && status === 'APPROVED')))
         assert.equal(canCancelContract(user, contract), marketing && ['DRAFT', 'REJECTED'].includes(status))
         assert.equal(canTerminateContract(user, contract), admin && status === 'APPROVED')

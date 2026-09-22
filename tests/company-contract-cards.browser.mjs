@@ -17,20 +17,41 @@ import '/src/modules/company/CompanyPage.css';
 const statuses = ['DRAFT', 'SUBMITTED', 'REJECTED', 'APPROVED', 'REVISED', 'TERMINATED'];
 const contracts = Array.from({ length: 12 }, (_, i) => ({ id: 'contract-' + (i + 1), companyId: 'company-1', contractNumber: 'CONTRACT-' + (i + 1), status: statuses[i % 6], version: 0, contractDate: '2026-01-01', effectiveFrom: '2026-01-01', effectiveUntil: '2099-01-01', hasList: false, companySnapshot: { name: 'Test Company' } }));
 window.requests = [];
+window.mutations = [];
+window.contractDetails = {};
+window.failContractDetail = false;
 window.fetch = async (url, options = {}) => {
-  if (options.method && options.method !== 'GET') throw new Error('Unexpected mutation');
   const parsed = new URL(url, location.href); window.requests.push(String(url));
   let data;
+  if (options.method && options.method !== 'GET') {
+    const body = JSON.parse(options.body);
+    const row = contracts.find(row => parsed.pathname.includes('/' + row.id));
+    if (!row || body.version !== row.version) throw new Error('Stale contract version');
+    window.mutations.push({ method: options.method, path: parsed.pathname, body });
+    if (options.method === 'PATCH') Object.assign(row, body, { status: 'DRAFT', version: row.version + 1 });
+    else if (parsed.pathname.endsWith('/submit') && row.status === 'DRAFT') Object.assign(row, { status: 'SUBMITTED', version: row.version + 1 });
+    else throw new Error('Unexpected mutation');
+    return new Response(JSON.stringify({ success: true, data: row }), { headers: { 'content-type': 'application/json' } });
+  }
   if (parsed.pathname.endsWith('/company-contracts')) {
     const page = Number(parsed.searchParams.get('page') || 1), limit = Number(parsed.searchParams.get('limit') || 10), status = parsed.searchParams.get('status');
     const rows = contracts.filter(row => !status || row.status === status);
     data = { contracts: rows.slice((page - 1) * limit, page * limit), pagination: { page, limit, total: rows.length, totalPages: Math.ceil(rows.length / limit) } };
-  } else if (parsed.pathname.includes('/company-contracts/')) data = contracts.find(row => parsed.pathname.endsWith('/' + row.id));
+  } else if (parsed.pathname.endsWith('/history')) {
+    const contractId = parsed.pathname.split('/').at(-2);
+    const page = Number(parsed.searchParams.get('page')), limit = Number(parsed.searchParams.get('limit'));
+    data = { contractId, history: [{ id: 'history-' + page, companyContractId: contractId, version: 22 - page, action: 'UPDATE', createdByName: 'History Tester', createdAt: '2026-09-22T03:00:00Z', snapshot: { oldData: { contractNumber: 'OLD-NUMBER' }, newData: { contractNumber: 'NEW-NUMBER' }, changedFields: ['contractNumber'] } }], pagination: { page, limit, total: 21, totalPages: 2 } };
+  } else if (parsed.pathname.includes('/company-contracts/')) {
+    if (window.failContractDetail) return new Response(JSON.stringify({ success: false, message: 'Unable to load contract detail' }), { status: 500, headers: { 'content-type': 'application/json' } });
+    data = contracts.find(row => parsed.pathname.endsWith('/' + row.id));
+    Object.assign(data, window.contractDetails[data.id] || {});
+    delete window.contractDetails[data.id];
+  }
   else if (parsed.pathname.endsWith('/company-contract-prices')) data = { prices: [], pagination: { total: 0, totalPages: 1 } };
   else data = { staffs: [], pagination: { total: 0, totalPages: 1 } };
   return new Response(JSON.stringify({ success: true, data }), { headers: { 'content-type': 'application/json' } });
 };
-createRoot(document.getElementById('root')).render(React.createElement(App, null, React.createElement(CompanyView, { company: { id: 'company-1', name: 'Test Company' }, currentUser: { role: 'ADMIN', section: 'MARKETING' }, onClose: () => {}, onChanged: () => {} })));
+createRoot(document.getElementById('root')).render(React.createElement(React.StrictMode, null, React.createElement(App, null, React.createElement(CompanyView, { company: { id: 'company-1', name: 'Test Company' }, currentUser: { role: 'ADMIN', section: 'MARKETING' }, onClose: () => {}, onChanged: () => {} }))));
 `
 
 test('Company contracts load on show, render all statuses as cards, and paginate within the viewed company', { timeout: 90000 }, async () => {
@@ -105,6 +126,39 @@ test('Company contracts load on show, render all statuses as cards, and paginate
     assert.equal(await evaluate(`document.querySelectorAll('#company-contract-cards table').length`), 0)
     assert.deepEqual(await evaluate(`[...new Set([...document.querySelectorAll('.company-contract-title .ant-tag')].map(el => el.textContent))]`), ['DRAFT', 'SUBMITTED', 'REJECTED', 'APPROVED', 'REVISED', 'TERMINATED'])
     assert.equal(await evaluate(`[...document.querySelectorAll('button')].find(el => el.textContent === 'Add Contract').disabled`), true)
+    assert.equal(await evaluate(`[...document.querySelectorAll('.company-contract-card button')].every(button => button.textContent.trim() === '' && button.getAttribute('aria-label') && getComputedStyle(button).borderTopStyle === 'solid')`), true)
+    await evaluate(`window.contractDetails['contract-1'] = { contractNumber: 'DETAIL-1', contractDate: '2026-09-01', effectiveFrom: '2026-10-01', effectiveUntil: '2027-09-30', version: 4 }; document.querySelector('[aria-label="Contract CONTRACT-1"] button[aria-label="Edit Contract"]').click()`)
+    await until(() => evaluate(`document.querySelector('input[id="contractNumber"]')?.value === 'DETAIL-1'`))
+    assert.deepEqual(await evaluate(`['contractNumber', 'contractDate', 'effectiveFrom', 'effectiveUntil'].map(id => document.getElementById(id).value)`), ['DETAIL-1', '2026-09-01', '2026-10-01', '2027-09-30'])
+    assert.equal(await evaluate(`window.requests.some(url => url.endsWith('/company-contracts/contract-1'))`), true)
+    const requestsBeforeUnchangedUpdate = await evaluate('window.requests.length')
+    await click('Update')
+    await until(() => evaluate(`document.body.textContent.includes('No changes were made.') && !document.querySelector('input[id="contractNumber"]')`))
+    assert.equal(await evaluate('window.requests.length'), requestsBeforeUnchangedUpdate)
+    assert.equal(await evaluate('window.mutations.length'), 0)
+    assert.equal(await evaluate(`!!document.querySelector('.akura-save-confirmation')`), false)
+    await evaluate(`document.querySelector('[aria-label="Contract CONTRACT-1"] button[aria-label="Edit Contract"]').click()`)
+    await until(() => evaluate(`document.querySelector('input[id="contractNumber"]')?.value === 'DETAIL-1'`))
+    await evaluate(`const input = document.getElementById('contractNumber'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'DETAIL-1-UPDATED'); input.dispatchEvent(new Event('input', { bubbles: true }))`)
+    await click('Update')
+    await click('Save')
+    await until(() => evaluate(`window.mutations.length === 1 && !!document.querySelector('[aria-label="Contract DETAIL-1-UPDATED"]')`))
+    assert.equal(await evaluate(`window.mutations[0].body.version`), 4)
+    assert.equal(await evaluate(`window.mutations[0].body.contractNumber`), 'DETAIL-1-UPDATED')
+    await evaluate(`window.mutations = []; window.failContractDetail = true`)
+    await evaluate(`document.querySelector('[aria-label="Contract CONTRACT-3"] button[aria-label="Edit Contract"]').click()`)
+    await until(() => evaluate(`document.querySelector('[role="alert"]')?.textContent.includes('Unable to load contract detail')`))
+    assert.equal(await evaluate(`[...document.querySelectorAll('button')].find(button => button.textContent.trim() === 'Update').disabled`), true)
+    await evaluate(`window.failContractDetail = false`)
+    await click('Retry')
+    await until(() => evaluate(`document.querySelector('input[id="contractNumber"]')?.value === 'CONTRACT-3'`))
+    assert.deepEqual(await evaluate(`['contractDate', 'effectiveFrom', 'effectiveUntil'].map(id => document.getElementById(id).value)`), ['2026-01-01', '2026-01-01', '2099-01-01'])
+    await click('Cancel')
+    await evaluate(`document.querySelector('[aria-label="Contract CONTRACT-3"] button[aria-label="Submit Contract"]').click()`)
+    await click('OK')
+    await until(() => evaluate(`document.querySelector('[aria-label="Contract CONTRACT-3"] .ant-tag')?.textContent === 'SUBMITTED'`))
+    assert.deepEqual(await evaluate(`window.mutations.map(({ method, body }) => [method, body.version])`), [['PATCH', 0], ['POST', 1]])
+    assert.equal(await evaluate(`window.mutations[1].path.endsWith('/contract-3/submit')`), true)
     await evaluate(`document.querySelector('.company-contract-pagination .ant-pagination-item-2').click()`)
     await until(() => evaluate(`document.querySelectorAll('.company-contract-card').length === 2`))
     assert.equal(await evaluate(`document.querySelector('.company-contract-list').textContent.includes('CONTRACT-12')`), true)
@@ -112,6 +166,16 @@ test('Company contracts load on show, render all statuses as cards, and paginate
     assert.equal(await evaluate(`document.querySelector('#company-contract-cards').hidden`), true)
     await click('Show Contracts')
     await until(() => evaluate(`document.querySelectorAll('.company-contract-card').length === 2`))
+    assert.equal(await evaluate(`window.requests.some(url => url.includes('/history?'))`), false)
+    await evaluate(`document.querySelector('.company-contract-card button[aria-label="View Contract History"]').click()`)
+    await until(() => evaluate(`document.querySelector('.company-contract-history')?.textContent.includes('History Tester')`))
+    assert.equal(await evaluate(`window.requests.some(url => url.endsWith('/company-contracts/contract-11/history?page=1&limit=20'))`), true)
+    await evaluate(`document.querySelector('.company-contract-history .ant-table-row-expand-icon').click()`)
+    await until(() => evaluate(`document.querySelector('.company-contract-history').textContent.includes('OLD-NUMBER') && document.querySelector('.company-contract-history').textContent.includes('NEW-NUMBER')`))
+    await evaluate(`document.querySelector('.company-contract-history .ant-pagination-item-2').click()`)
+    await until(() => evaluate(`window.requests.some(url => url.endsWith('/company-contracts/contract-11/history?page=2&limit=20'))`))
+    await click('Close')
+    await until(() => evaluate(`!document.querySelector('.company-contract-history')`))
     await evaluate(`document.querySelector('.company-contract-card button[aria-label="View Contract Prices"]').click()`)
     await until(() => evaluate(`window.requests.some(url => url.includes('/company-contracts/contract-11'))`))
     assert.equal(await evaluate(`window.requests.filter(url => url.includes('/company-contract-prices')).every(url => new URL(url, location.href).searchParams.get('contractId') === 'contract-11')`), true)

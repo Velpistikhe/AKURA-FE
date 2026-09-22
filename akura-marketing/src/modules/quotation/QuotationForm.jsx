@@ -95,6 +95,9 @@ export default function QuotationForm({ form, record, saving, onFinish, onLoadin
                 { title: 'Item', width: 230, render: (_, { name, key: _key, ...rest }) => <div className="quotation-selected-item">
                   {['id', 'itemSizeId', 'itemName', 'serviceName', 'serviceType', 'size', 'priceInspection', 'priceMaintenance'].map((property) => <Form.Item {...rest} key={property} name={[name, property]} hidden><Input /></Form.Item>)}
                   <Typography.Text strong>{form.getFieldValue(['items', name, 'itemName']) || '-'}</Typography.Text>
+                  <Form.Item {...rest} name={[name, 'note']} rules={[{ max: 2000, message: 'Item note must be 2,000 characters or fewer.' }]}>
+                    <Input.TextArea aria-label={`Note item ${name + 1}`} placeholder="Note (optional)" maxLength={2000} autoSize={{ minRows: 2, maxRows: 6 }} />
+                  </Form.Item>
                 </div> },
                 { title: 'Size', width: 120, render: (_, field) => form.getFieldValue(['items', field.name, 'size']) ?? 'Without size' },
                 ...[['quantityInspection', 'Inspection Quantity', 'priceInspection'], ['quantityMaintenance', 'Maintenance Quantity', 'priceMaintenance']].map(([property, label, price]) => ({

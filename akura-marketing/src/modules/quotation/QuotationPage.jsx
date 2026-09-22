@@ -169,7 +169,10 @@ export default function QuotationPage({ onCreate, currentUser }) {
     { title: 'State', dataIndex: 'isActive', width: 110, render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag> },
     { title: 'Service', dataIndex: 'serviceName', width: 240, render: (value) => value || 'Standalone' },
     { title: 'Type', dataIndex: 'serviceType', width: 100, render: (value) => value || '-' },
-    { title: 'Item', dataIndex: 'itemName', width: 220 },
+    { title: 'Item', dataIndex: 'itemName', width: 220, render: (value, item) => <div className="quotation-selected-item">
+      <span>{value}</span>
+      {item.note && <Typography.Text tone="secondary" style={{ whiteSpace: 'pre-wrap' }}>{item.note}</Typography.Text>}
+    </div> },
     { title: 'Size', dataIndex: 'size', width: 120, render: (value) => value ?? 'Without size' },
     { title: 'Inspection Quantity', dataIndex: 'quantityInspection', width: 160 },
     { title: 'Maintenance Quantity', dataIndex: 'quantityMaintenance', width: 170 },

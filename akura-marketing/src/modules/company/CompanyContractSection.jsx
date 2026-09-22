@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { App, Button, Form, Input, Modal, Typography, useSaveConfirmation } from '../../components/global'
 import { contractService } from '../../services/contractService'
 import PendingContracts from './PendingContracts'
@@ -14,6 +14,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
   const [pendingRevision, setPendingRevision] = useState(0)
   const { message } = App.useApp()
   const [form] = Form.useForm()
+  const [editForm] = Form.useForm()
   const [terminationForm] = Form.useForm()
   const [confirmSave, confirmation] = useSaveConfirmation()
   const [creationBlocked, setCreationBlocked] = useState(true)
@@ -23,9 +24,30 @@ export default function CompanyContractSection({ company, currentUser, onChanged
   const [createOpen, setCreateOpen] = useState(false)
   const [editMode, setEditMode] = useState('update')
   const [editingContract, setEditingContract] = useState(null)
+  const [editTarget, setEditTarget] = useState(null)
+  const [editError, setEditError] = useState('')
   const [priceListContract, setPriceListContract] = useState(null)
   const [priceListOpen, setPriceListOpen] = useState(false)
   const [contractsVisible, setContractsVisible] = useState(false)
+
+  useEffect(() => {
+    if (!editTarget) return
+    let active = true
+    contractService.get(editTarget.id).then(({ data: contract }) => {
+      if (!active) return
+      const allowed = editTarget.mode === 'revise' ? canReviseContract(currentUser, contract) : canUpdateContract(currentUser, contract)
+      if (!allowed || readOnly) {
+        throw new Error('Contract status or access has changed. Reload and try again.')
+      }
+      setEditingContract(contract)
+    }).catch((error) => { if (active) setEditError(error.message) })
+    return () => { active = false }
+  }, [editTarget, currentUser, readOnly])
+
+  const closeEdit = () => {
+    setEditTarget(null)
+    setEditingContract(null)
+  }
 
   const refreshCompanyDetail = async () => {
     setPendingRevision((value) => value + 1)
@@ -41,15 +63,10 @@ export default function CompanyContractSection({ company, currentUser, onChanged
 
   const openUpdate = (contract, mode = 'update') => {
     if (readOnly || !(mode === 'revise' ? canReviseContract(currentUser, contract) : canUpdateContract(currentUser, contract))) return
-    form.resetFields()
-    form.setFieldsValue({
-      contractNumber: contract.contractNumber,
-      contractDate: formatContractDate(contract.contractDate),
-      effectiveFrom: formatContractDate(contract.effectiveFrom),
-      effectiveUntil: formatContractDate(contract.effectiveUntil),
-    })
+    setEditingContract(null)
+    setEditError('')
     setEditMode(mode)
-    setEditingContract(contract)
+    setEditTarget({ id: contract.id, mode })
   }
 
   const createContract = async () => {
@@ -92,13 +109,26 @@ export default function CompanyContractSection({ company, currentUser, onChanged
 
   const updateContract = async () => {
     if (readOnly || !(editMode === 'revise' ? canReviseContract(currentUser, editingContract) : canUpdateContract(currentUser, editingContract))) return
-    const values = await form.validateFields()
+    const values = await editForm.validateFields()
+    const changes = {
+      contractNumber: values.contractNumber.trim(),
+      contractDate: values.contractDate,
+      effectiveFrom: values.effectiveFrom,
+      effectiveUntil: values.effectiveUntil,
+    }
+    const unchanged = changes.contractNumber === editingContract.contractNumber?.trim()
+      && ['contractDate', 'effectiveFrom', 'effectiveUntil'].every((field) => changes[field] === editingContract[field]?.slice(0, 10))
+    if (editMode === 'update' && unchanged) {
+      closeEdit()
+      message.info('No changes were made.')
+      return
+    }
     if (new Date(values.effectiveUntil) <= new Date(values.effectiveFrom)) {
-      form.setFields([{ name: 'effectiveUntil', errors: ['End date must be after the start date.'] }])
+      editForm.setFields([{ name: 'effectiveUntil', errors: ['End date must be after the start date.'] }])
       return
     }
     if (values.contractDate > values.effectiveFrom) {
-      form.setFields([{ name: 'contractDate', errors: ['Contract date must be on or before the start date.'] }])
+      editForm.setFields([{ name: 'contractDate', errors: ['Contract date must be on or before the start date.'] }])
       return
     }
     if (!await confirmSave(editMode === 'revise' ? 'company contract revision' : 'company contract changes')) return
@@ -107,19 +137,16 @@ export default function CompanyContractSection({ company, currentUser, onChanged
       const save = editMode === 'revise' ? contractService.revise : contractService.update
       await save(editingContract.id, {
         version: editingContract.version,
-        contractNumber: values.contractNumber.trim(),
-        contractDate: values.contractDate,
-        effectiveFrom: values.effectiveFrom,
-        effectiveUntil: values.effectiveUntil,
+        ...changes,
       })
+      closeEdit()
       message.success('Contract updated successfully.')
-      setEditingContract(null)
       await refreshCompanyDetail()
     } catch (error) {
       message.error(error.message)
       if (error.status === 409) {
         setCreateOpen(false)
-        setEditingContract(null)
+        closeEdit()
         await refreshCompanyDetail()
       }
     } finally {
@@ -189,15 +216,22 @@ export default function CompanyContractSection({ company, currentUser, onChanged
         </Form.Item>
       </Form>
     </Modal>
-    <Modal title={`${editMode === 'revise' ? 'Revise Contract' : 'Edit Contract'}: ${company.name}`} visible={Boolean(editingContract)} busy={saving} okText={editMode === 'revise' ? 'Revise' : 'Update'} onOk={updateContract}
-      onCancel={() => { if (!saving) setEditingContract(null) }} closable={!saving} keyboard={!saving} mask={{ closable: !saving }} cancelButtonProps={{ disabled: saving }} unmountOnClose>
-      <Form form={form} layout="vertical" preserve={false}>
+    <Modal title={`${editMode === 'revise' ? 'Revise Contract' : 'Edit Contract'}: ${company.name}`} visible={Boolean(editTarget)} busy={saving} okButtonProps={{ disabled: !editingContract || Boolean(editError) }} okText={editMode === 'revise' ? 'Revise' : 'Update'} onOk={updateContract}
+      onCancel={() => { if (!saving) closeEdit() }} closable={!saving} keyboard={!saving} mask={{ closable: !saving }} cancelButtonProps={{ disabled: saving }} unmountOnClose>
+      {editError ? <div role="alert">{editError} <Button onClick={() => { setEditError(''); setEditingContract(null); setEditTarget({ ...editTarget }) }}>Retry</Button></div> : !editingContract ? <Typography.Text>Loading contract...</Typography.Text> :
+      // clearOnDestroy would erase initialValues during StrictMode's simulated unmount.
+      <Form key={`${editingContract.id}:${editingContract.version}`} form={editForm} layout="vertical" preserve={false} initialValues={{
+        contractNumber: editingContract.contractNumber,
+        contractDate: editingContract.contractDate?.slice(0, 10) || '',
+        effectiveFrom: editingContract.effectiveFrom?.slice(0, 10) || '',
+        effectiveUntil: editingContract.effectiveUntil?.slice(0, 10) || '',
+      }}>
         <Typography.Text tone="secondary">{editMode === 'revise' ? 'Create a draft revision and submit it for approval. The original contract changes only after approval, when it is marked REVISED.' : 'Update contract details. A rejected contract returns to DRAFT and must be submitted again.'}</Typography.Text>
         <Form.Item name="contractNumber" label="Contract Number" rules={[{ required: true, whitespace: true, message: 'Contract number is required.' }, { max: 255 }]}><Input maxLength={255} /></Form.Item>
         <Form.Item name="contractDate" label="Contract Date" rules={[{ required: true, message: 'Contract date is required.' }]}><Input type="date" /></Form.Item>
         <Form.Item name="effectiveFrom" label="Effective From" rules={[{ required: true, message: 'Start date is required.' }]}><Input type="date" /></Form.Item>
         <Form.Item name="effectiveUntil" label="Effective Until" rules={[{ required: true, message: 'End date is required.' }]}><Input type="date" /></Form.Item>
-      </Form>
+      </Form>}
     </Modal>
     <Modal title="Terminate Contract" visible={Boolean(terminationContract)} busy={terminating} okText="Terminate" okButtonProps={{ danger: true }}
       onOk={terminateContract} onCancel={() => { if (!terminating) setTerminationContract(null) }} unmountOnClose>
