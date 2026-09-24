@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { App, Button, Pagination, Popconfirm, Space, Tag, Typography, EyeOutlined, EditOutlined, DeleteOutlined, SendOutlined, CloseOutlined, HistoryOutlined } from '../../components/global'
+import { App, Button, Pagination, Popconfirm, Space, Tag, Typography, EyeOutlined, EditOutlined, DeleteOutlined, SendOutlined, CloseOutlined, HistoryOutlined, UploadOutlined } from '../../components/global'
 import CompanyContractHistory from './CompanyContractHistory'
+import { contractUploadTargets } from './contractPriceModel'
 import { contractService } from '../../services/contractService'
 import { CheckOutlined, RollbackOutlined, StopOutlined } from '@ant-design/icons'
 import { blocksContractCreation, canApproveContract, canUpdateContract, canReviseContract, canTerminateContract, canSubmitContract, canRejectContract, canCancelContract } from './contractAccess'
 
-export default function PendingContracts({ visible, onCreationBlocked, onEdit, onRevise, onTerminate, companyId, currentUser, revision, onChanged, onView, readOnly = false }) {
+export default function PendingContracts({ visible, onCreationBlocked, onEdit, onRevise, onTerminate, companyId, currentUser, revision, onChanged, onView, onUpload, readOnly = false }) {
   const { message } = App.useApp()
   const [retry, setRetry] = useState(0)
   const [data, setData] = useState({ contracts: [], pagination: {} })
@@ -74,6 +75,7 @@ export default function PendingContracts({ visible, onCreationBlocked, onEdit, o
         <Space size={6} wrap>
         <Button size="small" variant="default" icon={<EyeOutlined />} title="View Contract Prices" disabled={Boolean(busy)} onClick={() => onView(record)} />
         <Button size="small" variant="default" icon={<HistoryOutlined />} title="View Contract History" disabled={Boolean(busy)} onClick={() => setHistoryContract(record)} />
+        {!readOnly && currentUser?.section === 'MARKETING' && contractUploadTargets([record]).length > 0 && <Button size="small" variant="default" icon={<UploadOutlined />} title="Upload Contract Items" disabled={Boolean(busy)} onClick={() => onUpload(record)} />}
         {!readOnly && canUpdateContract(currentUser, record) && <Button size="small" variant="default" icon={<EditOutlined />} title="Edit Contract" disabled={Boolean(busy)} onClick={() => onEdit(record)} />}
         {!readOnly && canReviseContract(currentUser, record) && <Button size="small" variant="default" icon={<RollbackOutlined />} title="Revise Contract" disabled={Boolean(busy)} onClick={() => onRevise(record)} />}
         {!readOnly && canTerminateContract(currentUser, record) && <Button size="small" variant="default" isDanger icon={<DeleteOutlined />} title="Terminate Contract" disabled={Boolean(busy)} onClick={() => onTerminate(record)} />}

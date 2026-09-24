@@ -5,14 +5,15 @@ import QuotationForm from './QuotationForm'
 import QuotationSkeleton from './QuotationSkeleton'
 import CreateInvoiceAction from './CreateInvoiceAction'
 import { loadQuotationPdf } from './quotationPdfPreview'
-import { canManageQuotations } from './quotationAccess'
+import { canApproveQuotations, canManageQuotations } from './quotationAccess'
 import { canViewInactiveCatalog } from '../catalogAccess'
-import { TEXT_FIELDS, canApproveQuotation, dateValue, displayEnum, money, quotationChanges, quotationNumber } from './quotationModel'
+import { TEXT_FIELDS, canApproveQuotation, canUpdateQuotation, dateValue, displayEnum, money, quotationChanges, quotationNumber } from './quotationModel'
 import '../company/CompanyPage.css'
 import './QuotationPage.css'
 
 export default function QuotationPage({ onCreate, currentUser }) {
   const readOnly = !canManageQuotations(currentUser)
+  const canApprove = canApproveQuotations(currentUser)
   const canViewInactive = canViewInactiveCatalog(currentUser)
   const [activeFilter, setActiveFilter] = useState('')
   const { message } = App.useApp()
@@ -79,7 +80,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
       const response = await quotationService.get(record.id)
       if (request !== detailRequestRef.current) return
       if (!response.data?.id) throw new Error('Invalid quotation detail.')
-      if (edit && !response.data.isActive) throw new Error('Inactive quotations cannot be updated.')
+      if (edit && !canUpdateQuotation(response.data)) throw new Error('Only active draft quotations can be updated.')
       if (edit) { setEditingLoading(true); setEditing(response.data); setStale(false); setDetailOpen(false); setOpen(true) }
       else { setDetail(response.data); setDetailOpen(true) }
     } catch (error) { message.error(error.message) }
@@ -87,7 +88,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
   }
 
   const save = async (values) => {
-    if (readOnly || savingRef.current || stale || editingLoading || !editing?.isActive) return
+    if (readOnly || savingRef.current || stale || editingLoading || !canUpdateQuotation(editing)) return
     const changes = quotationChanges(values, editing)
     if (!Object.keys(changes).length) { message.warning('No changes were made.'); return }
     savingRef.current = true
@@ -95,7 +96,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
     try {
       if (!await confirmSave('quotation')) return
       const response = await quotationService.update(editing.id, { ...changes, version: editing.version })
-      message.success(response.data.id !== editing.id ? 'A new quotation revision has been created.' : 'Quotation updated successfully.')
+      message.success('Quotation updated successfully.')
       setEditing(response.data)
       setOpen(false)
       setDetail(response.data)
@@ -107,6 +108,32 @@ export default function QuotationPage({ onCreate, currentUser }) {
         if (editing) { setStale(true); message.warning('This quotation has changed. Reopen it to review the latest data before saving again.') }
         await load()
       }
+    } finally { savingRef.current = false; setSaving(false) }
+  }
+
+  const changeItem = async (item, deleting = false) => {
+    if (readOnly || savingRef.current || stale || editingLoading || !canUpdateQuotation(editing)) return false
+    savingRef.current = true
+    setSaving(true)
+    try {
+      if (deleting && !Number.isInteger(item.version)) throw new Error('Item version is unavailable. Reopen the quotation before deleting this item.')
+      const response = deleting
+        ? await quotationService.removeItem(editing.id, item.id, editing.version, item.version)
+        : await quotationService.addItem(editing.id, { version: editing.version, itemSizeId: item.itemSizeId,
+          quantityInspection: item.quantityInspection, quantityMaintenance: item.quantityMaintenance, note: item.note || null })
+      setEditing(response.data)
+      setDetail(response.data)
+      message.success(deleting ? 'Quotation item deleted.' : 'Quotation item added.')
+      await load()
+      return true
+    } catch (error) {
+      message.error(error.message)
+      if (error.status === 409) {
+        setStale(true)
+        message.warning('Reopen the quotation to review its latest data before changing items again.')
+        await load()
+      }
+      return false
     } finally { savingRef.current = false; setSaving(false) }
   }
 
@@ -125,7 +152,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
   }
 
   const approve = async () => {
-    if (readOnly || approvingRef.current || !canApproveQuotation(detail)) return
+    if (!canApprove || approvingRef.current || !canApproveQuotation(detail)) return
     approvingRef.current = true
     setApproving(true)
     try {
@@ -176,9 +203,9 @@ export default function QuotationPage({ onCreate, currentUser }) {
     { title: 'Size', dataIndex: 'size', width: 120, render: (value) => value ?? 'Without size' },
     { title: 'Inspection Quantity', dataIndex: 'quantityInspection', width: 160 },
     { title: 'Maintenance Quantity', dataIndex: 'quantityMaintenance', width: 170 },
-    { title: 'Inspection Price', dataIndex: 'priceInspection', width: 150, render: money },
-    { title: 'Maintenance Price', dataIndex: 'priceMaintenance', width: 160, render: money },
-    { title: 'Subtotal', dataIndex: 'subTotal', width: 150, render: money },
+    { title: 'Inspection Price', dataIndex: 'priceInspection', width: 150, align: 'right', render: money },
+    { title: 'Maintenance Price', dataIndex: 'priceMaintenance', width: 160, align: 'right', render: money },
+    { title: 'Subtotal', dataIndex: 'subTotal', width: 150, align: 'right', render: money },
   ]
   const columns = [
     { title: 'Number', dataIndex: 'no', width: 190, render: (value) => value ?? 'Draft' },
@@ -191,7 +218,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
     { title: 'State', dataIndex: 'isActive', width: 110, render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag>,
       filters: canViewInactive ? [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }] : undefined,
       filterMultiple: false, filteredValue: canViewInactive && activeFilter ? [activeFilter] : null },
-    { title: 'Total', dataIndex: 'total', width: 150, render: money },
+    { title: 'Total', dataIndex: 'total', width: 150, render: (value) => <span style={{ whiteSpace: 'nowrap' }}>{money(value)}</span> },
     { title: 'Actions', key: 'actions', width: 140, fixed: 'right', render: (_, record) => <Space>
       <Button variant="text" icon={<EyeOutlined />} title="View Quotation" aria-label={`View quotation ${quotationNumber(record)}`} busy={openingId === record.id} onClick={() => view(record)} />
       <CreateInvoiceAction currentUser={currentUser} quotation={record} onCreated={load} />
@@ -221,7 +248,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
     </div>
     <Card>{loading ? <QuotationSkeleton variant="table" /> : loadError ? <div className="quotation-load-error" role="alert">
       <Typography.Text>Unable to load quotations.</Typography.Text><Button onClick={load}>Retry</Button>
-    </div> : <Table className="quotation-content-ready" rowKey="id" columns={columns} dataSource={records} scroll={{ x: 1260 }} pagination={{
+    </div> : <Table className="quotation-content-ready" rowKey="id" columns={columns} dataSource={records} scroll={{ x: 'max-content' }} pagination={{
       current: page, pageSize, total, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100], showTotal: (count) => `${count} quotations`,
       onChange: (next, size) => { setPage(size !== pageSize ? 1 : next); setPageSize(size) },
     }} onChange={(_, filters, _sorter, extra) => {
@@ -230,18 +257,17 @@ export default function QuotationPage({ onCreate, currentUser }) {
     <Modal title={editing ? `Edit Quotation ${quotationNumber(editing)}` : 'Edit Quotation'} visible={!readOnly && open} width={1080}
       okText="Save" cancelText="Cancel" busy={saving} onOk={() => form.submit()} okButtonProps={{ disabled: stale || editingLoading }}
       onCancel={() => { if (!saving) setOpen(false) }} cancelButtonProps={{ disabled: saving }} closable={!saving} mask={{ closable: !saving }} unmountOnClose>
-      {editing && <QuotationForm key={`${editing.id}-${editing.version}`} form={form} record={editing} saving={saving || stale} onFinish={save} onLoadingChange={setEditingLoading} />}
-      {editing?.status === 'APPROVED' && <Typography.Text tone="secondary">Saving content changes creates a new revision. The approved document and PDF remain available in history.</Typography.Text>}
+      {editing && <QuotationForm key={editing.id} form={form} record={editing} saving={saving} blocked={stale} onFinish={save} onLoadingChange={setEditingLoading} onAddItem={(item) => changeItem(item)} onRemoveItem={(item) => changeItem(item, true)} />}
       {stale && <Typography.Text tone="warning">Close this form and reopen the quotation to load the latest data.</Typography.Text>}
     </Modal>
     <Modal title={detail ? `Quotation ${detail.no ?? 'Draft'}` : 'Quotation'} visible={detailOpen} width={1080} unmountOnClose
       onCancel={() => { if (!approving && !pdfLoading) setDetailOpen(false) }} closable={!approving && !pdfLoading} afterClose={() => setDetail(null)} footer={detail && <Space wrap>
         {detail.pdfDocument && <Button variant="text" icon={<EyeOutlined />} title="View PDF" aria-label="View quotation PDF" busy={pdfLoading} disabled={approving} onClick={openPdf} />}
         {detail.previousQuotationId && <Button disabled={approving || pdfLoading} busy={openingId === detail.previousQuotationId} onClick={() => view({ id: detail.previousQuotationId })}>Previous Revision</Button>}
-        {!readOnly && canApproveQuotation(detail) && <Popconfirm title="Approve quotation?" description="Approval assigns the quotation number and generates its PDF." onConfirm={approve} okText="Approve" cancelText="Cancel">
+        {canApprove && canApproveQuotation(detail) && <Popconfirm title="Approve quotation?" description="Approval assigns the quotation number and generates its PDF." onConfirm={approve} okText="Approve" cancelText="Cancel">
           <Button variant="primary" busy={approving} disabled={pdfLoading || Boolean(openingId)}>Approve Quotation</Button>
         </Popconfirm>}
-        {!readOnly && detail.isActive && <Button variant="primary" icon={<EditOutlined />} disabled={approving || pdfLoading} busy={openingId === detail.id} onClick={() => view(detail, true)}>Update Quotation</Button>}
+        {!readOnly && canUpdateQuotation(detail) && <Button variant="primary" icon={<EditOutlined />} disabled={approving || pdfLoading} busy={openingId === detail.id} onClick={() => view(detail, true)}>Update Quotation</Button>}
       </Space>}>
       {detail && <div className="quotation-detail">
         <section className="company-view-section">

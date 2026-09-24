@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { App, Button, Modal, Typography, useSaveConfirmation } from '../../components/global'
+import { useEffect, useRef, useState } from 'react'
+import { App, Modal, Tag, Typography, UploadOutlined, useSaveConfirmation } from '../../components/global'
 import { contractService } from '../../services/contractService'
 import { contractUploadTargets } from './contractPriceModel'
 
@@ -11,86 +11,96 @@ export function validateWorkbook(file) {
 }
 
 export default function CompanyContractUpload({ company, contractId, onClose, onChanged }) {
+  const { message } = App.useApp()
+  const [contract, setContract] = useState(null)
+  const closeRef = useRef(onClose)
+  closeRef.current = onClose
+  useEffect(() => {
+    let active = true
+    contractService.get(contractId).then(({ data }) => {
+      if (!active) return
+      if (!data || data.id !== contractId || data.companyId !== company.id || !contractUploadTargets([data]).length) {
+        throw new Error('This contract is not available for upload.')
+      }
+      setContract(data)
+    }).catch((error) => {
+      if (active) { message.error(error.message); closeRef.current() }
+    })
+    return () => { active = false }
+  }, [company.id, contractId, message])
+  return contract ? <ContractUploadDialog company={company} contract={contract} onClose={onClose} onChanged={onChanged} /> : null
+}
+
+function ContractUploadDialog({ company, contract, onClose, onChanged }) {
   const [closing, setClosing] = useState(false)
   const { message } = App.useApp()
   const [confirmSave, confirmation] = useSaveConfirmation()
-  const [contracts, setContracts] = useState([])
   const [file, setFile] = useState(null)
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [details, setDetails] = useState([])
   const busyRef = useRef(false)
-  const requestRef = useRef(0)
-  const loadContracts = useCallback(async () => {
-    const requestId = ++requestRef.current
-    setLoading(true)
-    setContracts([])
-    try {
-      if (!contractId) return
-      const { data: contract } = await contractService.get(contractId)
-      if (requestId !== requestRef.current) return
-      const targets = contract.companyId === company.id ? contractUploadTargets([contract]) : []
-      setContracts(targets)
-    } catch (err) {
-      if (requestId === requestRef.current) { setError(err.message); setContracts([]) }
-    } finally {
-      if (requestId === requestRef.current) setLoading(false)
-    }
-  }, [company.id, contractId])
-  useEffect(() => {
-    loadContracts()
-    return () => { requestRef.current++ }
-  }, [loadContracts])
-
   const upload = async () => {
-    if (busyRef.current || loading) return
-    const selected = contracts.find((row) => row.id === contractId)
+    if (busyRef.current) return
     const validation = validateWorkbook(file)
-    if (!selected || validation) { setError(!selected ? 'This contract is not available for upload.' : validation); return }
+    if (validation) { setError(validation); return }
     busyRef.current = true
     setSaving(true)
     try {
       if (!await confirmSave('contract item prices')) return
       setError('')
       setDetails([])
-      const response = await contractService.importPrices(selected.id, { companyId: company.id, version: selected.version, file })
+      const response = await contractService.importPrices(contract.id, { companyId: company.id, version: contract.version, file })
       message.success(`${response.data?.imported ?? 0} contract item prices imported successfully.`)
       setClosing(true)
       onChanged?.()
     } catch (err) {
       setError(err.message)
       setDetails(Array.isArray(err.details) ? err.details : [])
-      if (err.status === 409) await loadContracts()
+      if ([404, 409].includes(err.status)) {
+        message.error(err.message)
+        setClosing(true)
+        onChanged?.()
+      }
     } finally {
       busyRef.current = false
       setSaving(false)
     }
   }
 
-  const targetContract = contracts.find((row) => row.id === contractId)
-
-  return <Modal title={`Upload Contract Items — ${company.name}`} visible={!closing}
+  return <Modal title="Upload Contract Items" className="contract-upload-modal" width={640} visible={!closing}
     onCancel={() => { if (!busyRef.current) setClosing(true) }} afterClose={onClose}
-    onOk={upload} okText="Upload" busy={saving} okButtonProps={{ disabled: loading || !contracts.some((row) => row.id === contractId) || !file }}
+    onOk={upload} okText="Upload Price List" busy={saving} okButtonProps={{ disabled: !file }}
     cancelButtonProps={{ disabled: saving }} closable={!saving} mask={{ closable: !saving }} keyboard={!saving}>
     {confirmation}
     <div className="contract-upload-fields">
-      <p>Download the Excel template from the Item menu, edit Service Price and Maintenance Price. Every item row in the file will be imported, including unchanged rows. Keep the hidden columns unchanged. Upload creates new contract prices; existing prices cannot be replaced.</p>
-      <Typography.Text>The price list will be uploaded to the contract shown in View Contract. Uploading does not change its status.</Typography.Text>
-      {loading ? <p>Loading contract...</p> : targetContract
-        ? <p>Contract: <strong>{targetContract.contractNumber}</strong> · {targetContract.status}</p>
-        : <p>This contract is not available for upload.</p>}
-      <Button disabled={saving || loading} onClick={() => { setError(''); loadContracts() }}>Reload contract</Button>
-      <label htmlFor="contract-upload-file">Excel file (.xlsx, up to 5 MB)</label>
-      <input id="contract-upload-file" type="file" accept=".xlsx" disabled={saving} onChange={(event) => {
-        const selected = event.target.files?.[0]
-        const validation = validateWorkbook(selected)
-        setError(validation)
-        setDetails([])
-        setFile(validation ? null : selected)
-      }} />
-      {error && <div role="alert"><Typography.Text tone="danger">{error}</Typography.Text>
+      <section className="contract-upload-summary" aria-label="Selected contract">
+        <span className="contract-upload-eyebrow">SELECTED CONTRACT</span>
+        <div className="contract-upload-title"><strong>{contract.contractNumber}</strong><Tag>{contract.status}</Tag></div>
+        <p>{contract.companySnapshot?.name || company.name}</p>
+        <dl><div><dt>Contract date</dt><dd>{contract.contractDate?.slice(0, 10) || '-'}</dd></div>
+          <div><dt>Effective period</dt><dd>{contract.effectiveFrom?.slice(0, 10) || '-'} to {contract.effectiveUntil?.slice(0, 10) || '-'}</dd></div></dl>
+      </section>
+      <div className="contract-upload-guide">
+        <Typography.Text strong>Prepare your price list</Typography.Text>
+        <ol><li>Download the Excel template from the Item menu.</li>
+          <li>Fill in Service Price and Maintenance Price. Keep hidden columns unchanged.</li></ol>
+        <p>Every item row will be imported, including unchanged rows. Existing contract prices cannot be replaced. The contract status stays the same.</p>
+      </div>
+      <label className={`contract-upload-dropzone${saving ? ' is-disabled' : ''}`} htmlFor="contract-upload-file">
+        <UploadOutlined aria-hidden="true" />
+        <strong>{file ? file.name : 'Choose or drop an Excel file'}</strong>
+        <span>{file ? `${(file.size / 1024).toFixed(1)} KB - Click to replace` : '.xlsx only - Maximum 5 MB'}</span>
+        <input id="contract-upload-file" type="file" accept=".xlsx" disabled={saving} aria-label="Excel price list" onChange={(event) => {
+          const selected = event.target.files?.[0]
+          const validation = validateWorkbook(selected)
+          setError(validation)
+          setDetails([])
+          setFile(validation ? null : selected)
+          if (validation) event.target.value = ''
+        }} />
+      </label>
+      {error && <div className="contract-upload-error" role="alert"><Typography.Text tone="danger">{error}</Typography.Text>
         {details.length > 0 && <ul className="contract-upload-errors">{details.map((detail, index) => <li key={index}>
           {detail.row ? `Row ${detail.row}: ` : ''}{detail.field ? `${detail.field}: ` : ''}{detail.message}
         </li>)}</ul>}

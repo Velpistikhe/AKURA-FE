@@ -42,6 +42,7 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
   const canAddSize = Boolean(itemId) && !readOnly
     && !loading && !error
     && sizeEligibility?.itemId === itemId && sizeEligibility?.allowed === true
+  const canAddNoSize = canAddSize && sizeEligibility?.empty === true
 
   useEffect(() => {
     if (!editor || editorReadOnly) return
@@ -65,7 +66,8 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
         // Reuse the table response; the backend prohibits mixing size modes.
         // An empty search result does not change the last known mode.
         if (result.sizes.length || !query.size) {
-          setSizeEligibility({ itemId, allowed: !result.sizes.some(({ size }) => size === null) })
+          setSizeEligibility({ itemId, allowed: !result.sizes.some(({ size }) => size === null),
+            empty: !query.size && query.page === 1 && result.pagination.total === 0 && result.sizes.length === 0 })
         }
         if (!result.sizes.length && query.page > 1) {
           setQuery((current) => ({ ...current, page: Math.max(1, result.pagination.totalPages || 1) }))
@@ -117,6 +119,16 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
     if (!canAddSize || lock.current || !await confirmSave('item size')) return
     await mutate('add', () => itemService.addSize({ itemId, itemVersion: item.version, size: values.size.trim() }),
       'Item size added successfully.', () => sizeForm.resetFields())
+  }
+
+  const addNoSize = async () => {
+    if (!canAddNoSize || lock.current || !await confirmSave('item without size')) return
+    await mutate('add-no-size', () => itemService.addSize({ itemId, itemVersion: item.version, size: null }),
+      'Item without size added successfully.', () => {
+        sizeForm.resetFields()
+        setSizeEligibility({ itemId, allowed: false, empty: false })
+        setQuery((current) => ({ ...current, page: 1, size: '' }))
+      })
   }
 
   const openEditor = async (row) => {
@@ -188,22 +200,25 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
           </div>
           {canAddSize && <Form form={sizeForm} className="item-add-size-form" onFinish={addSize} disabled={Boolean(busy)} preserve={false} clearOnDestroy>
             <Form.Item name="size" rules={sizeRules}><Input maxLength={100} placeholder="Enter a new size" aria-label="New size" /></Form.Item>
-            <Button variant="primary" icon={<PlusOutlined />} htmlType="submit" busy={busy === 'add'}>Add Size</Button>
+            <Space wrap>
+              <Button variant="primary" icon={<PlusOutlined />} htmlType="submit" busy={busy === 'add'}>Add Size</Button>
+              {canAddNoSize && <Button icon={<PlusOutlined />} htmlType="button" busy={busy === 'add-no-size'} onClick={addNoSize}>Add No Size</Button>}
+            </Space>
           </Form>}
           {error && <div className="item-error" role="alert">{error} <Button onClick={() => setRefresh((value) => value + 1)}>Retry</Button></div>}
           <Table className="item-size-table" rowKey="id" busy={loading} dataSource={data.sizes}
-            tableLayout="fixed" scroll={{ x: hasMaintenance ? 1280 : 940 }}
+            tableLayout="auto" scroll={{ x: 'max-content' }}
             columns={[
-              { title: 'Size', dataIndex: 'size', key: 'size', width: 140, sorter: true,
+              { title: 'Size', dataIndex: 'size', key: 'size', sorter: true,
                 sortOrder: query.sortOrder ? (query.sortOrder === 'asc' ? 'ascend' : 'descend') : null,
                 filteredValue: query.size ? [query.size] : null,
                 filterDropdown: (props) => <TableSearchFilter {...props} placeholder="Search size"
                   onSearch={(value) => setQuery((current) => ({ ...current, size: value.trim(), page: 1 }))} />,
                 render: (value) => <Tag>{value ?? 'Without size'}</Tag> },
-              { title: 'Price Status', dataIndex: 'priceStatus', width: 130, render: (value) =>
+              { title: 'Price Status', dataIndex: 'priceStatus', render: (value) =>
                 <Tag color={value === 'AVAILABLE' ? 'success' : 'default'}>{value === 'AVAILABLE' ? 'Available' : 'Unavailable'}</Tag> },
-              ...visiblePrices.map(([key, title]) => ({ title, dataIndex: key, width: 170, render: formatPrice })),
-              { title: 'Actions', key: 'actions', width: 260, fixed: 'right', render: (_, row) => <Space wrap size={4}>
+              ...visiblePrices.map(([key, title]) => ({ title, dataIndex: key, render: formatPrice })),
+              { title: 'Actions', key: 'actions', fixed: 'right', render: (_, row) => <Space wrap size={4}>
                 <Button variant="text" icon={readOnly || row.isActive === false ? <EyeOutlined /> : <EditOutlined />} busy={busy === row.id} disabled={Boolean(busy)}
                   title={readOnly || row.isActive === false ? 'View Price' : row.priceStatus === 'AVAILABLE' ? 'Edit Price' : 'Set Price'}
                   aria-label={`${readOnly || row.isActive === false ? 'View price' : row.priceStatus === 'AVAILABLE' ? 'Edit price' : 'Set price'} for ${row.size ?? 'Without size'}`}

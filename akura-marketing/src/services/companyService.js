@@ -25,10 +25,6 @@ export const companyService = {
     method: 'PATCH',
     body: JSON.stringify(data),
   }),
-  remove: (companyId, version) => apiRequest(`${COMPANY_PATH}/${companyId}`, {
-    method: 'DELETE',
-    body: JSON.stringify({ version }),
-  }),
 }
 
 export default companyService

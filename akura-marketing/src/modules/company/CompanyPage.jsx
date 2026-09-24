@@ -4,14 +4,12 @@ import {
   App,
   Button,
   Card,
-  DeleteOutlined,
   EyeOutlined,
   HistoryOutlined,
   Form,
   Input,
   Modal,
   PlusOutlined,
-  Popconfirm,
   Select,
   Space,
   Switch,
@@ -187,20 +185,6 @@ function CompanyPage({ currentUser }) {
     }
   }
 
-  const deleteCompany = async (company) => {
-    if (company.revoked === true) return
-    try {
-      await companyService.remove(company.id, company.version)
-      setViewCompany((current) => current?.id === company.id ? null : current)
-      message.success('Company deactivated successfully.')
-      if (companies.length === 1 && page > 1) setPage((current) => current - 1)
-      else await loadCompanies()
-    } catch (error) {
-      message.error(error.message)
-      if (error.status === 409) await loadCompanies()
-    }
-  }
-
   const handleTableChange = (tablePagination, filters, sorter) => {
     const nextPageSize = tablePagination.pageSize || pageSize
     setPageSize(nextPageSize)
@@ -281,16 +265,6 @@ function CompanyPage({ currentUser }) {
             onClick={() => openView(company)}
             title="View Company"
           />
-          {company.revoked !== true && <Popconfirm
-            title="Deactivate company?"
-            description="The company and all its active staff will be deactivated."
-            okText="Deactivate"
-            cancelText="Cancel"
-            okButtonProps={{ danger: true }}
-            onConfirm={() => deleteCompany(company)}
-          >
-            <Button isDanger variant="text" icon={<DeleteOutlined />} title="Deactivate Company" />
-          </Popconfirm>}
         </Space>
       ),
     },

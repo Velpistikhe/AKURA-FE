@@ -41,6 +41,7 @@
 .quotation-page .ant-table-cell { overflow-wrap: anywhere; }
 .quotation-form-grid, .quotation-detail-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
 .quotation-form-full-width { grid-column: 1 / -1; }
+.quotation-form-row-start { grid-column: 1; }
 .quotation-form-grid .ant-input-number, .quotation-items-table .ant-input-number { width: 100%; }
 .quotation-lines, .quotation-detail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-width: 0; }
 .quotation-lines > *, .quotation-detail > * { min-width: 0; }

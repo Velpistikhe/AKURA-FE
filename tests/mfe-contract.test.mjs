@@ -191,6 +191,9 @@ test('Marketing contract lifecycle, prices, company and staff requests match Swa
     const api = await service('akura-marketing', name)
     check(api.list({ ...query, page: 1, limit: 20 })); check(api.create(payload))
     const { companyId, ...fields } = payload
-    check(api.update(id, { ...fields, version: 0 })); check(api.remove(id, 0)); check(api.history(id))
+    check(api.update(id, { ...fields, version: 0 }))
+    if (name === 'companyStaffService') check(api.remove(id, 0))
+    else assert.equal(api.remove, undefined, 'Company deletion is no longer supported')
+    check(api.history(id))
   }
 })

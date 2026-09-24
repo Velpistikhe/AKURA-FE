@@ -3,6 +3,7 @@ import { App, Button, Form, Input, Modal, Typography, useSaveConfirmation } from
 import { contractService } from '../../services/contractService'
 import PendingContracts from './PendingContracts'
 import CompanyContractPrices from './CompanyContractPrices'
+import CompanyContractUpload from './CompanyContractUpload'
 import { canManageCompanyContracts, canUpdateContract, canReviseContract, canTerminateContract } from './contractAccess'
 
 function formatContractDate(value) {
@@ -28,6 +29,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
   const [editError, setEditError] = useState('')
   const [priceListContract, setPriceListContract] = useState(null)
   const [priceListOpen, setPriceListOpen] = useState(false)
+  const [uploadContract, setUploadContract] = useState(null)
   const [contractsVisible, setContractsVisible] = useState(false)
 
   useEffect(() => {
@@ -194,7 +196,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
       </div>
     </div>
     <div id="company-contract-cards" hidden={!contractsVisible}>
-    <PendingContracts visible={contractsVisible} onCreationBlocked={setCreationBlocked} onEdit={openUpdate} onRevise={(contract) => openUpdate(contract, 'revise')} onTerminate={(contract) => { terminationForm.resetFields(); setTerminationContract(contract) }} readOnly={readOnly} companyId={company.id} currentUser={currentUser} revision={pendingRevision} onChanged={refreshCompanyDetail} onView={(row) => { setPriceListContract(row); setPriceListOpen(true) }} />
+    <PendingContracts onUpload={setUploadContract} visible={contractsVisible} onCreationBlocked={setCreationBlocked} onEdit={openUpdate} onRevise={(contract) => openUpdate(contract, 'revise')} onTerminate={(contract) => { terminationForm.resetFields(); setTerminationContract(contract) }} readOnly={readOnly} companyId={company.id} currentUser={currentUser} revision={pendingRevision} onChanged={refreshCompanyDetail} onView={(row) => { setPriceListContract(row); setPriceListOpen(true) }} />
 
     </div>
 
@@ -240,6 +242,7 @@ export default function CompanyContractSection({ company, currentUser, onChanged
       </Form>
     </Modal>
     {pricesModal}
+    {uploadContract && <CompanyContractUpload key={uploadContract.id} company={company} contractId={uploadContract.id} onClose={() => setUploadContract(null)} onChanged={refreshCompanyDetail} />}
     </section>
   </>
 }

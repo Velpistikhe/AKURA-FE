@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { contractPricePayload } from '../src/modules/company/contractPriceModel.js'
 import { createItemPayload } from '../src/modules/item/itemModel.js'
-import { canApproveQuotation, quotationNumber, quotationChanges, quotationFormValues, quotationPayload, quotationOptionValues, TEXT_FIELDS, QUANTITY_PATTERN } from '../src/modules/quotation/quotationModel.js'
+import { canApproveQuotation, canUpdateQuotation, quotationNumber, quotationChanges, quotationFormValues, quotationPayload, quotationOptionValues, quotationTextMaxLength, TEXT_FIELDS, QUANTITY_PATTERN } from '../src/modules/quotation/quotationModel.js'
 
 const swagger = process.env.SWAGGER_FILE ? JSON.parse(await readFile(process.env.SWAGGER_FILE, 'utf8')) : await fetch(process.env.SWAGGER_URL || 'http://localhost:5000/api-docs.json').then((response) => {
   assert.equal(response.status, 200, 'Local Swagger must be available')
@@ -189,6 +189,20 @@ test('Contract list is company-scoped and Excel upload sends only documented mul
   assert.match(operation(upload).description, /DRAFT contracts are supported and remain DRAFT/)
 })
 
+test('Contract price history uses the price row ID and server pagination', async () => {
+  const service = await loadService('contractService')
+  const request = service.priceHistory(uuid, { page: 2, limit: 10 })
+  const url = new URL(request.path, 'http://localhost')
+  assert.equal(url.pathname, `/marketing/company-contract-prices/${uuid}/history`)
+  assert.equal(request.method || 'GET', 'GET')
+  assert.equal(request.body, undefined)
+  assert.deepEqual([...url.searchParams], [['page', '2'], ['limit', '10']])
+  const op = operation(request)
+  assert.ok(op.parameters.some(p => p.in === 'path' && p.name === 'contractPriceId'))
+  for (const key of url.searchParams.keys()) assert.ok(op.parameters.some(p => p.in === 'query' && p.name === key))
+  assert.equal(new URL(service.priceHistory(uuid).path, 'http://localhost').searchParams.get('limit'), '20')
+})
+
 test('Marketing service methods use documented endpoints and HTTP methods', async () => {
   for (const name of ['companyService', 'companyStaffService', 'itemService', 'serviceService', 'contractService', 'quotationService']) {
     const service = await loadService(name)
@@ -252,14 +266,17 @@ const record = { ...quotationFormValues(), companySnapshot: { id: uuid, name: 'C
   ...Object.fromEntries(TEXT_FIELDS.map(([key]) => [key, 'Test'])),
   items: [{ id: uuid, itemSizeId: uuid, quantityInspection: '1', quantityMaintenance: '2', priceInspection: '100.00', priceMaintenance: '150.00' }] }
 
-test('Delivery invoice uses required text fields and preserves trimmed values on create and edit', () => {
+test('Delivery invoice is required text and preserves trimmed values on create and edit', () => {
+  assert.ok(swagger.components.schemas.CreateQuotationRequest.required.includes('deliveryInvoice'))
   assert.ok(TEXT_FIELDS.some(([key]) => key === 'deliveryInvoice'))
   for (const name of ['CreateQuotationRequest', 'UpdateQuotationRequest', 'Quotation']) {
     const schema = swagger.components.schemas[name]
     assert.equal(schema.properties.deliveryInvoice.maxLength, 255)
+    assert.ok(!schema.properties.deliveryInvoice.nullable)
   }
   for (const deliveryInvoice of [undefined, null, '', '   ']) {
-    assert.equal(quotationFormValues({ ...record, deliveryInvoice }).deliveryInvoice, '')
+    const values = quotationFormValues({ ...record, deliveryInvoice })
+    assert.equal(values.deliveryInvoice, '')
   }
   const original = { ...record, deliveryInvoice: 'Email to billing contact' }
   const values = quotationFormValues(original)
@@ -270,6 +287,44 @@ test('Delivery invoice uses required text fields and preserves trimmed values on
   assert.deepEqual(changes, { deliveryInvoice: 'Courier' })
   assertBody(swagger.components.schemas.UpdateQuotationRequest, { ...changes, version: 0 })
   assert.equal(quotationPayload({ ...record, deliveryInvoice: '  Email invoice  ' }, { create: true }).deliveryInvoice, 'Email invoice')
+})
+
+test('Job start is required free text and survives create and header-only updates without date truncation', async () => {
+  assert.ok(swagger.components.schemas.CreateQuotationRequest.required.includes('jobStart'))
+  for (const name of ['CreateQuotationRequest', 'UpdateQuotationRequest', 'Quotation']) {
+    const schema = swagger.components.schemas[name].properties.jobStart
+    assert.equal(schema.type, 'string')
+    assert.equal(schema.format, undefined)
+    assert.equal(schema.minLength, 1)
+    assert.equal(schema.maxLength, quotationTextMaxLength('jobStart'))
+    assert.ok(!schema.nullable)
+  }
+  const api = await loadService('quotationService')
+  const jobStart = 'Within 7 days after purchase order approval'
+  const original = { ...record, jobStart }
+  const values = quotationFormValues(original)
+  assert.equal(values.jobStart, jobStart)
+  assert.deepEqual(quotationChanges(values, original), {})
+  const create = api.create(quotationPayload({ ...values, jobStart: `  ${jobStart}  ` }, { create: true }))
+  const body = JSON.parse(create.body)
+  assertBody(operation(create).requestBody.content['application/json'].schema, body)
+  assert.equal(body.jobStart, jobStart)
+  const changes = quotationChanges({ ...values, jobStart: '  After confirmation  ' }, original)
+  assert.deepEqual(changes, { jobStart: 'After confirmation' })
+  const update = api.update(uuid, { ...changes, version: 2 })
+  assertBody(operation(update).requestBody.content['application/json'].schema, JSON.parse(update.body))
+})
+
+test('Supply fields preserve multiline text up to the documented 5000 character limit', () => {
+  for (const key of ['supplyAkura', 'supplyCustomer']) {
+    for (const name of ['CreateQuotationRequest', 'UpdateQuotationRequest', 'Quotation']) {
+      assert.equal(swagger.components.schemas[name].properties[key].maxLength, quotationTextMaxLength(key))
+    }
+    const text = `First line\n${'x'.repeat(4989)}`
+    assert.equal(text.length, 5000)
+    assert.equal(quotationPayload({ ...record, [key]: text }, { create: true })[key], text)
+    assert.deepEqual(quotationChanges({ ...quotationFormValues(record), [key]: text }, record), { [key]: text })
+  }
 })
 
 test('Create quotation sends only allowed item fields and omits client prices and IDs', () => {
@@ -291,9 +346,9 @@ test('Create quotation sends only allowed item fields and omits client prices an
   }
 })
 
-test('Quotation item notes follow Swagger and survive creation, editing and clearing', () => {
-  for (const name of ['QuotationItemInput', 'UpdateQuotationItemInput', 'QuotationItem']) {
-    assert.equal(swagger.components.schemas[name].properties.note.maxLength, 2000)
+test('Item notes follow Swagger on creation and remain immutable during header updates', () => {
+  for (const name of ['QuotationItemInput', 'QuotationItem']) {
+    assert.equal(swagger.components.schemas[name].properties.note.maxLength, 5000)
     assert.equal(swagger.components.schemas[name].properties.note.nullable, true)
   }
   const note = 'Inspect welds first.\nReport findings separately.'
@@ -301,14 +356,12 @@ test('Quotation item notes follow Swagger and survive creation, editing and clea
   const values = quotationFormValues(original)
   assert.equal(values.items[0].note, note)
   assert.deepEqual(quotationChanges(values, original), {})
-  const payload = quotationPayload(values, { create: true })
+  const payload = quotationPayload(original, { create: true })
   assert.equal(payload.items[0].note, note)
   assertBody(swagger.components.schemas.QuotationItemInput, payload.items[0])
-  for (const nextNote of ['Updated note', 'x'.repeat(2000), '', null]) {
+  for (const nextNote of ['Updated note', 'x'.repeat(5000), '', null]) {
     const changed = quotationChanges({ ...values, items: [{ ...values.items[0], note: nextNote }] }, original)
-    assert.equal(changed.items[0].note, nextNote || null)
-    assert.equal(changed.items[0].id, uuid)
-    assertBody(swagger.components.schemas.UpdateQuotationItemInput, changed.items[0])
+    assert.deepEqual(changed, {})
   }
   assert.equal(Object.hasOwn(quotationPayload(quotationFormValues(record), { create: true }).items[0], 'note'), false)
 })
@@ -367,13 +420,13 @@ test('Branch tax snapshots are read-only and never enter create or update payloa
   assert.equal(swagger.components.schemas.Quotation.properties.tax.readOnly, true)
 })
 
-test('Quantity-only updates retain line IDs and both quantities without sending saved prices or tokens', () => {
+test('Quantity changes cannot enter quotation header updates', () => {
   const values = quotationFormValues(record)
   assert.deepEqual(quotationChanges(values, record), {})
   values.items[0].quantityInspection = '2.500'
   const changes = quotationChanges(values, record)
-  assert.deepEqual(changes.items[0], { id: uuid, itemSizeId: uuid, quantityInspection: '2.5', quantityMaintenance: '2' })
-  assertBody(swagger.components.schemas.UpdateQuotationItemInput, changes.items[0])
+  assert.deepEqual(changes, {})
+  assert.equal(swagger.components.schemas.UpdateQuotationRequest.properties.items, undefined)
 })
 
 test('Create and update omit server-managed statuses even when supplied in form values', async () => {
@@ -396,17 +449,16 @@ test('Create and update omit server-managed statuses even when supplied in form 
   }
 })
 
-test('Customer changes include the complete active item list even when lines are unchanged', () => {
+test('Customer changes send only the new contact without repricing items', () => {
   const values = quotationFormValues(record)
   values.staffId = '00000000-0000-4000-8000-000000000002'
   const changes = quotationChanges(values, record)
   assert.equal(changes.staffId, values.staffId)
-  assert.equal(changes.items.length, 1)
-  assert.equal(changes.items[0].id, uuid)
-  assertBody(swagger.components.schemas.UpdateQuotationItemInput, changes.items[0])
+  assert.deepEqual(changes, { staffId: values.staffId })
+  assertBody(swagger.components.schemas.UpdateQuotationRequest, { ...changes, version: 0 })
 })
 
-test('Quotation options use standard or sister-company rates and reject contract or inactive catalog options', () => {
+test('Quotation options accept contract, standard and sister-company rates and reject unavailable options', () => {
   const option = { id: uuid, itemId: uuid, size: '2', item: { name: 'Pipe', service: { name: 'Inspection' } },
     catalogSnapshot: { itemName: 'Contract Pipe', serviceName: 'Contract Inspection', size: '3', serviceType: 'INSPECTION', hasMaintenance: false },
     catalogActive: true, priceSource: 'PRIMARY', priceStatus: 'AVAILABLE', priceService: '0.00', priceMaintenance: null,
@@ -419,8 +471,11 @@ test('Quotation options use standard or sister-company rates and reject contract
   assert.equal(selected.size, '3')
   assert.equal(quotationOptionValues({ ...option, catalogSnapshot: null }).itemName, 'Pipe')
   assert.equal(quotationOptionValues({ ...option, priceStatus: 'UNAVAILABLE' }), null)
-  assert.deepEqual(swagger.components.schemas.QuotationSizeOption.properties.priceSource.enum, ['PRIMARY', 'SISTER_COMPANY'])
-  assert.equal(quotationOptionValues({ ...option, priceSource: 'CONTRACT' }), null)
+  assert.deepEqual(swagger.components.schemas.QuotationSizeOption.properties.priceSource.enum, ['PRIMARY', 'SISTER_COMPANY', 'CONTRACT'])
+  const contractOption = quotationOptionValues({ ...option, priceSource: 'CONTRACT' })
+  assert.equal(contractOption.priceInspection, '0.00')
+  assert.deepEqual(quotationPayload({ ...record, items: [contractOption] }, { create: true }).items[0], { itemSizeId: uuid, quantityInspection: '1', quantityMaintenance: '0' })
+  assert.equal(quotationOptionValues({ ...option, priceSource: 'CONTRACT', priceStatus: 'UNAVAILABLE' }), null)
   assert.equal(quotationOptionValues({ ...option, catalogActive: false }), null)
   assert.equal(quotationOptionValues({ ...option, priceSource: 'SISTER_COMPANY' }).priceInspection, '0.00')
   assert.equal(quotationOptionValues({ ...option, priceService: null }), null)
@@ -429,24 +484,28 @@ test('Quotation options use standard or sister-company rates and reject contract
   assert.deepEqual(line, { itemSizeId: uuid, quantityInspection: '1', quantityMaintenance: '0' })
 })
 
-test('Company-only creation supports maintenance-only lines and strips legacy fields', () => {
-  const payload = quotationPayload({ ...record, staffId: undefined, items: [{ itemSizeId: uuid,
+test('Creation with a required contact supports maintenance-only lines and strips legacy fields', () => {
+  assert.ok(swagger.components.schemas.CreateQuotationRequest.required.includes('staffId'))
+  assert.equal(swagger.components.schemas.CreateQuotationRequest.properties.staffId.nullable, false)
+  const payload = quotationPayload({ ...record, items: [{ itemSizeId: uuid,
     quantityInspection: '0', quantityMaintenance: '2.500', quantity: '5', priceKind: 'MAINTENANCE', priceInspection: '100' }] }, { create: true })
   assertBody(swagger.components.schemas.CreateQuotationRequest, payload)
   assert.equal(payload.companyId, uuid)
-  assert.equal(payload.staffId, null)
+  assert.equal(payload.staffId, uuid)
   assert.deepEqual(payload.items[0], { itemSizeId: uuid, quantityInspection: '0', quantityMaintenance: '2.5' })
   assertBody(swagger.components.schemas.QuotationItemInput, payload.items[0])
 })
 
-test('Company replacement reprices all lines and clearing a contact sends null', () => {
+test('Quotation updates omit immutable company and items even if supplied', () => {
   const values = quotationFormValues(record)
   values.companyId = '00000000-0000-4000-8000-000000000002'
-  values.staffId = undefined
+  values.staffId = '00000000-0000-4000-8000-000000000003'
   const changes = quotationChanges(values, record)
-  assert.equal(changes.companyId, values.companyId)
-  assert.equal(changes.staffId, null)
-  assert.equal(changes.items.length, 1)
+  assert.equal(Object.hasOwn(changes, 'companyId'), false)
+  assert.equal(swagger.components.schemas.UpdateQuotationRequest.properties.companyId.readOnly, true)
+  assert.equal(changes.staffId, values.staffId)
+  assert.equal(swagger.components.schemas.UpdateQuotationRequest.properties.staffId.nullable, false)
+  assert.equal(Object.hasOwn(changes, 'items'), false)
   assertBody(swagger.components.schemas.UpdateQuotationRequest, { ...changes, version: 0 })
 })
 
@@ -495,4 +554,30 @@ test('Contract lifecycle uses Swagger statuses, draft PATCH, revision POST and t
     }
     assert.ok(parameters.find((parameter) => parameter.name === 'status').schema.enum.includes(status))
   }
+})
+
+
+test('Only active CREATED quotations allow header updates', () => {
+  for (const status of ['CREATED', 'SENT', 'REVISED', 'APPROVED', 'CANCELLED', undefined]) {
+    for (const isActive of [true, false, undefined]) {
+      assert.equal(canUpdateQuotation({ status, isActive }), status === 'CREATED' && isActive === true)
+    }
+  }
+  assert.equal(canUpdateQuotation(null), false)
+  assert.equal(canUpdateQuotation(), false)
+})
+
+test('Every editable quotation header field matches the live Swagger PATCH contract', async () => {
+  const service = await loadService('quotationService')
+  const values = { ...quotationFormValues(record), ...Object.fromEntries(TEXT_FIELDS.map(([key]) => [key, 'Updated ' + key])),
+    inquiryMethod: 'VERBAL', inquiryDate: '2026-09-24', staffId: '00000000-0000-4000-8000-000000000002',
+    companyId: '00000000-0000-4000-8000-000000000003', items: [] }
+  const changes = quotationChanges(values, record)
+  const request = service.update(uuid, { ...changes, version: 2 })
+  const schema = resolve(operation(request).requestBody.content['application/json'].schema)
+  assertBody(schema, JSON.parse(request.body))
+  assert.equal(request.method, 'PATCH')
+  assert.equal(Object.keys(changes).length, TEXT_FIELDS.length + 3)
+  assert.equal(Object.hasOwn(changes, 'companyId'), false)
+  assert.equal(Object.hasOwn(changes, 'items'), false)
 })

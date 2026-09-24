@@ -1,0 +1,2135 @@
+{
+  "checkedAt": "2026-09-23T00:42:36.327Z",
+  "source": "http://localhost:5000/api-docs.json",
+  "note": "Static source audit, not runtime telemetry. Service references must be reviewed for dynamically selected methods and component reachability.",
+  "totalOperations": 129,
+  "unused": [
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/internal/taxes/events",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/company-contract-references/{companyId}",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/contract-references/{contractId}",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/fieldservice/work-orders/{id}/history",
+      "callers": []
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/fieldservice/work-orders/{id}",
+      "callers": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/fieldservice/work-orders/{id}",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/services",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api-docs",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/health",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/health",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/health",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finance/health",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/fieldservice/health",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api-docs.json",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/.well-known/jwks.json",
+      "callers": []
+    }
+  ],
+  "serviceOnly": [],
+  "undocumented": [
+    {
+      "app": "akura-marketing",
+      "caller": "akura-marketing/src/services/contractService.js: contractService.createPrice",
+      "references": [
+        "akura-marketing/src/modules/company/CompanyContractPriceEditor.jsx"
+      ],
+      "method": "POST",
+      "path": "/api/v1/marketing/items/sizes/{id}/contract-prices",
+      "documented": false
+    }
+  ],
+  "operations": [
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/quotations/{quotationId}/approve",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/quotationService.js: quotationService.approve",
+          "references": [
+            "akura-marketing/src/modules/quotation/QuotationPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/quotations/{id}/approve",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/quotations",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/quotationService.js: quotationService.list",
+          "references": [
+            "akura-marketing/src/modules/quotation/QuotationPage.jsx",
+            "akura-marketing/src/modules/work-order/WorkOrderCreatePage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/quotations",
+          "documented": true
+        },
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/quotationService.js: quotationService.list",
+          "references": [
+            "akura-finance/src/modules/quotation/QuotationPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/quotations",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/quotations",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/quotationService.js: quotationService.create",
+          "references": [
+            "akura-marketing/src/modules/quotation/QuotationCreatePage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/quotations",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/marketing/quotations/{quotationId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/quotationService.js: quotationService.update",
+          "references": [
+            "akura-marketing/src/modules/quotation/QuotationPage.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/marketing/quotations/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/quotations/{quotationId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/quotationService.js: quotationService.get",
+          "references": [
+            "akura-marketing/src/modules/quotation/QuotationPage.jsx",
+            "akura-marketing/src/modules/work-order/WorkOrderCreatePage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/quotations/{id}",
+          "documented": true
+        },
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/quotationService.js: quotationService.get",
+          "references": [
+            "akura-finance/src/modules/quotation/QuotationPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/quotations/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/marketing/quotations/{quotationId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/quotationService.js: quotationService.remove",
+          "references": [
+            "akura-marketing/src/modules/quotation/QuotationPage.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/marketing/quotations/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/finance/taxes",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/taxService.js: taxService.create",
+          "references": [
+            "akura-finance/src/modules/tax/TaxPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/finance/taxes",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finance/taxes",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/taxService.js: taxService.list",
+          "references": [
+            "akura-finance/src/modules/tax/TaxPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/finance/taxes",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finance/taxes/deliveries",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/taxService.js: taxService.deliveries",
+          "references": [
+            "akura-finance/src/modules/tax/TaxPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/finance/taxes/deliveries",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/finance/taxes/resync",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/taxService.js: taxService.resync",
+          "references": [
+            "akura-finance/src/modules/tax/TaxPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/finance/taxes/resync",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/internal/taxes/events",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finance/proforma-invoices",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/documentService.js: documentService.list",
+          "references": [
+            "akura-finance/src/modules/documents/DocumentPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/finance/proforma-invoices",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/finance/proforma-invoices",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/documentService.js: documentService.create",
+          "references": [
+            "akura-finance/src/modules/documents/DocumentPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/finance/proforma-invoices",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finance/proforma-invoices/{id}",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/documentService.js: documentService.get",
+          "references": [
+            "akura-finance/src/modules/documents/DocumentPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/finance/proforma-invoices/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/finance/proforma-invoices/{id}",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/documentService.js: documentService.update",
+          "references": [
+            "akura-finance/src/modules/documents/DocumentPage.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/finance/proforma-invoices/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/finance/proforma-invoices/{id}",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/documentService.js: documentService.remove",
+          "references": [
+            "akura-finance/src/modules/documents/DocumentPage.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/finance/proforma-invoices/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finance/proforma-invoices/{id}/history",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/documentService.js: documentService.history",
+          "references": [
+            "akura-finance/src/modules/documents/DocumentPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/finance/proforma-invoices/{id}/history",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finance/invoices",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/documentService.js: documentService.list",
+          "references": [
+            "akura-finance/src/modules/documents/DocumentPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/finance/invoices",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/finance/invoices",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/modules/quotation/CreateInvoiceAction.jsx",
+          "references": [
+            "akura-marketing/src/modules/quotation/CreateInvoiceAction.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/finance/invoices",
+          "documented": true
+        },
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/documentService.js: documentService.create",
+          "references": [
+            "akura-finance/src/modules/documents/DocumentPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/finance/invoices",
+          "documented": true
+        },
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/modules/quotation/CreateInvoiceAction.jsx",
+          "references": [
+            "akura-finance/src/modules/quotation/CreateInvoiceAction.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/finance/invoices",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finance/invoices/{id}",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/documentService.js: documentService.get",
+          "references": [
+            "akura-finance/src/modules/documents/DocumentPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/finance/invoices/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/finance/invoices/{id}",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/documentService.js: documentService.update",
+          "references": [
+            "akura-finance/src/modules/documents/DocumentPage.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/finance/invoices/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/finance/invoices/{id}",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/documentService.js: documentService.remove",
+          "references": [
+            "akura-finance/src/modules/documents/DocumentPage.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/finance/invoices/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finance/invoices/{id}/history",
+      "callers": [
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/documentService.js: documentService.history",
+          "references": [
+            "akura-finance/src/modules/documents/DocumentPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/finance/invoices/{id}/history",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/quotation-references/{quotationId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/modules/quotation/CreateInvoiceAction.jsx",
+          "references": [
+            "akura-marketing/src/modules/quotation/CreateInvoiceAction.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/quotation-references/{id}",
+          "documented": true
+        },
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/documentService.js: getQuotationReference",
+          "references": [
+            "akura-finance/src/modules/documents/DocumentPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/quotation-references/{id}",
+          "documented": true
+        },
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/modules/quotation/CreateInvoiceAction.jsx",
+          "references": [
+            "akura-finance/src/modules/quotation/CreateInvoiceAction.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/quotation-references/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/company-contract-references/{companyId}",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/contract-references/{contractId}",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/fieldservice/work-orders/{id}/history",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/fieldservice/work-orders",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/workOrderService.js: workOrderService.list",
+          "references": [
+            "akura-marketing/src/modules/work-order/WorkOrderPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/fieldservice/work-orders",
+          "documented": true
+        },
+        {
+          "app": "akura-fieldservice",
+          "caller": "akura-fieldservice/src/services/workOrderService.js: workOrderService.list",
+          "references": [
+            "akura-fieldservice/src/modules/work-order/WorkOrderPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/fieldservice/work-orders",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/fieldservice/work-orders",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/workOrderService.js: workOrderService.create",
+          "references": [
+            "akura-marketing/src/modules/work-order/WorkOrderCreatePage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/fieldservice/work-orders",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/fieldservice/work-orders/{id}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/workOrderService.js: workOrderService.get",
+          "references": [
+            "akura-marketing/src/modules/work-order/WorkOrderPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/fieldservice/work-orders/{id}",
+          "documented": true
+        },
+        {
+          "app": "akura-fieldservice",
+          "caller": "akura-fieldservice/src/services/workOrderService.js: workOrderService.get",
+          "references": [
+            "akura-fieldservice/src/modules/work-order/WorkOrderPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/fieldservice/work-orders/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/fieldservice/work-orders/{id}",
+      "callers": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/fieldservice/work-orders/{id}",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/items/{itemId}/history",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.history",
+          "references": [
+            "akura-marketing/src/modules/item/ItemHistory.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/items/{id}/history",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/items/sizes/{itemSizeId}/history",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.sizeHistory",
+          "references": [
+            "akura-marketing/src/modules/item/ItemHistory.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/items/sizes/{id}/history",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/items/sizes/{itemSizeId}/price/history",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.priceHistory",
+          "references": [
+            "akura-marketing/src/modules/item/ItemHistory.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/items/sizes/{id}/price/history",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/company-staffs/{companyStaffId}/history",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/companyStaffService.js: companyStaffService.history",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyHistory.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/company-staffs/{id}/history",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/companies/{companyId}/staff-history",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/companyService.js: companyService.staffHistory",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyHistory.jsx",
+            "akura-marketing/src/modules/company/CompanyStaffHistorySection.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/companies/{id}/staff-history",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/companies/{companyId}/history",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/companyService.js: companyService.history",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyHistory.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/companies/{id}/history",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/items/sizes/export",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.download",
+          "references": [
+            "akura-marketing/src/modules/item/ItemPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/items/sizes/export",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/company-contracts/{contractId}/prices/import",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.importPrices",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractUpload.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/company-contracts/{id}/prices/import",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/items",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.list",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractPriceEditor.jsx",
+            "akura-marketing/src/modules/item/ItemDetail.jsx",
+            "akura-marketing/src/modules/item/ItemPage.jsx",
+            "akura-marketing/src/modules/quotation/QuotationItemPicker.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/items",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/items",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.create",
+          "references": [
+            "akura-marketing/src/modules/item/ItemDetail.jsx",
+            "akura-marketing/src/modules/item/ItemPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/items",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/items/{itemId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.get",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractPriceEditor.jsx",
+            "akura-marketing/src/modules/item/ItemDetail.jsx",
+            "akura-marketing/src/modules/item/ItemPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/items/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/marketing/items/{itemId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.update",
+          "references": [
+            "akura-marketing/src/modules/item/ItemDetail.jsx",
+            "akura-marketing/src/modules/item/ItemPage.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/marketing/items/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/marketing/items/{itemId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.remove",
+          "references": [
+            "akura-marketing/src/modules/item/ItemDetail.jsx",
+            "akura-marketing/src/modules/item/ItemPage.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/marketing/items/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/items/sizes/prices",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.listPrices",
+          "references": [
+            "akura-marketing/src/modules/quotation/QuotationItemPicker.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/items/sizes/prices",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/items/sizes",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.listSizes",
+          "references": [
+            "akura-marketing/src/modules/item/ItemDetail.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/items/sizes",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/items/sizes",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.addSize",
+          "references": [
+            "akura-marketing/src/modules/item/ItemDetail.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/items/sizes",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/items/sizes/{itemSizeId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.getSize",
+          "references": [
+            "akura-marketing/src/modules/item/ItemDetail.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/items/sizes/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/marketing/items/sizes/{itemSizeId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.removeSize",
+          "references": [
+            "akura-marketing/src/modules/item/ItemDetail.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/marketing/items/sizes/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/items/sizes/{itemSizeId}/price",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.createPrice",
+          "references": [
+            "akura-marketing/src/modules/item/ItemDetail.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/items/sizes/{id}/price",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/marketing/items/sizes/{itemSizeId}/price",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.updatePrice",
+          "references": [
+            "akura-marketing/src/modules/item/ItemDetail.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/marketing/items/sizes/{id}/price",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/marketing/items/contract-prices/{contractPriceId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.updatePrice",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractPriceEditor.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/marketing/items/contract-prices/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/marketing/items/contract-prices/{contractPriceId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.removePrice",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractPrices.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/marketing/items/contract-prices/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/company-contract-prices",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.listPrices",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractPrices.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/company-contract-prices",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/items/sizes/contract-price-options/{contractId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/itemService.js: itemService.listContractPriceOptions",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractPriceEditor.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/items/sizes/contract-price-options/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/company-contracts",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.list",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractPrices.jsx",
+            "akura-marketing/src/modules/company/PendingContracts.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/company-contracts",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/company-contracts",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.create",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractPriceEditor.jsx",
+            "akura-marketing/src/modules/company/CompanyContractSection.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/company-contracts",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/company-contracts/{contractId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.get",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractPrices.jsx",
+            "akura-marketing/src/modules/company/CompanyContractSection.jsx",
+            "akura-marketing/src/modules/company/CompanyContractUpload.jsx",
+            "akura-marketing/src/modules/company/PendingContracts.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/company-contracts/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/marketing/company-contracts/{contractId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.update",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractPriceEditor.jsx",
+            "akura-marketing/src/modules/company/CompanyContractSection.jsx",
+            "akura-marketing/src/modules/company/PendingContracts.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/marketing/company-contracts/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/marketing/company-contracts/{contractId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.cancel",
+          "references": [
+            "akura-marketing/src/modules/company/PendingContracts.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/marketing/company-contracts/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/company-contracts/{contractId}/history",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.history",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractHistory.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/company-contracts/{id}/history",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/company-contracts/{contractId}/revise",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.revise",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractSection.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/company-contracts/{id}/revise",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/company-contracts/{contractId}/submit",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.submit",
+          "references": [
+            "akura-marketing/src/modules/company/PendingContracts.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/company-contracts/{id}/submit",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/company-contracts/{contractId}/reject",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.reject",
+          "references": [
+            "akura-marketing/src/modules/company/PendingContracts.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/company-contracts/{id}/reject",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/company-contracts/{contractId}/terminate",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.terminate",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractSection.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/company-contracts/{id}/terminate",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/company-contract-prices/{contractPriceId}/history",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.priceHistory",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyContractPriceHistory.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/company-contract-prices/{id}/history",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/company-contracts/{contractId}/approve",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/contractService.js: contractService.approve",
+          "references": [
+            "akura-marketing/src/modules/company/PendingContracts.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/company-contracts/{id}/approve",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/services",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api-docs",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/health",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/health",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/health",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finance/health",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/fieldservice/health",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api-docs.json",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/register",
+      "callers": [
+        {
+          "app": "akura-shell",
+          "caller": "akura-shell/src/services/api.js",
+          "references": [
+            "akura-shell/src/services/api.js"
+          ],
+          "method": "POST",
+          "path": "/api/v1/auth/register",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/.well-known/jwks.json",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "callers": [
+        {
+          "app": "akura-shell",
+          "caller": "akura-shell/src/services/api.js",
+          "references": [
+            "akura-shell/src/services/api.js"
+          ],
+          "method": "POST",
+          "path": "/api/v1/auth/login",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/refresh-token",
+      "callers": [
+        {
+          "app": "akura-shell",
+          "caller": "akura-shell/src/services/api.js",
+          "references": [
+            "akura-shell/src/services/api.js"
+          ],
+          "method": "POST",
+          "path": "/api/v1/auth/refresh-token",
+          "documented": true
+        },
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/api.js",
+          "references": [
+            "akura-app-manager/src/services/api.js"
+          ],
+          "method": "POST",
+          "path": "/api/v1/auth/refresh-token",
+          "documented": true
+        },
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/api.js",
+          "references": [
+            "akura-marketing/src/services/api.js"
+          ],
+          "method": "POST",
+          "path": "/api/v1/auth/refresh-token",
+          "documented": true
+        },
+        {
+          "app": "akura-finance",
+          "caller": "akura-finance/src/services/api.js",
+          "references": [
+            "akura-finance/src/services/api.js"
+          ],
+          "method": "POST",
+          "path": "/api/v1/auth/refresh-token",
+          "documented": true
+        },
+        {
+          "app": "akura-fieldservice",
+          "caller": "akura-fieldservice/src/services/api.js",
+          "references": [
+            "akura-fieldservice/src/services/api.js"
+          ],
+          "method": "POST",
+          "path": "/api/v1/auth/refresh-token",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "callers": [
+        {
+          "app": "akura-shell",
+          "caller": "akura-shell/src/services/api.js",
+          "references": [
+            "akura-shell/src/services/api.js"
+          ],
+          "method": "POST",
+          "path": "/api/v1/auth/logout",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "callers": [
+        {
+          "app": "akura-shell",
+          "caller": "akura-shell/src/services/api.js",
+          "references": [
+            "akura-shell/src/services/api.js"
+          ],
+          "method": "GET",
+          "path": "/api/v1/auth/me",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/auth/profile",
+      "callers": [
+        {
+          "app": "akura-shell",
+          "caller": "akura-shell/src/services/api.js",
+          "references": [
+            "akura-shell/src/services/api.js"
+          ],
+          "method": "PUT",
+          "path": "/api/v1/auth/profile",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/auth/password",
+      "callers": [
+        {
+          "app": "akura-shell",
+          "caller": "akura-shell/src/services/api.js",
+          "references": [
+            "akura-shell/src/services/api.js"
+          ],
+          "method": "PUT",
+          "path": "/api/v1/auth/password",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/users",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/userService.js: userService.list",
+          "references": [
+            "akura-app-manager/src/modules/user/UserPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/auth/users",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/users/{userId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/userService.js: userService.get",
+          "references": [
+            "akura-app-manager/src/modules/user/UserPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/auth/users/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/auth/users/{userId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/userService.js: userService.update",
+          "references": [
+            "akura-app-manager/src/modules/user/UserPage.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/auth/users/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menus/my-menus",
+      "callers": [
+        {
+          "app": "akura-shell",
+          "caller": "akura-shell/src/services/menuApi.js",
+          "references": [
+            "akura-shell/src/services/menuApi.js"
+          ],
+          "method": "GET",
+          "path": "/api/v1/app-manager/menus/my-menus",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menus",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuService.js: menuService.list",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuItemPage.jsx",
+            "akura-app-manager/src/modules/menu/MenuPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/app-manager/menus",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/app-manager/menus",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuService.js: menuService.create",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/app-manager/menus",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menus/{menuId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuService.js: menuService.get",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/app-manager/menus/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/app-manager/menus/{menuId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuService.js: menuService.update",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuPage.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/app-manager/menus/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/app-manager/menus/{menuId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuService.js: menuService.remove",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuPage.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/app-manager/menus/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menu-accesses",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuAccessService.js: menuAccessService.list",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuAccessPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/app-manager/menu-accesses",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/app-manager/menu-accesses",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuAccessService.js: menuAccessService.create",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuAccessPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/app-manager/menu-accesses",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menu-accesses/{menuAccessId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuAccessService.js: menuAccessService.get",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuAccessPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/app-manager/menu-accesses/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/app-manager/menu-accesses/{menuAccessId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuAccessService.js: menuAccessService.update",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuAccessPage.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/app-manager/menu-accesses/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/app-manager/menu-accesses/{menuAccessId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuAccessService.js: menuAccessService.remove",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuAccessPage.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/app-manager/menu-accesses/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menu-items",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuItemService.js: menuItemService.list",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuAccessPage.jsx",
+            "akura-app-manager/src/modules/menu/MenuItemPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/app-manager/menu-items",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/app-manager/menu-items",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuItemService.js: menuItemService.create",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuItemPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/app-manager/menu-items",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menu-items/{menuItemId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuItemService.js: menuItemService.get",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuItemPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/app-manager/menu-items/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/app-manager/menu-items/{menuItemId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuItemService.js: menuItemService.update",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuItemPage.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/app-manager/menu-items/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/app-manager/menu-items/{menuItemId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/menuItemService.js: menuItemService.remove",
+          "references": [
+            "akura-app-manager/src/modules/menu/MenuItemPage.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/app-manager/menu-items/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/office-branches",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/officeBranchService.js: officeBranchService.list",
+          "references": [
+            "akura-app-manager/src/modules/office-branch/OfficeBranchPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/app-manager/office-branches",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/app-manager/office-branches",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/officeBranchService.js: officeBranchService.create",
+          "references": [
+            "akura-app-manager/src/modules/office-branch/OfficeBranchPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/app-manager/office-branches",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/office-branches/options",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/officeBranchService.js: officeBranchService.options",
+          "references": [
+            "akura-app-manager/src/modules/user/UserPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/app-manager/office-branches/options",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/office-branches/{officeBranchId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/officeBranchService.js: officeBranchService.get",
+          "references": [
+            "akura-app-manager/src/modules/office-branch/OfficeBranchPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/app-manager/office-branches/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/app-manager/office-branches/{officeBranchId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/officeBranchService.js: officeBranchService.update",
+          "references": [
+            "akura-app-manager/src/modules/office-branch/OfficeBranchPage.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/app-manager/office-branches/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/app-manager/office-branches/{officeBranchId}",
+      "callers": [
+        {
+          "app": "akura-app-manager",
+          "caller": "akura-app-manager/src/services/officeBranchService.js: officeBranchService.remove",
+          "references": [
+            "akura-app-manager/src/modules/office-branch/OfficeBranchPage.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/app-manager/office-branches/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/companies",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/companyService.js: companyService.list",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyPage.jsx",
+            "akura-marketing/src/modules/quotation/QuotationForm.jsx",
+            "akura-marketing/src/modules/work-order/WorkOrderCreatePage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/companies",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/companies",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/companyService.js: companyService.create",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/companies",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/companies/{companyId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/companyService.js: companyService.get",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/companies/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/marketing/companies/{companyId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/companyService.js: companyService.update",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyPage.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/marketing/companies/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/company-staffs",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/companyStaffService.js: companyStaffService.list",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyStaffModal.jsx",
+            "akura-marketing/src/modules/quotation/QuotationForm.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/company-staffs",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/company-staffs",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/companyStaffService.js: companyStaffService.create",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyStaffModal.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/company-staffs",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/company-staffs/{companyStaffId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/companyStaffService.js: companyStaffService.get",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyStaffModal.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/company-staffs/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/marketing/company-staffs/{companyStaffId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/companyStaffService.js: companyStaffService.update",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyStaffModal.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/marketing/company-staffs/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/marketing/company-staffs/{companyStaffId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/companyStaffService.js: companyStaffService.remove",
+          "references": [
+            "akura-marketing/src/modules/company/CompanyStaffModal.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/marketing/company-staffs/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/services",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/serviceService.js: serviceService.list",
+          "references": [
+            "akura-marketing/src/modules/item/ItemPage.jsx",
+            "akura-marketing/src/modules/service/ServiceCatalogPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/services",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/services",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/serviceService.js: serviceService.create",
+          "references": [
+            "akura-marketing/src/modules/service/ServiceCatalogPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/services",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/services/{serviceId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/serviceService.js: serviceService.get",
+          "references": [
+            "akura-marketing/src/modules/service/ServiceCatalogPage.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/services/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/marketing/services/{serviceId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/serviceService.js: serviceService.update",
+          "references": [
+            "akura-marketing/src/modules/service/ServiceCatalogPage.jsx"
+          ],
+          "method": "PATCH",
+          "path": "/api/v1/marketing/services/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/marketing/services/{serviceId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/serviceService.js: serviceService.remove",
+          "references": [
+            "akura-marketing/src/modules/service/ServiceCatalogPage.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/marketing/services/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/marketing/services/{serviceId}/history",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/serviceService.js: serviceService.history",
+          "references": [
+            "akura-marketing/src/modules/service/ServiceHistory.jsx"
+          ],
+          "method": "GET",
+          "path": "/api/v1/marketing/services/{id}/history",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/services/{serviceId}/inspection/scopes",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/serviceService.js: serviceService.createInspectionScope",
+          "references": [
+            "akura-marketing/src/modules/service/ServiceCatalogPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/services/{id}/inspection/scopes",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/marketing/services/{serviceId}/inspection/scopes/{inspectionScopeId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/serviceService.js: serviceService.removeInspectionScope",
+          "references": [
+            "akura-marketing/src/modules/service/ServiceCatalogPage.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/marketing/services/{id}/inspection/scopes/{id}",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/services/{serviceId}/maintenance/scopes",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/serviceService.js: serviceService.createMaintenanceScope",
+          "references": [
+            "akura-marketing/src/modules/service/ServiceCatalogPage.jsx"
+          ],
+          "method": "POST",
+          "path": "/api/v1/marketing/services/{id}/maintenance/scopes",
+          "documented": true
+        }
+      ]
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/marketing/services/{serviceId}/maintenance/scopes/{scopeId}",
+      "callers": [
+        {
+          "app": "akura-marketing",
+          "caller": "akura-marketing/src/services/serviceService.js: serviceService.removeMaintenanceScope",
+          "references": [
+            "akura-marketing/src/modules/service/ServiceCatalogPage.jsx"
+          ],
+          "method": "DELETE",
+          "path": "/api/v1/marketing/services/{id}/maintenance/scopes/{id}",
+          "documented": true
+        }
+      ]
+    }
+  ]
+}

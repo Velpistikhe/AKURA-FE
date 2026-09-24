@@ -15,13 +15,15 @@ import { App } from 'antd';
 import ItemPage from '/src/modules/item/ItemPage.jsx';
 const item = { id: 'item-1', name: 'Detail name', uom: 'JOINT', version: 1, isActive: true };
 window.writes = [];
+window.sizes = new URL(location.href).searchParams.has('empty') ? [] : [{ id: 'size-1', size: 'Large', isActive: true, version: 1, priceStatus: 'AVAILABLE', priceServicePrimary: '100', priceServiceSisterCompany: '90' }];
 window.fetch = async (url, options = {}) => {
   const path = new URL(url, location.href).pathname;
   let data;
+  if (options.method === 'POST' && path.endsWith('/sizes')) { const body = JSON.parse(options.body); window.writes.push(body); window.sizes.push({ id: 'no-size', size: body.size, isActive: true, version: 0 }); item.version++; }
   if (options.method === 'PATCH') { window.writes.push(JSON.parse(options.body)); Object.assign(item, JSON.parse(options.body)); }
   if (path.endsWith('/items/item-1')) data = item;
   else if (path.endsWith('/items')) data = { items: [{ ...item, name: 'List name' }], pagination: { total: 1 } };
-  else if (path.endsWith('/sizes')) data = { sizes: [{ id: 'size-1', size: 'Large', isActive: true, version: 1, priceStatus: 'AVAILABLE', priceServicePrimary: '100', priceServiceSisterCompany: '90' }], pagination: { total: 1 } };
+  else if (path.endsWith('/sizes')) data = { sizes: window.sizes, pagination: { total: window.sizes.length } };
   else if (path.endsWith('/services')) data = { services: [], pagination: { totalPages: 1 } };
   else data = { history: [], pagination: { total: 0 } };
   return new Response(JSON.stringify({ success: true, data }), { headers: { 'content-type': 'application/json' } });
@@ -112,6 +114,7 @@ test('Item edit uses detail values, skips unchanged saves, and action columns re
       return { cell: cell.offsetWidth, content: content.offsetWidth };
     })()`)
     assert.ok(sizeDimensions.cell >= sizeDimensions.content + 30, JSON.stringify(sizeDimensions))
+    assert.equal(await evaluate("[...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Add No Size')"), false)
     await viewport(535)
     await until(() => evaluate(`getComputedStyle(document.querySelector('.item-size-table td.akura-actions-cell')).position !== 'sticky'`))
     const bounds = await evaluate(`(() => {
@@ -139,6 +142,17 @@ test('Item edit uses detail values, skips unchanged saves, and action columns re
     await until(() => evaluate('window.writes.length === 1'))
     assert.deepEqual(await evaluate('window.writes[0]'), { version: 1, name: 'detail name', uom: 'JOINT' })
     console.log('Edit values and saves verified')
+    await send('Page.navigate', { url: `http://127.0.0.1:${server.httpServer.address().port}/test?empty=1` })
+    await until(() => evaluate(`!!document.querySelector('[aria-label="View List name"]')`))
+    await evaluate(`document.querySelector('[aria-label="View List name"]').click()`)
+    await click('Add No Size')
+    await until(() => evaluate(`!!document.querySelector('.akura-save-confirmation')`))
+    await evaluate(`[...document.querySelectorAll('.akura-save-confirmation button')].find(b => b.textContent.trim() === 'Save').click()`)
+    await until(() => evaluate('window.writes.length === 1'))
+    assert.deepEqual(await evaluate('window.writes[0]'), { itemId: 'item-1', itemVersion: 1, size: null })
+    await until(() => evaluate(`document.querySelector('.item-size-table')?.textContent.includes('Without size')`))
+    assert.equal(await evaluate("[...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Add No Size' || b.textContent.trim() === 'Add Size')"), false)
+    console.log('No Size creation and duplicate prevention verified')
   } finally {
     console.log('Closing browser fixture')
     socket?.close()

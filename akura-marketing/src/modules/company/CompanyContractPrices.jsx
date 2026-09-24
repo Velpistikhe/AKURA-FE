@@ -7,6 +7,8 @@ import { canCreateContractPrice, canEditContractPrice, canDeleteContractPrice } 
 import { canReceiveContractPrices } from './contractPriceModel'
 import CompanyContractUpload from './CompanyContractUpload'
 import CompanyContractPriceEditor from './CompanyContractPriceEditor'
+import CompanyContractPriceHistory from './CompanyContractPriceHistory'
+import { HistoryOutlined } from '../../components/global'
 
 export default function CompanyContractPrices({ company, currentUser, initialContract, onClose, onChanged }) {
   const { message } = App.useApp()
@@ -24,6 +26,7 @@ export default function CompanyContractPrices({ company, currentUser, initialCon
   const [error, setError] = useState('')
   const [revision, setRevision] = useState(0)
   const [editor, setEditor] = useState(null)
+  const [historyPrice, setHistoryPrice] = useState(null)
   const inactive = canViewInactiveCatalog(currentUser)
   const selectedContract = contracts.find((row) => row.id === contractId)
   const marketingAccess = company.revoked !== true && currentUser?.section === 'MARKETING'
@@ -84,7 +87,7 @@ export default function CompanyContractPrices({ company, currentUser, initialCon
   }
 
   return <Modal title={`Contract Items and Prices: ${company.name}`} visible={!closing} footer={null} width={1150}
-    onCancel={() => { if (!uploadOpen && !deleteLock.current) setClosing(true) }} afterClose={onClose}
+    onCancel={() => { if (!uploadOpen && !historyPrice && !deleteLock.current) setClosing(true) }} afterClose={onClose}
     closable={!deletingId} keyboard={!deletingId} mask={{ closable: !deletingId }} unmountOnClose>
     <div className="company-view-section-heading"><Space size={8}>
       {marketingAccess && <Button icon={<UploadOutlined />} disabled={Boolean(deletingId) || contractsLoading || !selectedContract} onClick={() => setUploadOpen(true)}>Upload Price List</Button>}
@@ -115,16 +118,19 @@ export default function CompanyContractPrices({ company, currentUser, initialCon
         { title: 'Status', dataIndex: 'isActive', filterMultiple: false, filteredValue: inactive && query.isActive ? [query.isActive] : null,
           filters: inactive ? [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }] : undefined,
           render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag> },
-        ...(canEdit || canDelete ? [{ title: 'Actions', width: 112, render: (_, row) => row.isActive === true && <Space size={4}>
-          {canEdit && <Button variant="text" icon={<EditOutlined />} title="Edit Contract Price" disabled={contractsLoading || Boolean(deletingId)}
+        { title: 'Actions', width: canEdit || canDelete ? 148 : 80, fixed: 'right', render: (_, row) => <Space size={4}>
+          <Button variant="text" icon={<HistoryOutlined />} title="View Contract Price History" aria-label={`View contract price history ${row.catalogSnapshot?.itemName || 'Item'} (${row.catalogSnapshot?.size || 'No size'})`}
+            disabled={Boolean(deletingId)} onClick={() => setHistoryPrice(row)} />
+          {row.isActive === true && canEdit && <Button variant="text" icon={<EditOutlined />} title="Edit Contract Price" disabled={contractsLoading || Boolean(deletingId)}
             onClick={() => setEditor({ price: row, contract: selectedContract })} />}
-          {canDelete && <Popconfirm title="Delete contract price?" description={`Remove ${row.catalogSnapshot?.itemName || 'this item'} (${row.catalogSnapshot?.size || 'No size'}) from this contract's active price list?`}
+          {row.isActive === true && canDelete && <Popconfirm title="Delete contract price?" description={`Remove ${row.catalogSnapshot?.itemName || 'this item'} (${row.catalogSnapshot?.size || 'No size'}) from this contract's active price list?`}
             okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }} disabled={contractsLoading || Boolean(deletingId)} onConfirm={() => deletePrice(row)}>
             <Button variant="text" isDanger icon={<DeleteOutlined />} title="Delete Contract Price" busy={deletingId === row.id} disabled={contractsLoading || Boolean(deletingId)} />
           </Popconfirm>}
-        </Space> }] : []),
+        </Space> },
       ]} />
     {uploadOpen && <CompanyContractUpload company={company} contractId={selectedContract?.id} onClose={() => setUploadOpen(false)} onChanged={refresh} />}
     {editor && <CompanyContractPriceEditor {...editor} company={company} currentUser={currentUser} onClose={() => setEditor(null)} onSaved={refresh} onConflict={refresh} />}
+    {historyPrice && <CompanyContractPriceHistory key={historyPrice.id} price={historyPrice} onClose={() => setHistoryPrice(null)} />}
   </Modal>
 }

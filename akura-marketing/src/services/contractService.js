@@ -4,6 +4,7 @@ const PATH = '/marketing/company-contracts'
 export const contractService = {
   list: (params = {}) => apiRequest(`${PATH}?${new URLSearchParams(Object.entries(params).filter(([, value]) => value !== '' && value != null))}`),
   get: (contractId) => apiRequest(`${PATH}/${contractId}`),
+  priceHistory: (contractPriceId, { page = 1, limit = 20 } = {}) => apiRequest(`/marketing/company-contract-prices/${contractPriceId}/history?${new URLSearchParams({ page, limit })}`),
   history: (contractId, { page = 1, limit = 20 } = {}) => apiRequest(`${PATH}/${contractId}/history?${new URLSearchParams({ page, limit })}`),
   approve: (contractId, version) => apiRequest(`${PATH}/${contractId}/approve`, { method: 'POST', body: JSON.stringify({ version }) }),
   submit: (contractId, version) => apiRequest(`${PATH}/${contractId}/submit`, { method: 'POST', body: JSON.stringify({ version }) }),

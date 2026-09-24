@@ -25,6 +25,9 @@ window.fetch = async (url, options = {}) => {
     if (window.conflict) { window.conflict = false; return new Response(JSON.stringify({ success: false, message: 'Stale version' }), { status: 409, headers: { 'content-type': 'application/json' } }); }
     if (options.method === 'PATCH') price = { ...price, ...body, version: price.version + 1 };
     data = price;
+  } else if (path.endsWith('/company-contract-prices/price-1/history')) {
+    const page = Number(new URL(url, location.href).searchParams.get('page'));
+    data = { contractPriceId: price.id, history: [{ id: 'history-' + page, version: page === 1 ? 7 : 6, action: 'UPDATE', changedAt: '2026-09-23T01:00:00Z', changedBy: { name: 'History Reviewer' }, changes: [{ field: 'priceService', label: 'Service price', before: '80.25', after: '100.25' }] }], pagination: { page, limit: 20, total: 21, totalPages: 2 } };
   } else if (path.endsWith('/company-contract-prices')) data = { prices: [price], pagination: { total: 1, totalPages: 1 } };
   else if (path.endsWith('/company-contracts/contract-1')) data = contract;
   else if (path.endsWith('/items/sizes/contract-price-options/contract-1')) data = { sizes: [{ id: 'size-new', itemId: 'item-new', version: 0, size: null, itemName: 'New Pipe', serviceName: 'Inspection' }], pagination: { total: 1, totalPages: 1 } };
@@ -82,7 +85,8 @@ test('Contract prices use header filters, enforce role access, validate maintena
     }
     const send = (method, params = {}) => new Promise((resolve, reject) => {
       const key = ++id
-      pending.set(key, result => result.error ? reject(new Error(JSON.stringify(result.error))) : resolve(result.result))
+      const timer = setTimeout(() => { pending.delete(key); reject(new Error(`Chrome DevTools timeout: ${method}`)) }, 15000)
+      pending.set(key, result => { clearTimeout(timer); result.error ? reject(new Error(JSON.stringify(result.error))) : resolve(result.result) })
       socket.send(JSON.stringify({ id: key, method, params }))
     })
     const evaluate = async (expression) => {
@@ -120,6 +124,16 @@ test('Contract prices use header filters, enforce role access, validate maintena
     assert.equal(await evaluate(`window.requests.filter(url => url.includes('company-contract-prices')).every(url => new URL(url, location.href).searchParams.get('contractId') === 'contract-1')`), true)
     assert.equal(await evaluate(`window.requests.some(url => new URL(url, location.href).pathname.endsWith('/company-contracts'))`), false)
     console.log('Contract detail requests and fixed contract scope verified')
+    assert.equal(await evaluate(`window.requests.some(url => url.includes('/price-1/history'))`), false)
+    await evaluate(`document.querySelector('[aria-label^="View contract price history"]').click()`)
+    await until(() => evaluate(`document.body.textContent.includes('History Reviewer')`))
+    await evaluate(`document.querySelector('.ant-table-row-expand-icon').click()`)
+    await until(() => evaluate(`document.body.textContent.includes('80.25') && document.body.textContent.includes('100.25')`))
+    await evaluate(`[...document.querySelectorAll('.ant-modal')].find(el => el.textContent.includes('Contract Price History:')).querySelector('.ant-pagination-next button').click()`)
+    await until(() => evaluate(`window.requests.some(url => url.includes('/price-1/history') && new URL(url, location.href).searchParams.get('page') === '2')`))
+    await click('Close')
+    await until(() => evaluate(`!document.body.textContent.includes('Contract Price History:')`))
+    assert.equal(await evaluate('window.contractPricesClosed'), 0)
     await click('Add Contract Price')
     await until(() => evaluate(`!!document.querySelector('.ant-table-selection-column input[type="radio"]')`))
     await evaluate(`document.querySelector('.ant-table-selection-column input[type="radio"]').click()`)
@@ -155,6 +169,7 @@ test('Contract prices use header filters, enforce role access, validate maintena
       await evaluate(`window.mount(${JSON.stringify(role)}, ${JSON.stringify(section)})`)
       await until(() => evaluate(`document.body.textContent.includes('Existing Pipe') && !document.querySelector('[aria-label="Edit Contract Price"]')`))
       assert.equal(await evaluate(`[...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Add Contract Price')`), canCreate)
+      assert.equal(await evaluate(`!!document.querySelector('[aria-label^="View contract price history"]')`), true)
       if (canCreate) assert.equal(await evaluate(`[...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'Add Contract Price').disabled`), true, 'Approved prices require Marketing ADMIN')
     }
     await evaluate(`window.mount('ADMIN', 'MARKETING', true)`)

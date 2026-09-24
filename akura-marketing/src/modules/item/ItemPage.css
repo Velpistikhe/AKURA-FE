@@ -8,8 +8,8 @@
 .item-price-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
 .item-price-grid .ant-input-number { width: 100%; }
 .item-size-table { min-width: 0; max-width: 100%; }
-.item-size-table .ant-table-cell { overflow-wrap: anywhere; }
-.item-size-table .ant-tag { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.item-size-table .ant-table-cell { white-space: nowrap; overflow-wrap: normal; }
+.item-size-table .ant-tag { white-space: nowrap; overflow-wrap: normal; }
 .item-size-table .ant-pagination { flex-wrap: wrap; }
 .item-error { margin-bottom: 16px; color: var(--text-secondary, #5c6c84); }
 @media (max-width: 600px) {

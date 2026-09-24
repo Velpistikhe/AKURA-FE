@@ -78,6 +78,26 @@
 @media (prefers-reduced-motion: reduce) { .company-page { animation: none; } }
 
 .contract-upload-fields { display: grid; gap: 12px; }
+.contract-upload-modal .contract-upload-fields { gap: 22px; padding-top: 8px; }
+.contract-upload-summary { padding: 20px; border: 1px solid var(--border, #dbe4f3); border-radius: 14px; background: var(--surface-subtle, #f5f8fe); }
+.contract-upload-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .12em; color: var(--text-secondary, #5c6c84); }
+.contract-upload-title { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 8px; }
+.contract-upload-title strong { font-size: 20px; overflow-wrap: anywhere; }
+.contract-upload-summary p { margin: 6px 0 18px; color: var(--text-secondary, #5c6c84); }
+.contract-upload-summary dl { display: flex; flex-wrap: wrap; gap: 12px 32px; margin: 0; padding-top: 14px; border-top: 1px solid var(--border, #dbe4f3); }
+.contract-upload-summary dt { font-size: 11px; color: var(--text-secondary, #5c6c84); }
+.contract-upload-summary dd { margin: 4px 0 0; font-size: 13px; }
+.contract-upload-guide ol { padding-left: 20px; margin: 10px 0; }
+.contract-upload-guide li + li { margin-top: 6px; }
+.contract-upload-guide p { margin: 0; font-size: 12px; color: var(--text-secondary, #5c6c84); }
+.contract-upload-dropzone { position: relative; display: grid; justify-items: center; gap: 8px; padding: 26px 18px; border: 1px dashed var(--button-border, #9bacc7); border-radius: 14px; text-align: center; cursor: pointer; }
+.contract-upload-dropzone:hover, .contract-upload-dropzone:focus-within { border-color: var(--primary, #294b91); background: var(--surface-subtle, #f5f8fe); }
+.contract-upload-dropzone > .anticon { font-size: 28px; color: var(--primary, #294b91); }
+.contract-upload-dropzone strong { max-width: 100%; overflow-wrap: anywhere; }
+.contract-upload-dropzone > span:not(.anticon) { font-size: 12px; color: var(--text-secondary, #5c6c84); }
+.contract-upload-dropzone input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.contract-upload-dropzone.is-disabled { opacity: .6; cursor: not-allowed; }
+.contract-upload-error { padding: 12px 14px; border: 1px solid #f1b6b6; border-radius: 10px; }
 .contract-upload-fields input[type="file"] { max-width: 100%; color: var(--text-primary, #20304b); }
 .contract-upload-errors { max-height: 220px; overflow: auto; padding-left: 20px; margin-top: 10px; }
 

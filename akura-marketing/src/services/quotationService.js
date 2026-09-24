@@ -9,5 +9,9 @@ export const quotationService = {
   approve: (id, version) => apiRequest(`${PATH}/${id}/approve`, { method: 'POST', body: JSON.stringify({ version }) }),
   create: (data) => apiRequest(PATH, { method: 'POST', body: JSON.stringify(data) }),
   update: (id, data) => apiRequest(`${PATH}/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  addItem: (id, data) => apiRequest(`${PATH}/${id}/items`, { method: 'POST', body: JSON.stringify(data) }),
+  removeItem: (id, itemId, quotationVersion, itemVersion) => apiRequest(`${PATH}/${id}/items/${itemId}`, {
+    method: 'DELETE', body: JSON.stringify({ quotationVersion, itemVersion }),
+  }),
   remove: (id, version) => apiRequest(`${PATH}/${id}`, { method: 'DELETE', body: JSON.stringify({ version }) }),
 }
