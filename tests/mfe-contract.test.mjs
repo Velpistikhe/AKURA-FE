@@ -152,6 +152,17 @@ test('Shell authentication and navigation requests match Swagger', async () => {
     authAPI.login(credentials), authAPI.register(credentials), authAPI.me(), authAPI.logout(), authAPI.refreshToken(),
     authAPI.updateProfile(credentials), authAPI.changePassword({ oldPassword: 'OldPass123!', newPassword: 'SecurePass123!', newPasswordConfirmation: 'SecurePass123!' }),
   ])) check(request)
+  for (const action of ['register', 'updateProfile']) {
+    for (const contacts of [{ email: 'audit@example.com', telp: '+62 811 1234 5678' }, { email: null, telp: null }, {}]) {
+      const request = await authAPI[action]({ ...credentials, ...contacts })
+      check(request)
+      const body = JSON.parse(request.body)
+      for (const key of ['email', 'telp']) {
+        assert.equal(body[key], contacts[key], `${action} must preserve ${key}, including null and omission`)
+        assert.equal(Object.hasOwn(body, key), Object.hasOwn(contacts, key))
+      }
+    }
+  }
   const menuSource = (await readFile(new URL('../akura-shell/src/services/menuApi.js', import.meta.url), 'utf8')).replace("import api from './api'", "const api = { get: (path) => ({ path, method: 'GET' }) }")
   const { menuAPI } = await import(`data:text/javascript;base64,${Buffer.from(menuSource).toString('base64')}`)
   const operation = check(menuAPI.myMenus())

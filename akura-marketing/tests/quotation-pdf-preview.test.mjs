@@ -1,6 +1,25 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { loadQuotationPdf } from '../src/modules/quotation/quotationPdfPreview.js'
+import { loadQuotationPdf, quotationPdfBlob } from '../src/modules/quotation/quotationPdfPreview.js'
+import { readFile } from 'node:fs/promises'
+
+test('Preview endpoint uses authenticated API transport, binary response and abort signal', async () => {
+  const source = (await readFile(new URL('../src/services/quotationService.js', import.meta.url), 'utf8'))
+    .replace("import { apiRequest } from './api'", 'const apiRequest = (path, options) => ({ path, ...options })')
+  const { quotationService } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
+  const signal = new AbortController().signal
+  const request = quotationService.previewPdf('quote-1', { signal })
+  assert.equal(request.path, '/marketing/quotations/quote-1/pdf')
+  assert.equal(request.method, 'GET')
+  assert.equal(request.responseType, 'blob')
+  assert.equal(request.cache, 'no-store')
+  assert.equal(request.signal, signal)
+  assert.equal(request.body, undefined)
+  const pdf = await quotationPdfBlob(new Blob(['%PDF-1.4\npreview'], { type: 'application/octet-stream' }))
+  assert.equal(pdf.type, 'application/pdf')
+  await assert.rejects(quotationPdfBlob(new Blob(['{"error":"unavailable"}'])), /valid PDF/)
+  await assert.rejects(quotationPdfBlob(undefined), /valid PDF/)
+})
 
 test('Attachment responses become PDF blobs for inline browser preview', async (t) => {
   const controller = new AbortController()

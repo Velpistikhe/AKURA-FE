@@ -8,7 +8,8 @@ import { INQUIRY_METHODS, TEXT_FIELDS, QUANTITY_PATTERN, displayEnum, loadAll, m
 
 const options = (values) => values.map((value) => ({ value, label: displayEnum(value) }))
 
-export default function QuotationForm({ form, record, saving, blocked = false, onFinish, onLoadingChange, onAddItem, onRemoveItem }) {
+export default function QuotationForm({ form, record, copySource, saving, blocked = false, onFinish, onLoadingChange, onAddItem, onRemoveItem }) {
+  const defaults = record || copySource
   const { message } = App.useApp()
   const [staffs, setStaffs] = useState([])
   const [companies, setCompanies] = useState([])
@@ -27,11 +28,11 @@ export default function QuotationForm({ form, record, saving, blocked = false, o
   const initialized = useRef(false)
   useEffect(() => {
     if (!loading && !optionError) {
-      const values = quotationFormValues(record)
+      const values = quotationFormValues(defaults)
       form.setFieldsValue(initialized.current ? { items: values.items } : values)
       initialized.current = true
     }
-  }, [form, record, loading, optionError])
+  }, [form, defaults, loading, optionError])
   useEffect(() => { onLoadingChange?.(loading || optionError) }, [loading, optionError, onLoadingChange])
   useEffect(() => {
     let active = true
@@ -44,11 +45,11 @@ export default function QuotationForm({ form, record, saving, blocked = false, o
     return () => { active = false }
   }, [message, retry])
   const contacts = staffs.filter((staff) => staff.isActive !== false && (staff.companyId || staff.company?.id) === companyId).map((staff) => ({ value: staff.id, label: staff.name }))
-  if (record?.staffId && companyId === record.companySnapshot?.id && !contacts.some((staff) => staff.value === record.staffId)) contacts.push({ value: record.staffId, label: record.customerSnapshot, disabled: true })
+  if (defaults?.staffId && companyId === defaults.companySnapshot?.id && !contacts.some((staff) => staff.value === defaults.staffId)) contacts.push({ value: defaults.staffId, label: defaults.customerSnapshot, disabled: true })
   const companyOptions = companies.map((company) => ({ value: company.id, label: company.name }))
-  if (record?.companySnapshot?.id && !companyOptions.some((company) => company.value === record.companySnapshot.id)) companyOptions.push({ value: record.companySnapshot.id, label: record.companySnapshot.name })
+  if (defaults?.companySnapshot?.id && !companyOptions.some((company) => company.value === defaults.companySnapshot.id)) companyOptions.push({ value: defaults.companySnapshot.id, label: defaults.companySnapshot.name })
   return (
-    <Form className="quotation-content-ready" form={form} layout="vertical" initialValues={quotationFormValues(record)} clearOnDestroy preserve disabled={saving || blocked || loading || optionError} onFinish={onFinish} onValuesChange={(changed) => {
+    <Form className="quotation-content-ready" form={form} layout="vertical" initialValues={quotationFormValues(defaults)} clearOnDestroy preserve disabled={saving || blocked || loading || optionError} onFinish={onFinish} onValuesChange={(changed) => {
       if (!Object.hasOwn(changed, 'companyId')) return
       form.setFieldValue('staffId', null)
       closePicker()
@@ -63,7 +64,7 @@ export default function QuotationForm({ form, record, saving, blocked = false, o
       </div> : <>
       <div className="quotation-form-grid">
         <Form.Item name="companyId" label="Company" rules={[{ required: true, message: 'Company is required.' }]}>
-          <Select showSearch optionFilterProp="label" placeholder="Select company" disabled={Boolean(record) || saving} loading={loading} options={companyOptions} />
+          <Select showSearch optionFilterProp="label" placeholder="Select company" disabled={Boolean(defaults) || saving} loading={loading} options={companyOptions} />
         </Form.Item>
         <Form.Item name="staffId" label="Customer Contact" rules={[{ required: true, message: 'Customer contact is required.' }]}>
           <Select showSearch optionFilterProp="label" placeholder="Select contact" disabled={saving || !companyId} loading={loading} options={contacts} />
@@ -141,7 +142,7 @@ export default function QuotationForm({ form, record, saving, blocked = false, o
                   : <Button variant="text" isDanger icon={<DeleteOutlined />} aria-label={`Remove item ${field.name + 1}`} disabled={saving} onClick={() => remove(field.name)} /> },
               ]}
             />
-            {picker && <QuotationItemPicker key={companyId} companyId={companyId} visible={!picker.closing} saving={saving} blocked={blocked} selectedSizeIds={picker.selectedSizeIds} onCancel={closePicker}
+            {picker && <QuotationItemPicker key={companyId} companyId={companyId} visible={!picker.closing} saving={saving} blocked={blocked} configureSelection={Boolean(record)} selectedSizeIds={picker.selectedSizeIds} onCancel={closePicker}
               afterClose={() => setPicker((current) => current?.closing ? null : current)} onSelect={async (selected) => {
               if (picker.closing || !companyId || !selected) return
               if ((form.getFieldValue('items') || []).some((item) => item.itemSizeId === selected.itemSizeId)) {

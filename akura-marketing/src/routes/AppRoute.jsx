@@ -18,8 +18,8 @@ function AppRoute({ currentUser, pathname = window.location.pathname, navigate, 
   if (isQuotationCreate || /^\/marketing\/(quotations|quotation)$/.test(path)) {
     return <div key={`${path}-${readOnly}`} className={`quotation-route quotation-route--${isQuotationCreate && !readOnly ? 'create' : 'browse'}`}>
       {isQuotationCreate
-        ? <QuotationCreatePage currentUser={currentUser} onBack={() => navigate(path.slice(0, -7))} />
-        : <QuotationPage currentUser={currentUser} onCreate={readOnly ? undefined : () => navigate(`${path}/create`)} />}
+        ? <QuotationCreatePage currentUser={currentUser} copyFrom={new URLSearchParams(window.location.search).get('copyFrom')} onBack={() => navigate(path.slice(0, -7))} />
+        : <QuotationPage currentUser={currentUser} onCreate={readOnly ? undefined : () => navigate(`${path}/create`)} onCopy={readOnly ? undefined : (id) => navigate(`${path}/create?copyFrom=${encodeURIComponent(id)}`)} />}
     </div>
   }
   const Module = moduleRoutes[path]

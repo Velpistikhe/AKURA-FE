@@ -42,6 +42,8 @@ function UserModule() {
     profileForm.setFieldsValue({
       firstName: user?.firstName || '',
       lastName: user?.lastName || '',
+      email: user?.email || '',
+      telp: user?.telp || '',
     })
     setProfileOpen(true)
   }
@@ -51,7 +53,11 @@ function UserModule() {
     if (!await confirmSave('profile')) return
     setProfileSaving(true)
     try {
-      await updateProfile(values)
+      await updateProfile({
+        ...values,
+        email: values.email?.trim().toLowerCase() || null,
+        telp: values.telp?.trim() || null,
+      })
       setProfileOpen(false)
       notify.success('Profile Updated', 'Your profile has been updated successfully.')
     } catch (error) {
@@ -113,6 +119,14 @@ function UserModule() {
             <strong>{user?.lastName || '-'}</strong>
           </div>
           <div className="profile-detail">
+            <span>Email</span>
+            <strong>{user?.email || '-'}</strong>
+          </div>
+          <div className="profile-detail">
+            <span>Phone number</span>
+            <strong>{user?.telp || '-'}</strong>
+          </div>
+          <div className="profile-detail">
             <span>Role</span>
             <strong>{user?.role || '-'}</strong>
             <small>Managed through App Manager</small>
@@ -159,6 +173,23 @@ function UserModule() {
             rules={[{ required: true, whitespace: true, message: 'Last name is required.' }]}
           >
             <Input placeholder="Enter last name" />
+          </Form.Item>
+          <Form.Item
+            name="email"
+            label="Email (optional)"
+            rules={[
+              { type: 'email', transform: (value) => value?.trim(), message: 'Enter a valid email address.' },
+              { max: 255, message: 'Email must contain at most 255 characters.' },
+            ]}
+          >
+            <Input placeholder="john@example.com" maxLength={255} autoComplete="email" />
+          </Form.Item>
+          <Form.Item
+            name="telp"
+            label="Phone Number (optional)"
+            rules={[{ max: 50, message: 'Phone number must contain at most 50 characters.' }]}
+          >
+            <Input type="tel" placeholder="+62 811 1234 5678" maxLength={50} autoComplete="tel" />
           </Form.Item>
         </Form>
       </Modal>

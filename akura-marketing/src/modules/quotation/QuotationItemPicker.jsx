@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { Button, Modal, Table, TableSearchFilter, Typography } from '../../components/global'
 import { itemService } from '../../services/itemService'
 import { money, quotationOptionValues } from './quotationModel'
+import QuotationItemDetails from './QuotationItemDetails'
 
-export default function QuotationItemPicker({ visible, companyId, selectedSizeIds = [], saving = false, blocked = false, onSelect, onCancel, afterClose }) {
+export default function QuotationItemPicker({ visible, companyId, selectedSizeIds = [], saving = false, blocked = false, configureSelection = false, onSelect, onCancel, afterClose }) {
+  const [selected, setSelected] = useState(null)
   const [filters, setFilters] = useState({ itemName: '', serviceName: '', size: '' })
   const [sortOrder, setSortOrder] = useState(null)
   const [page, setPage] = useState(1)
@@ -43,10 +45,11 @@ export default function QuotationItemPicker({ visible, companyId, selectedSizeId
     { title: 'Size', ...searchColumn('size', 'size'), sorter: true, sortOrder, render: (_, row) => (row.catalogSnapshot ? row.catalogSnapshot.size : row.size) ?? 'Without size' },
     { title: 'Inspection Estimate', render: (_, row) => money(row.priceInspection ?? row.priceService) },
     { title: 'Maintenance Estimate', dataIndex: 'priceMaintenance', render: money },
-    { title: 'Select', key: 'action', render: (_, row) => <Button variant="primary" disabled={disabled || selectedSizeIds.includes(row.id) || !quotationOptionValues(row)} onClick={() => onSelect(quotationOptionValues(row))}>Select Item</Button> },
+    { title: 'Select', key: 'action', render: (_, row) => <Button variant="primary" disabled={disabled || selectedSizeIds.includes(row.id) || !quotationOptionValues(row)} onClick={() => configureSelection ? setSelected(quotationOptionValues(row)) : onSelect(quotationOptionValues(row))}>Select Item</Button> },
   ]
-  return <Modal title="Select Quotation Item" visible={visible} width={1100} footer={null}
+  return <Modal title={selected ? 'Quotation Item Details' : 'Select Quotation Item'} visible={visible} width={selected ? 640 : 1100} footer={null}
     onCancel={() => { if (!saving) onCancel() }} closable={!saving} mask={{ closable: !saving }} afterClose={afterClose}>
+    {selected ? <QuotationItemDetails key={selected.itemSizeId} item={selected} saving={saving} blocked={blocked || !visible} onBack={() => setSelected(null)} onConfirm={onSelect} /> : <>
     <p><Typography.Text tone="secondary">Items use valid prices from the company's current approved contract when available, otherwise standard or sister-company prices. Final prices are calculated when saved.</Typography.Text></p>
     {error && <div role="alert"><Typography.Text tone="danger">{error}</Typography.Text> <Button onClick={() => setRetry((value) => value + 1)}>Retry</Button></div>}
     <Table rowKey="id" columns={columns} dataSource={data.sizes.filter((row) => !selectedSizeIds.includes(row.id))} busy={loading} scroll={{ x: 950 }} locale={{ emptyText: error ? 'Unable to load items.' : 'No unselected items found.' }}
@@ -58,5 +61,6 @@ export default function QuotationItemPicker({ visible, companyId, selectedSizeId
         setPage(1)
       }}
       pagination={{ current: page, pageSize: limit, total: data.pagination.total, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100], onChange: (next, size) => { setLoading(true); setPage(size !== limit ? 1 : next); setLimit(size) } }} />
+    </>}
   </Modal>
 }

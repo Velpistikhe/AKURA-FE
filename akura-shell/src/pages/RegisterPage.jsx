@@ -36,6 +36,8 @@ function RegisterPage() {
         passwordConfirmation: values.passwordConfirmation,
         firstName:            values.firstName,
         lastName:             values.lastName,
+        email:                values.email?.trim().toLowerCase() || null,
+        telp:                 values.telp?.trim() || null,
       })
       notify.success('Registration Successful', 'Your account has been created successfully.')
       navigate('/login')
@@ -110,7 +112,7 @@ function RegisterPage() {
               <AppForm.Item
                 label="First Name"
                 name="firstName"
-                rules={[{ required: true, message: 'First name is required.' }]}
+                rules={[{ required: true, whitespace: true, message: 'First name is required.' }]}
               >
                 <AppInput
                   id="input-firstname"
@@ -122,13 +124,33 @@ function RegisterPage() {
               <AppForm.Item
                 label="Last Name"
                 name="lastName"
-                rules={[{ required: true, message: 'Last name is required.' }]}
+                rules={[{ required: true, whitespace: true, message: 'Last name is required.' }]}
               >
                 <AppInput
                   id="input-lastname"
                   prefixIcon={<UserOutlined />}
                   placeholder="Doe"
                 />
+              </AppForm.Item>
+            </div>
+
+            <div className="form-row">
+              <AppForm.Item
+                label="Email (optional)"
+                name="email"
+                rules={[
+                  { type: 'email', transform: (value) => value?.trim(), message: 'Enter a valid email address.' },
+                  { max: 255, message: 'Email must contain at most 255 characters.' },
+                ]}
+              >
+                <AppInput id="input-email" placeholder="john@example.com" maxLength={255} autoComplete="email" />
+              </AppForm.Item>
+              <AppForm.Item
+                label="Phone Number (optional)"
+                name="telp"
+                rules={[{ max: 50, message: 'Phone number must contain at most 50 characters.' }]}
+              >
+                <AppInput id="input-telp" type="tel" placeholder="+62 811 1234 5678" maxLength={50} autoComplete="tel" />
               </AppForm.Item>
             </div>
 
@@ -159,14 +181,14 @@ function RegisterPage() {
                 name="password"
                 rules={[
                   { required: true, message: 'Password is required.' },
-                  { min: 8, message: 'Password must contain at least 8 characters.' },
+                  { min: 6, message: 'Password must contain at least 6 characters.' },
                 ]}
               >
                 <AppInput
                   id="input-password"
                   inputType="password"
                   prefixIcon={<LockOutlined />}
-                  placeholder="At least 8 characters"
+                  placeholder="At least 6 characters"
                 />
               </AppForm.Item>
 

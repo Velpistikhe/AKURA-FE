@@ -19,8 +19,15 @@ export function quotationOptionValues(size) {
 }
 export const dateValue = (value) => value ? value.slice(0, 10) : null
 export const quotationNumber = (record) => `${record.no == null || record.numberYear == null ? 'Draft' : `${record.no}/${record.numberYear}`}${record.revision ? ` - Revision ${record.revision}` : ''}`
-export const canApproveQuotation = (record) => record?.isActive === true && ['CREATED', 'SENT', 'REVISED'].includes(record.status)
-export const canUpdateQuotation = (record) => record?.isActive === true && record.status === 'CREATED'
+export const canApproveQuotation = (record) => record?.isActive === true && record.status === 'SUBMITTED'
+export const canSubmitQuotation = (record) => record?.isActive === true && ['CREATED', 'REJECTED'].includes(record.status)
+export const canRejectQuotation = canApproveQuotation
+export const canReviseQuotation = (record) => record?.isActive === true && record.status === 'APPROVED'
+export const canUpdateQuotation = (record, user) => record?.isActive === true && (
+  ['CREATED', 'REJECTED'].includes(record.status)
+  || (record.status === 'SUBMITTED' && user?.role === 'ADMIN' && user?.section === 'MARKETING')
+)
+export const canCopyQuotation = (record) => ['REVISED', 'APPROVED'].includes(record?.status)
 export const displayEnum = (value) => value ? value.replaceAll('_', ' ') : '-'
 export const money = (value) => value == null ? '-' : new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value))
 

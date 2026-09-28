@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import test from 'node:test'
 import { contractPricePayload } from '../src/modules/company/contractPriceModel.js'
 import { createItemPayload } from '../src/modules/item/itemModel.js'
+import { canSubmitQuotation, canRejectQuotation, canReviseQuotation } from '../src/modules/quotation/quotationModel.js'
 import { canApproveQuotation, canUpdateQuotation, quotationNumber, quotationChanges, quotationFormValues, quotationPayload, quotationOptionValues, quotationTextMaxLength, TEXT_FIELDS, QUANTITY_PATTERN } from '../src/modules/quotation/quotationModel.js'
 
 const swagger = process.env.SWAGGER_FILE ? JSON.parse(await readFile(process.env.SWAGGER_FILE, 'utf8')) : await fetch(process.env.SWAGGER_URL || 'http://localhost:5000/api-docs.json').then((response) => {
@@ -75,11 +76,31 @@ test('Draft numbering and approval eligibility follow the quotation lifecycle', 
   assert.equal(quotationNumber({ no: null, numberYear: null, revision: 0 }), 'Draft')
   assert.equal(quotationNumber({ no: null, numberYear: null, revision: 2 }), 'Draft - Revision 2')
   assert.equal(quotationNumber({ no: 1, numberYear: 2026, revision: 2 }), '1/2026 - Revision 2')
-  for (const status of ['CREATED', 'SENT', 'REVISED']) {
+  for (const status of ['SUBMITTED']) {
     assert.equal(canApproveQuotation({ status, isActive: true }), true)
     assert.equal(canApproveQuotation({ status, isActive: false }), false)
   }
-  for (const status of ['APPROVED', 'REJECTED', 'COMPLETE']) assert.equal(canApproveQuotation({ status, isActive: true }), false)
+  for (const status of ['CREATED', 'SENT', 'REVISED', 'APPROVED', 'REJECTED', 'COMPLETE']) assert.equal(canApproveQuotation({ status, isActive: true }), false)
+})
+
+test('Quotation transitions match current Swagger statuses and version-only endpoints', async () => {
+  const service = await loadService('quotationService')
+  const statuses = swagger.components.schemas.QuotationStatus.enum
+  assert.ok(statuses.includes('SUBMITTED'))
+  assert.equal(statuses.includes('SENT'), false)
+  const rules = { submit: [canSubmitQuotation, ['CREATED', 'REJECTED']], approve: [canApproveQuotation, ['SUBMITTED']], reject: [canRejectQuotation, ['SUBMITTED']], revise: [canReviseQuotation, ['APPROVED']] }
+  for (const [action, [eligible, expected]] of Object.entries(rules)) {
+    for (const status of [...statuses, 'SENT', undefined]) {
+      assert.equal(eligible({ status, isActive: true }), expected.includes(status))
+      assert.equal(eligible({ status, isActive: false }), false)
+    }
+    assert.equal(eligible(null), false)
+    const request = service[action](uuid, 5)
+    assert.equal(request.method, 'POST')
+    assert.equal(request.path, `/marketing/quotations/${uuid}/${action}`)
+    assert.deepEqual(JSON.parse(request.body), { version: 5 })
+    assertBody(operation(request).requestBody.content['application/json'].schema, JSON.parse(request.body))
+  }
 })
 
 test('Approval sends only the latest concurrency version to the documented endpoint', async () => {
@@ -557,14 +578,77 @@ test('Contract lifecycle uses Swagger statuses, draft PATCH, revision POST and t
 })
 
 
-test('Only active CREATED quotations allow header updates', () => {
-  for (const status of ['CREATED', 'SENT', 'REVISED', 'APPROVED', 'CANCELLED', undefined]) {
+test('Active SUBMITTED quotations allow updates only for Marketing ADMIN', () => {
+  for (const section of ['MARKETING', 'FINANCE', 'FIELD_SERVICE', undefined]) {
+    for (const role of ['ADMIN', 'USER', 'APP_MANAGER', undefined]) {
+      const user = { role, section }
+      assert.equal(canUpdateQuotation({ status: 'SUBMITTED', isActive: true }, user), section === 'MARKETING' && role === 'ADMIN')
+      assert.equal(canUpdateQuotation({ status: 'SUBMITTED', isActive: false }, user), false)
+      assert.equal(canUpdateQuotation({ status: 'APPROVED', isActive: true }, user), false)
+    }
+  }
+  assert.equal(canUpdateQuotation({ status: 'SUBMITTED', isActive: true }, null), false)
+})
+
+test('Active CREATED and REJECTED quotations allow updates', () => {
+  for (const status of ['CREATED', 'REJECTED', 'SUBMITTED', 'SENT', 'REVISED', 'APPROVED', 'CANCELLED', undefined]) {
     for (const isActive of [true, false, undefined]) {
-      assert.equal(canUpdateQuotation({ status, isActive }), status === 'CREATED' && isActive === true)
+      assert.equal(canUpdateQuotation({ status, isActive }), ['CREATED', 'REJECTED'].includes(status) && isActive === true)
     }
   }
   assert.equal(canUpdateQuotation(null), false)
   assert.equal(canUpdateQuotation(), false)
+})
+
+test('Quotation history uses documented pagination, action filter and sorting without a write', async () => {
+  const historySchema = swagger.components.schemas.QuotationHistory
+  assert.equal(historySchema.properties.changes.type, 'array')
+  assert.deepEqual(historySchema.properties.changes.items.required, ['field', 'label', 'before', 'after'])
+  assert.equal(historySchema.properties.snapshot, undefined)
+  assert.equal(historySchema.properties.createdByName.type, 'string')
+  const service = await loadService('quotationService')
+  for (const params of [undefined, { page: 2, limit: 10, action: 'SUBMIT', sortBy: 'createdAt', sortOrder: 'asc' }]) {
+    const request = service.history(uuid, params)
+    const url = new URL(request.path, 'http://localhost')
+    assert.equal(request.method || 'GET', 'GET')
+    assert.equal(request.body, undefined)
+    assert.equal(url.pathname, `/marketing/quotations/${uuid}/history`)
+    assert.deepEqual(Object.fromEntries(url.searchParams), params ? { page: '2', limit: '10', action: 'SUBMIT', sortBy: 'createdAt', sortOrder: 'asc' } : { page: '1', limit: '20', sortBy: 'version', sortOrder: 'desc' })
+    const op = operation(request)
+    for (const key of url.searchParams.keys()) assert.ok(op.parameters.some((parameter) => parameter.in === 'query' && parameter.name === key))
+    assert.ok(op.responses[200])
+  }
+})
+
+test('Quotation list sends combined header filters supported by Swagger and omits cleared filters', async () => {
+  const service = await loadService('quotationService')
+  const params = { page: 2, limit: 10, isActive: 'false', no: 12, dateFrom: '2026-09-01', dateTo: '2026-09-28', status: 'SUBMITTED', company: ' Akura ', invoiceStatus: 'APPROVED' }
+  const request = service.list(params)
+  const url = new URL(request.path, 'http://localhost')
+  assert.deepEqual(Object.fromEntries(url.searchParams), { ...params, page: '2', limit: '10', no: '12', company: 'Akura' })
+  const op = operation(request)
+  for (const key of url.searchParams.keys()) assert.ok(op.parameters.some((parameter) => parameter.in === 'query' && parameter.name === key))
+  assert.equal(request.method || 'GET', 'GET')
+  const cleared = new URL(service.list({ no: '', company: ' ', dateFrom: '', dateTo: '', status: '', invoiceStatus: '', isActive: '' }).path, 'http://localhost')
+  assert.deepEqual(Object.fromEntries(cleared.searchParams), { page: '1', limit: '20' })
+  assert.equal(new URL(service.list({ invoiceStatus: 'null' }).path, 'http://localhost').searchParams.get('invoiceStatus'), 'null')
+  const rows = resolve(resolve(op.responses[200].content['application/json'].schema).properties.data.properties.quotations.items)
+  assert.ok(rows.properties.companyName)
+  assert.equal(rows.properties.items, undefined)
+})
+
+test('Editing a rejected quotation preserves company and sends changes without overriding status', async () => {
+  const rejected = { ...record, status: 'REJECTED', isActive: true }
+  const values = quotationFormValues(rejected)
+  values.subject = 'Corrected subject'
+  values.companyId = 'different-company'
+  const changes = quotationChanges(values, rejected)
+  assert.deepEqual(changes, { subject: 'Corrected subject' })
+  const service = await loadService('quotationService')
+  const request = service.update(uuid, { ...changes, version: 7 })
+  assert.equal(request.method, 'PATCH')
+  assert.deepEqual(JSON.parse(request.body), { subject: 'Corrected subject', version: 7 })
+  assertBody(operation(request).requestBody.content['application/json'].schema, JSON.parse(request.body))
 })
 
 test('Every editable quotation header field matches the live Swagger PATCH contract', async () => {

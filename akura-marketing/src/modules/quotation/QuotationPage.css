@@ -57,4 +57,12 @@
 .quotation-items-table .ant-table-cell { vertical-align: top; }
 .quotation-items-table .ant-form-item { margin-bottom: 0; }
 .quotation-selected-item { display: grid; gap: 6px; }
+.quotation-history-cell { white-space: normal; overflow-wrap: anywhere; }
+.quotation-history-detail > .ant-card { min-width: 0; border-radius: 14px; background: var(--surface-subtle, #fafbfe); }
+.quotation-history-detail .ant-table-cell { vertical-align: top; }
+.quotation-change-list { margin: 0; padding-inline-start: 20px; }
+.quotation-change-list > li + li { margin-top: 8px; }
+.quotation-change-object { display: grid; gap: 8px; margin: 0; }
+.quotation-change-object dt { color: var(--text-secondary, #5c6c84); font-size: 12px; }
+.quotation-change-object dd { margin: 0; }
 .quotation-selected-item > .ant-btn { justify-self: start; padding: 0; height: auto; }

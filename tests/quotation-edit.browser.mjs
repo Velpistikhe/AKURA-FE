@@ -13,11 +13,16 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from '/src/components/global';
 import QuotationPage from '/src/modules/quotation/QuotationPage.jsx';
+import QuotationCreatePage from '/src/modules/quotation/QuotationCreatePage.jsx';
 import { TEXT_FIELDS } from '/src/modules/quotation/quotationModel.js';
 const record = { id: 'quote-1', version: 2, isActive: true, status: 'CREATED', companySnapshot: { id: 'company-1', name: 'Test Company' }, staffId: 'staff-1', customerSnapshot: 'Test Contact', inquiryMethod: 'WHATSAPP', inquiryDate: '2026-09-22', ...Object.fromEntries(TEXT_FIELDS.map(([key]) => [key, 'Saved ' + key])), items: [{ id: 'line-1', version: 3, itemSizeId: 'size-1', isActive: true, itemName: 'Existing Pipe', serviceName: 'Inspection', size: 'Large', note: 'Saved note', quantityInspection: '2.500', quantityMaintenance: '1.000', priceInspection: '100', priceMaintenance: '50' }, { id: 'inactive', isActive: false, itemName: 'Inactive Pipe' }] };
 window.requests = []; window.writes = []; window.failOptions = false;
 window.fetch = async (url, options = {}) => {
   const path = new URL(url, location.href).pathname; window.requests.push(path); if (path.endsWith('/sizes/prices')) window.optionQuery = new URL(url, location.href).search;
+  if (path.endsWith('/quotations/quote-1/pdf')) {
+    if (window.failPdf) return new Response(JSON.stringify({ message: 'PDF unavailable' }), { status: 500 });
+    return new Response('%PDF-1.4\\n1 0 obj<</Type/Catalog>>endobj\\n%%EOF', { headers: { 'content-type': 'application/pdf' } });
+  }
   let data;
   if (options.method === 'DELETE') {
     window.writes.push({ path, body: JSON.parse(options.body) }); record.version++;
@@ -29,7 +34,12 @@ window.fetch = async (url, options = {}) => {
     { id: 'size-1', priceStatus: 'AVAILABLE', priceSource: 'PRIMARY', priceService: '100', priceMaintenance: '50', catalogSnapshot: { itemName: 'Existing Pipe', size: 'Large' } },
     { id: 'size-2', priceStatus: 'AVAILABLE', priceSource: 'PRIMARY', priceService: '100', priceMaintenance: null, catalogSnapshot: { itemName: 'New Pipe', size: 'Small' } }
   ], pagination: { total: 2, totalPages: 1 } };
-  else if (['POST', 'PATCH'].includes(options.method)) { window.writes.push({ path, body: JSON.parse(options.body) }); data = { ...record, status: 'APPROVED' }; }
+  else if (['POST', 'PATCH'].includes(options.method)) {
+    window.writes.push({ path, body: JSON.parse(options.body) });
+    if (path.endsWith('/submit')) { record.status = 'SUBMITTED'; record.version++; }
+    if (path.endsWith('/approve')) { record.status = 'APPROVED'; record.version++; }
+    data = { ...record };
+  }
   else if (path.endsWith('/quotations/quote-1')) data = record;
   else if (path.endsWith('/quotations')) data = { quotations: [record], pagination: { total: 1, totalPages: 1 } };
   else if (path.endsWith('/companies') || path.endsWith('/company-staffs')) {
@@ -40,7 +50,9 @@ window.fetch = async (url, options = {}) => {
   return new Response(JSON.stringify({ success: true, data }), { headers: { 'content-type': 'application/json' } });
 };
 const root = createRoot(document.getElementById('root'));
-window.mount = (role = 'ADMIN', section = 'MARKETING') => root.render(React.createElement(React.StrictMode, null, React.createElement(App, null, React.createElement(QuotationPage, { key: role + section, currentUser: { role, section } }))));
+window.setStatus = status => { record.status = status; };
+const copy = id => root.render(React.createElement(App, null, React.createElement(QuotationCreatePage, { currentUser: { section: 'MARKETING' }, copyFrom: id, onBack: () => window.mount() })));
+window.mount = (role = 'ADMIN', section = 'MARKETING') => root.render(React.createElement(React.StrictMode, null, React.createElement(App, null, React.createElement(QuotationPage, { key: role + section, currentUser: { role, section }, onCopy: copy }))));
 window.mount();
 `
 
@@ -113,8 +125,21 @@ test('Quotation edit defaults survive reopen and retry; unchanged save skips API
       await until(() => evaluate('!!document.querySelector(".quotation-detail")'));
     };
     const hasApprove = () => evaluate("[...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Approve Quotation')");
+    await until(() => evaluate(`!!document.querySelector('[aria-label="Preview PDF for quotation Draft"]')`));
+    await evaluate('window.failPdf = true');
+    await evaluate(`document.querySelector('[aria-label="Preview PDF for quotation Draft"]').click()`);
+    await until(() => evaluate("document.body.textContent.includes('PDF unavailable')"));
+    await evaluate('window.failPdf = false');
+    await click('Retry');
+    await until(() => evaluate("!!document.querySelector('iframe')"));
+    assert.match(await evaluate("document.querySelector('iframe').src"), /^blob:/);
+    assert.match(await evaluate("document.querySelector('a[download]').download"), /Quotation-Draft/);
+    assert.equal(await evaluate('window.writes.length'), 0);
+    assert.equal(await evaluate("window.requests.filter(p => p.endsWith('/quote-1/pdf')).length"), 2);
+    await click('Close');
+    await until(() => evaluate("!document.querySelector('iframe')"));
     await view();
-    assert.equal(await hasApprove(), true);
+    assert.equal(await hasApprove(), false);
     for (let cycle = 0; cycle < 3; cycle++) {
       if (cycle === 2) await evaluate('window.failOptions = true');
       await click('Update Quotation');
@@ -156,9 +181,21 @@ test('Quotation edit defaults survive reopen and retry; unchanged save skips API
     await evaluate("(() => { const el = document.getElementById('subject'); Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, 'Preserved header'); el.dispatchEvent(new Event('input', { bubbles: true })); })()");
     await click('Add Item');
     await click('Select Item');
+    await until(() => evaluate(`!!document.querySelector('[aria-label="New item inspection quantity"]')`));
+    assert.equal(await evaluate('window.writes.length'), 0);
+    assert.equal(await evaluate(`!!document.querySelector('[aria-label="New item maintenance quantity"]')`), false);
+    await evaluate(`(() => {
+      for (const [label, value] of [['New item inspection quantity', '3'], ['New item note', 'Added item note']]) {
+        const el = document.querySelector('[aria-label="' + label + '"]');
+        const prototype = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+        Object.getOwnPropertyDescriptor(prototype, 'value').set.call(el, value);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    })()`);
+    await evaluate(`Array.from(document.querySelector('[aria-label="New item note"]').closest('.ant-modal-content').querySelectorAll('button')).find(b => b.textContent.trim() === 'Add Item').click()`);
     assert.match(await evaluate('window.optionQuery'), /exclude=size-1/);
     await until(() => evaluate("document.querySelectorAll('.quotation-items-table tbody tr.ant-table-row').length === 2"));
-    assert.deepEqual(await evaluate('window.writes[0]'), { path: '/api/v1/marketing/quotations/quote-1/items', body: { version: 2, itemSizeId: 'size-2', quantityInspection: '1', quantityMaintenance: '0', note: null } });
+    assert.deepEqual(await evaluate('window.writes[0]'), { path: '/api/v1/marketing/quotations/quote-1/items', body: { version: 2, itemSizeId: 'size-2', quantityInspection: '3', quantityMaintenance: '0', note: 'Added item note' } });
     assert.equal(await evaluate("document.getElementById('subject').value"), 'Preserved header');
     await until(() => evaluate("![...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Select Item')"));
     await evaluate("document.querySelector('[aria-label=\"Remove item 2\"]').click()");
@@ -170,16 +207,51 @@ test('Quotation edit defaults survive reopen and retry; unchanged save skips API
     await until(() => evaluate("!document.getElementById('subject')"));
     await evaluate('window.writes = []');
     await view();
+    await click('Submit Quotation');
+    await click('Submit');
+    await until(() => evaluate('window.writes.length === 1'));
+    assert.deepEqual(await evaluate('window.writes[0]'), { path: '/api/v1/marketing/quotations/quote-1/submit', body: { version: 4 } });
+    await until(hasApprove);
+    await evaluate('window.writes = []');
     await click('Approve Quotation');
     await click('Approve');
     await until(() => evaluate('window.writes.length === 1'));
-    assert.deepEqual(await evaluate('window.writes[0]'), { path: '/api/v1/marketing/quotations/quote-1/approve', body: { version: 4 } });
+    assert.deepEqual(await evaluate('window.writes[0]'), { path: '/api/v1/marketing/quotations/quote-1/approve', body: { version: 5 } });
     await until(() => evaluate("![...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Update Quotation')"));
     for (const [role, section] of [['USER', 'MARKETING'], ['APP_MANAGER', 'MARKETING'], ['ADMIN', 'FINANCE']]) {
       await evaluate('window.mount(' + JSON.stringify(role) + ',' + JSON.stringify(section) + ')');
       await until(() => evaluate("!document.querySelector('.quotation-detail')"));
       await view();
       assert.equal(await hasApprove(), false, role + '/' + section);
+    }
+    for (const status of ['REVISED', 'APPROVED']) {
+      await evaluate(`window.setStatus(${JSON.stringify(status)}); window.writes = []; window.mount()`);
+      await until(() => evaluate(`!!document.querySelector('[aria-label^="Copy quotation "]')`));
+      await evaluate(`document.querySelector('[aria-label^="Copy quotation "]').click()`);
+      await until(() => evaluate("!!document.getElementById('subject')"));
+      assert.equal(await evaluate("document.getElementById('subject').value"), 'Saved subject');
+      assert.equal(await evaluate("document.getElementById('companyId').disabled"), true);
+      assert.equal(await evaluate("document.querySelector('[aria-label=\"Inspection Quantity item 1\"]').disabled"), false);
+      assert.equal(await evaluate("document.querySelector('[aria-label=\"Note item 1\"]').disabled"), false);
+      assert.equal(await evaluate("document.querySelectorAll('.quotation-items-table tbody tr.ant-table-row').length"), 1);
+      await evaluate("document.querySelector('[aria-label=\"Remove item 1\"]').click()");
+      assert.equal(await evaluate('window.writes.length'), 0);
+      await click('Save Quotation');
+      await until(() => evaluate("document.body.textContent.includes('Add between 1 and 100 quotation items.')"));
+      await click('Cancel');
+      await until(() => evaluate(`!!document.querySelector('[aria-label^="Copy quotation "]')`));
+      await evaluate(`document.querySelector('[aria-label^="Copy quotation "]').click()`);
+      await until(() => evaluate("!!document.getElementById('subject')"));
+      await click('Save Quotation');
+      await click('Save');
+      await until(() => evaluate('window.writes.length === 1'));
+      const write = await evaluate('window.writes[0]');
+      assert.equal(write.path, '/api/v1/marketing/quotations');
+      assert.equal(write.body.companyId, 'company-1');
+      assert.equal(write.body.subject, 'Saved subject');
+      assert.deepEqual(write.body.items, [{ itemSizeId: 'size-1', note: 'Saved note', quantityInspection: '2.5', quantityMaintenance: '1' }]);
+      for (const field of ['id', 'version', 'status', 'no', 'revision', 'previousQuotationId']) assert.equal(field in write.body, false);
+      await until(() => evaluate(`!!document.querySelector('[aria-label^="Copy quotation "]')`));
     }
   } catch (error) {
     console.error(error)

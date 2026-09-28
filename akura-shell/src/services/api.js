@@ -128,8 +128,8 @@ export const authAPI = {
    */
   me: () => api.get('/auth/me'),
 
-  updateProfile: ({ firstName, lastName }) =>
-    api.put('/auth/profile', { firstName, lastName }),
+  updateProfile: ({ firstName, lastName, email, telp }) =>
+    api.put('/auth/profile', { firstName, lastName, email, telp }),
 
   changePassword: ({ oldPassword, newPassword, newPasswordConfirmation }) =>
     api.put('/auth/password', {
@@ -140,16 +140,18 @@ export const authAPI = {
 
   /**
    * Register — POST /auth/register
-   * Body: { username, password, passwordConfirmation, firstName, lastName }
-   * Response: { status: 201, success, message, data: { user } }
+   * Body: { username, password, passwordConfirmation, firstName, lastName, email?, telp? }
+   * Response: { status: 201, success, message } (without a session)
    */
-  register: ({ username, password, passwordConfirmation, firstName, lastName }) =>
+  register: ({ username, password, passwordConfirmation, firstName, lastName, email, telp }) =>
     api.post('/auth/register', {
       username,
       password,
       passwordConfirmation,
       firstName,
       lastName,
+      email,
+      telp,
     }),
 }
 

@@ -1,21 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { App, Button, Card, DeleteOutlined, EditOutlined, EyeOutlined, Form, Modal, PlusOutlined, Popconfirm, Space, Table, Tag, Typography, useSaveConfirmation } from '../../components/global'
+import { App, Button, Card, DeleteOutlined, EditOutlined, EyeOutlined, FilePdfOutlined, Form, Modal, PlusOutlined, Popconfirm, Space, Table, Tag, Typography, useSaveConfirmation } from '../../components/global'
 import { quotationService } from '../../services/quotationService'
 import QuotationForm from './QuotationForm'
 import QuotationSkeleton from './QuotationSkeleton'
+import QuotationHistory from './QuotationHistory'
 import CreateInvoiceAction from './CreateInvoiceAction'
-import { loadQuotationPdf } from './quotationPdfPreview'
+import { loadQuotationPdf, quotationPdfBlob } from './quotationPdfPreview'
 import { canApproveQuotations, canManageQuotations } from './quotationAccess'
 import { canViewInactiveCatalog } from '../catalogAccess'
+import { CopyOutlined, SendOutlined, TableSearchFilter } from '../../components/global'
+import { QuotationNumberFilter, QuotationDateFilter, QUOTATION_STATUSES, QUOTATION_INVOICE_STATUSES } from './QuotationTableFilters'
+import { canCopyQuotation, canSubmitQuotation, canRejectQuotation, canReviseQuotation } from './quotationModel'
 import { TEXT_FIELDS, canApproveQuotation, canUpdateQuotation, dateValue, displayEnum, money, quotationChanges, quotationNumber } from './quotationModel'
 import '../company/CompanyPage.css'
 import './QuotationPage.css'
 
-export default function QuotationPage({ onCreate, currentUser }) {
+export default function QuotationPage({ onCreate, onCopy, currentUser }) {
   const readOnly = !canManageQuotations(currentUser)
   const canApprove = canApproveQuotations(currentUser)
   const canViewInactive = canViewInactiveCatalog(currentUser)
   const [activeFilter, setActiveFilter] = useState('')
+  const [listFilters, setListFilters] = useState({})
   const { message } = App.useApp()
   const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = Form.useForm()
@@ -27,6 +32,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
   const [loadError, setLoadError] = useState(false)
   const [saving, setSaving] = useState(false)
   const [approving, setApproving] = useState(false)
+  const [transitionId, setTransitionId] = useState(null)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [pdfPreview, setPdfPreview] = useState(null)
   const [pdfError, setPdfError] = useState('')
@@ -60,7 +66,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
     setLoading(true)
     setLoadError(false)
     try {
-      const response = await quotationService.list({ page, limit: pageSize, isActive: canViewInactive ? activeFilter : 'true' })
+      const response = await quotationService.list({ ...listFilters, page, limit: pageSize, isActive: canViewInactive ? activeFilter : 'true' })
       if (request !== requestRef.current) return
       setRecords(response.data?.quotations || [])
       setTotal(response.data?.pagination?.total || 0)
@@ -69,7 +75,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
     } finally {
       if (request === requestRef.current) setLoading(false)
     }
-  }, [page, pageSize, message, canViewInactive, activeFilter])
+  }, [page, pageSize, message, canViewInactive, activeFilter, listFilters])
   useEffect(() => { load(); return () => { requestRef.current++ } }, [load])
 
   const view = async (record, edit = false) => {
@@ -80,7 +86,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
       const response = await quotationService.get(record.id)
       if (request !== detailRequestRef.current) return
       if (!response.data?.id) throw new Error('Invalid quotation detail.')
-      if (edit && !canUpdateQuotation(response.data)) throw new Error('Only active draft quotations can be updated.')
+      if (edit && !canUpdateQuotation(response.data, currentUser)) throw new Error('This quotation cannot be edited in its current state by your account.')
       if (edit) { setEditingLoading(true); setEditing(response.data); setStale(false); setDetailOpen(false); setOpen(true) }
       else { setDetail(response.data); setDetailOpen(true) }
     } catch (error) { message.error(error.message) }
@@ -88,7 +94,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
   }
 
   const save = async (values) => {
-    if (readOnly || savingRef.current || stale || editingLoading || !canUpdateQuotation(editing)) return
+    if (readOnly || savingRef.current || stale || editingLoading || !canUpdateQuotation(editing, currentUser)) return
     const changes = quotationChanges(values, editing)
     if (!Object.keys(changes).length) { message.warning('No changes were made.'); return }
     savingRef.current = true
@@ -112,7 +118,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
   }
 
   const changeItem = async (item, deleting = false) => {
-    if (readOnly || savingRef.current || stale || editingLoading || !canUpdateQuotation(editing)) return false
+    if (readOnly || savingRef.current || stale || editingLoading || !canUpdateQuotation(editing, currentUser)) return false
     savingRef.current = true
     setSaving(true)
     try {
@@ -151,43 +157,53 @@ export default function QuotationPage({ onCreate, currentUser }) {
     } finally { setDeletingId(null) }
   }
 
-  const approve = async () => {
-    if (!canApprove || approvingRef.current || !canApproveQuotation(detail)) return
+  const transition = async (action, record = detail) => {
+    const eligible = { submit: canSubmitQuotation, approve: canApproveQuotation, reject: canRejectQuotation, revise: canReviseQuotation }[action]
+    if (readOnly || (action !== 'submit' && !canApprove) || approvingRef.current || !eligible?.(record)) return
     approvingRef.current = true
     setApproving(true)
+    setTransitionId(record.id)
     try {
-      const response = await quotationService.approve(detail.id, detail.version)
-      setDetail(response.data)
-      message.success('Quotation approved and PDF generated.')
+      const response = await quotationService[action](record.id, record.version)
+      setDetail((current) => current?.id === record.id ? response.data : current)
+      message.success({ submit: 'Quotation submitted for approval.', approve: 'Quotation approved and PDF generated.', reject: 'Quotation rejected.', revise: 'Draft revision created. Use Update Quotation to edit it.' }[action])
       await load()
     } catch (error) {
       message.error(error.message)
       if (error.status === 409 || error.status === 503) {
-        setDetailOpen(false)
-        message.warning('Reopen the quotation to review its latest state before retrying approval.')
+        if (detail?.id === record.id) setDetailOpen(false)
+        message.warning('Reopen the quotation to review its latest state before retrying this action.')
         await load()
       }
-    } finally { approvingRef.current = false; setApproving(false) }
+    } finally { approvingRef.current = false; setApproving(false); setTransitionId(null) }
   }
 
-  const openPdf = async () => {
-    if (!detail || pdfLoading) return
+  const openPdf = async (record, stored = false) => {
+    if (!record?.id) return
     pdfController.current?.abort()
     if (pdfObjectUrl.current) URL.revokeObjectURL(pdfObjectUrl.current)
     pdfObjectUrl.current = null
     const controller = new AbortController()
     pdfController.current = controller
-    setPdfPreview({ title: `Quotation ${detail.no ?? 'Draft'}`, url: null })
+    setPdfPreview({ record, stored, title: `Quotation ${quotationNumber(record)}`, url: null })
     setPdfError('')
     setPdfLoading(true)
     try {
-      const response = await quotationService.get(detail.id)
+      let file
+      if (stored) {
+        const response = await quotationService.get(record.id)
+        if (controller.signal.aborted) return
+        file = await loadQuotationPdf(response.data?.pdf?.url, { signal: controller.signal })
+        if (controller.signal.aborted) return
+        setDetail((current) => current?.id === response.data.id ? response.data : current)
+      } else {
+        const response = await quotationService.previewPdf(record.id, { signal: controller.signal })
+        if (controller.signal.aborted) return
+        file = await quotationPdfBlob(response.blob)
+      }
       if (controller.signal.aborted) return
-      const file = await loadQuotationPdf(response.data?.pdf?.url, { signal: controller.signal })
-      if (controller.signal.aborted) return
-      setDetail(response.data)
       pdfObjectUrl.current = URL.createObjectURL(file)
-      setPdfPreview({ title: `Quotation ${response.data.no ?? 'Draft'}`, url: pdfObjectUrl.current })
+      setPdfPreview({ record, stored, title: `Quotation ${quotationNumber(record)}`, url: pdfObjectUrl.current })
     } catch (error) { if (!controller.signal.aborted) setPdfError(error.message || 'Unable to preview PDF.') }
     finally { if (!controller.signal.aborted) setPdfLoading(false) }
   }
@@ -208,27 +224,40 @@ export default function QuotationPage({ onCreate, currentUser }) {
     { title: 'Subtotal', dataIndex: 'subTotal', width: 150, align: 'right', render: money },
   ]
   const columns = [
-    { title: 'Number', dataIndex: 'no', width: 190, render: (value) => value ?? 'Draft' },
-    { title: 'Date', dataIndex: 'date', width: 120, render: (value) => dateValue(value) || 'Draft' },
+    { title: 'Number', dataIndex: 'no', width: 140, render: (_, record) => record.no == null || record.numberYear == null ? 'Draft' : `${record.no}/${record.numberYear}`,
+      filteredValue: listFilters.no ? [listFilters.no] : null, filterDropdown: (props) => <QuotationNumberFilter {...props} /> },
+    { title: 'Revision', dataIndex: 'revision', width: 100, align: 'center', render: (value) => value ?? 0 },
+    { title: 'Date', dataIndex: 'date', width: 150, render: (value) => dateValue(value) || 'Draft',
+      filteredValue: listFilters.dateFrom || listFilters.dateTo ? [listFilters.dateFrom || '', listFilters.dateTo || ''] : null,
+      filterDropdown: (props) => <QuotationDateFilter {...props} /> },
     { title: 'Subject', dataIndex: 'subject', width: 260 },
-    { title: 'Company', render: (_, record) => record.companySnapshot?.name || '-', width: 200 },
+    { title: 'Company', key: 'company', render: (_, record) => record.companyName ?? record.companySnapshot?.name ?? '-', width: 200,
+      filteredValue: listFilters.company ? [listFilters.company] : null, filterDropdown: (props) => <TableSearchFilter {...props} placeholder="Search company name" maxLength={255} /> },
     { title: 'Customer Contact', dataIndex: 'customerSnapshot', width: 200 },
-    { title: 'Status', dataIndex: 'status', width: 200, render: (value) => <Tag>{displayEnum(value)}</Tag> },
-    { title: 'Invoice Status', dataIndex: 'invoiceStatus', width: 170, render: (value) => <Tag>{displayEnum(value)}</Tag> },
+    { title: 'Status', dataIndex: 'status', width: 200, render: (value) => <Tag>{displayEnum(value)}</Tag>,
+      filters: QUOTATION_STATUSES.map((value) => ({ text: displayEnum(value), value })), filterMultiple: false, filteredValue: listFilters.status ? [listFilters.status] : null },
+    { title: 'Invoice Status', dataIndex: 'invoiceStatus', width: 170, render: (value) => <Tag>{displayEnum(value)}</Tag>,
+      filters: [{ text: 'No Invoice', value: 'null' }, ...QUOTATION_INVOICE_STATUSES.map((value) => ({ text: displayEnum(value), value }))], filterMultiple: false, filteredValue: listFilters.invoiceStatus ? [listFilters.invoiceStatus] : null },
     { title: 'State', dataIndex: 'isActive', width: 110, render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag>,
       filters: canViewInactive ? [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }] : undefined,
       filterMultiple: false, filteredValue: canViewInactive && activeFilter ? [activeFilter] : null },
     { title: 'Total', dataIndex: 'total', width: 150, render: (value) => <span style={{ whiteSpace: 'nowrap' }}>{money(value)}</span> },
-    { title: 'Actions', key: 'actions', width: 140, fixed: 'right', render: (_, record) => <Space>
+    { title: 'Actions', key: 'actions', width: 220, fixed: 'right', render: (_, record) => <Space>
+      {!readOnly && canUpdateQuotation(record, currentUser) && <Button variant="text" icon={<EditOutlined />} title="Edit Quotation" aria-label={`Edit quotation ${quotationNumber(record)}`} busy={openingId === record.id} disabled={approving || deletingId === record.id} onClick={() => view(record, true)} />}
+      {!readOnly && canSubmitQuotation(record) && <Popconfirm title="Submit quotation?" description={record.status === 'REJECTED' ? 'Resubmit this quotation for approval.' : 'Submit this quotation for approval.'} onConfirm={() => transition('submit', record)} okText="Submit" cancelText="Cancel" disabled={approving}>
+        <Button variant="text" icon={<SendOutlined />} title="Submit Quotation" aria-label={`Submit quotation ${quotationNumber(record)}`} busy={transitionId === record.id} disabled={approving && transitionId !== record.id} />
+      </Popconfirm>}
+      {!readOnly && canCopyQuotation(record) && <Button variant="text" icon={<CopyOutlined />} title="Copy Quotation" aria-label={`Copy quotation ${quotationNumber(record)}`} onClick={() => onCopy?.(record.id)} />}
       <Button variant="text" icon={<EyeOutlined />} title="View Quotation" aria-label={`View quotation ${quotationNumber(record)}`} busy={openingId === record.id} onClick={() => view(record)} />
+      {record.isActive && <Button variant="text" icon={<FilePdfOutlined />} title="Preview PDF" aria-label={`Preview PDF for quotation ${quotationNumber(record)}`} busy={pdfLoading && pdfPreview?.record.id === record.id} onClick={() => openPdf(record)} />}
       <CreateInvoiceAction currentUser={currentUser} quotation={record} onCreated={load} />
-      {!readOnly && record.isActive && <Popconfirm title="Delete quotation?" description="The quotation and its items will be deactivated." okText="Delete" cancelText="Cancel" onConfirm={() => remove(record)}>
+      {!readOnly && record.isActive && <Popconfirm title="Delete quotation?" description={record.previousQuotationId ? 'This revision will be deactivated and the original quotation restored to approved.' : 'The quotation and its items will be deactivated.'} okText="Delete" cancelText="Cancel" onConfirm={() => remove(record)}>
         <Button variant="text" isDanger icon={<DeleteOutlined />} busy={deletingId === record.id} aria-label={`Delete quotation ${record.no}`} />
       </Popconfirm>}
     </Space> },
   ]
   const detailFields = detail ? [
-    ['Number', detail.no ?? 'Draft'], ['Company', detail.companySnapshot?.name], ['Customer Contact', detail.customerSnapshot], ['Date', dateValue(detail.date) || 'Draft'],
+    ['Number', quotationNumber(detail)], ['Company', detail.companySnapshot?.name], ['Customer Contact', detail.customerSnapshot], ['Date', dateValue(detail.date) || 'Draft'],
     ['Inquiry Method', displayEnum(detail.inquiryMethod)], ['Inquiry Date', dateValue(detail.inquiryDate)],
     ...TEXT_FIELDS.map(([key, label]) => [label, detail[key]]),
     ['Status', displayEnum(detail.status)], ['Invoice Status', displayEnum(detail.invoiceStatus)],
@@ -236,9 +265,9 @@ export default function QuotationPage({ onCreate, currentUser }) {
   ] : []
 
   return <section className="company-page quotation-page">
-    <Modal title={pdfPreview?.title || 'Quotation PDF'} visible={Boolean(pdfPreview)} onCancel={closePdf} width={1100} unmountOnClose footer={<Button onClick={closePdf}>Close</Button>}>
+    <Modal title={pdfPreview?.title || 'Quotation PDF'} visible={Boolean(pdfPreview)} onCancel={closePdf} width={1100} unmountOnClose footer={<Space>{pdfPreview?.url && <Button href={pdfPreview.url} download={`Quotation-${pdfPreview.record.no ?? 'Draft'}-R${pdfPreview.record.revision ?? 0}.pdf`}>Download PDF</Button>}<Button onClick={closePdf}>Close</Button></Space>}>
       {pdfLoading && <Typography.Text>Loading PDF preview...</Typography.Text>}
-      {pdfError && <div role="alert"><Typography.Text tone="danger">{pdfError}</Typography.Text><Button onClick={openPdf}>Retry</Button></div>}
+      {pdfError && <div role="alert"><Typography.Text tone="danger">{pdfError}</Typography.Text><Button onClick={() => openPdf(pdfPreview.record, pdfPreview.stored)}>Retry</Button></div>}
       {pdfPreview?.url && <iframe title={`${pdfPreview.title} PDF preview`} src={pdfPreview.url} className="quotation-pdf-preview" />}
     </Modal>
     {saveConfirmation}
@@ -252,7 +281,13 @@ export default function QuotationPage({ onCreate, currentUser }) {
       current: page, pageSize, total, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100], showTotal: (count) => `${count} quotations`,
       onChange: (next, size) => { setPage(size !== pageSize ? 1 : next); setPageSize(size) },
     }} onChange={(_, filters, _sorter, extra) => {
-      if (extra.action === 'filter') { setActiveFilter(filters.isActive?.[0] || ''); setPage(1) }
+      if (extra.action === 'filter') {
+        setActiveFilter(filters.isActive?.[0] || '')
+        setListFilters({ no: filters.no?.[0] || '', company: String(filters.company?.[0] || '').trim(),
+          dateFrom: filters.date?.[0] || '', dateTo: filters.date?.[1] || '',
+          status: filters.status?.[0] || '', invoiceStatus: filters.invoiceStatus?.[0] || '' })
+        setPage(1)
+      }
     }} />}</Card>
     <Modal title={editing ? `Edit Quotation ${quotationNumber(editing)}` : 'Edit Quotation'} visible={!readOnly && open} width={1080}
       okText="Save" cancelText="Cancel" busy={saving} onOk={() => form.submit()} okButtonProps={{ disabled: stale || editingLoading }}
@@ -260,14 +295,23 @@ export default function QuotationPage({ onCreate, currentUser }) {
       {editing && <QuotationForm key={editing.id} form={form} record={editing} saving={saving} blocked={stale} onFinish={save} onLoadingChange={setEditingLoading} onAddItem={(item) => changeItem(item)} onRemoveItem={(item) => changeItem(item, true)} />}
       {stale && <Typography.Text tone="warning">Close this form and reopen the quotation to load the latest data.</Typography.Text>}
     </Modal>
-    <Modal title={detail ? `Quotation ${detail.no ?? 'Draft'}` : 'Quotation'} visible={detailOpen} width={1080} unmountOnClose
+    <Modal title={detail ? `Quotation ${quotationNumber(detail)}` : 'Quotation'} visible={detailOpen} width={1080} unmountOnClose
       onCancel={() => { if (!approving && !pdfLoading) setDetailOpen(false) }} closable={!approving && !pdfLoading} afterClose={() => setDetail(null)} footer={detail && <Space wrap>
-        {detail.pdfDocument && <Button variant="text" icon={<EyeOutlined />} title="View PDF" aria-label="View quotation PDF" busy={pdfLoading} disabled={approving} onClick={openPdf} />}
+        {detail.pdfDocument && <Button variant="text" icon={<EyeOutlined />} title="View PDF" aria-label="View quotation PDF" busy={pdfLoading} disabled={approving} onClick={() => openPdf(detail, true)} />}
         {detail.previousQuotationId && <Button disabled={approving || pdfLoading} busy={openingId === detail.previousQuotationId} onClick={() => view({ id: detail.previousQuotationId })}>Previous Revision</Button>}
-        {canApprove && canApproveQuotation(detail) && <Popconfirm title="Approve quotation?" description="Approval assigns the quotation number and generates its PDF." onConfirm={approve} okText="Approve" cancelText="Cancel">
+        {!readOnly && canSubmitQuotation(detail) && <Popconfirm title="Submit quotation?" description={detail.status === 'REJECTED' ? 'Resubmit this quotation for approval.' : 'Submit this quotation for approval.'} onConfirm={() => transition('submit')} okText="Submit" cancelText="Cancel">
+          <Button variant="primary" busy={approving} disabled={pdfLoading || Boolean(openingId)}>Submit Quotation</Button>
+        </Popconfirm>}
+        {canApprove && canApproveQuotation(detail) && <Popconfirm title="Approve quotation?" description="Approval assigns the quotation number and generates its PDF." onConfirm={() => transition('approve')} okText="Approve" cancelText="Cancel">
           <Button variant="primary" busy={approving} disabled={pdfLoading || Boolean(openingId)}>Approve Quotation</Button>
         </Popconfirm>}
-        {!readOnly && canUpdateQuotation(detail) && <Button variant="primary" icon={<EditOutlined />} disabled={approving || pdfLoading} busy={openingId === detail.id} onClick={() => view(detail, true)}>Update Quotation</Button>}
+        {canApprove && canRejectQuotation(detail) && <Popconfirm title="Reject quotation?" description="This submitted quotation will be marked as rejected." onConfirm={() => transition('reject')} okText="Reject" cancelText="Cancel">
+          <Button isDanger busy={approving} disabled={pdfLoading || Boolean(openingId)}>Reject Quotation</Button>
+        </Popconfirm>}
+        {canApprove && canReviseQuotation(detail) && <Popconfirm title="Revise quotation?" description="Create a draft revision retaining the quotation number. The approved quotation becomes inactive and revised." onConfirm={() => transition('revise')} okText="Revise" cancelText="Cancel">
+          <Button busy={approving} disabled={pdfLoading || Boolean(openingId)}>Revise Quotation</Button>
+        </Popconfirm>}
+        {!readOnly && canUpdateQuotation(detail, currentUser) && <Button variant="primary" icon={<EditOutlined />} disabled={approving || pdfLoading} busy={openingId === detail.id} onClick={() => view(detail, true)}>Update Quotation</Button>}
       </Space>}>
       {detail && <div className="quotation-detail">
         <section className="company-view-section">
@@ -282,6 +326,7 @@ export default function QuotationPage({ onCreate, currentUser }) {
         <div className="company-view-section-heading"><h3>Quotation Totals</h3></div>
         <div className="quotation-totals"><span>Subtotal: <strong>{money(detail.subTotal)}</strong></span><span>Tax ({detail.tax}%): <strong>{money(detail.taxAmount)}</strong></span><span>Total: <strong>{money(detail.total)}</strong></span></div>
         </section>
+        <QuotationHistory key={detail.id} record={detail} />
       </div>}
     </Modal>
   </section>
