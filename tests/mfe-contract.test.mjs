@@ -96,7 +96,7 @@ test('Field Service read requests follow the live Swagger', async () => {
 
 for (const app of ['akura-app-manager', 'akura-marketing', 'akura-finance', 'akura-fieldservice']) test(`${app}: expired sessions refresh through cookies and retry the original request`, async () => {
   let source = await readFile(new URL(`../${app}/src/services/api.js`, import.meta.url), 'utf8')
-  source = source.replaceAll('import.meta.env.VITE_API_BASE_URL', 'undefined').replaceAll('import.meta.env.VITE_AKURA_SHELL_URL', 'undefined').replaceAll('import.meta.env.PROD', 'false')
+  source = source.replaceAll('import.meta.env.VITE_API_BASE_URL', 'undefined').replaceAll('import.meta.env.VITE_AUTH_BASE_URL', 'undefined').replaceAll('import.meta.env.VITE_AKURA_SHELL_URL', 'undefined').replaceAll('import.meta.env.PROD', 'false')
   source = `// ${app}
     const calls = []; let retried = false;
     const fetch = async (url, options) => {

@@ -1,16 +1,40 @@
+// Marketing data endpoints. Development default is the directly accessed local
+// Marketing microservice (no local gateway); production uses the same-origin gateway.
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL
-  || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5000/api/v1')).replace(/\/+$/, '')
+  || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5003')).replace(/\/+$/, '')
+// Auth endpoints (refresh/logout/profile) always run on the gateway that issued
+// the HttpOnly session cookie (the Vercel gateway in development), never on the
+// directly accessed Marketing service.
+const AUTH_BASE_URL = (import.meta.env.VITE_AUTH_BASE_URL
+  || (import.meta.env.PROD ? '/api/v1' : 'https://akura-api-gateway.vercel.app/api/v1')).replace(/\/+$/, '')
 const SHELL_URL = (import.meta.env.VITE_AKURA_SHELL_URL || 'http://localhost:4173').replace(/\/+$/, '')
 const REFRESH_PATH = '/auth/refresh-token'
 
 let refreshPromise = null
 
+// Development access token handed over by the Shell (HttpOnly Vercel cookies
+// are not sent to the local Marketing service). Kept in memory only.
+let accessToken = ''
+
+export function setAccessToken(token) {
+  accessToken = typeof token === 'string' ? token : ''
+}
+
+export function getAccessToken() {
+  return accessToken
+}
 
 async function executeRequest(path, options = {}) {
   const { responseType, ...requestOptions } = options
   const headers = new Headers(options.headers)
   if (!(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  // Marketing data goes to the directly accessed local service; auth and other
+  // module calls (e.g. Field Service work orders) run on the issuing gateway,
+  // which owns those routes. Auth relies on the HttpOnly cookie only.
+  const isAuthPath = path.startsWith('/auth/')
+  const isDirectMarketing = path.startsWith('/marketing/')
+  if (!isAuthPath && accessToken && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${accessToken}`)
+  const response = await fetch(`${isDirectMarketing ? API_BASE_URL : AUTH_BASE_URL}${path}`, {
     ...requestOptions,
     credentials: 'include',
     headers,
@@ -37,6 +61,8 @@ function refreshSession() {
     })
       .then(({ response, payload }) => {
         if (!response.ok) throw createApiError(response, payload)
+        // Rotated access token so expired direct Marketing calls can retry.
+        if (payload?.data?.accessToken) setAccessToken(payload.data.accessToken)
       })
       .finally(() => {
         refreshPromise = null

@@ -2,6 +2,7 @@ import { Component, lazy, Suspense } from 'react'
 import { Alert, Button } from '../global'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AppLoading } from '../ui'
+import { getAccessToken } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
 
 const FederatedMarketing = lazy(() => import('akuraMarketing/MarketingApp'))
@@ -38,7 +39,14 @@ function RemoteMarketing() {
   return (
     <MarketingErrorBoundary>
       <Suspense fallback={<AppLoading message="Loading Akura Marketing..." fullScreen={false} />}>
-        <FederatedMarketing currentUser={user} pathname={location.pathname} navigate={navigate} />
+        <FederatedMarketing
+          currentUser={user}
+          pathname={location.pathname}
+          navigate={navigate}
+          // Passed explicitly because the local MFE calls Marketing directly;
+          // its HttpOnly Vercel cookie is not sent to localhost.
+          accessToken={getAccessToken()}
+        />
       </Suspense>
     </MarketingErrorBoundary>
   )

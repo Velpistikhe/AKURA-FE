@@ -1,3 +1,4 @@
+import { setAccessToken } from '../services/api'
 import CompanyPage from '../modules/company/CompanyPage'
 import ItemPage from '../modules/item/ItemPage'
 import ServicePage from '../modules/service/ServicePage'
@@ -11,7 +12,11 @@ const moduleRoutes = {
   '/referensi/items': ItemPage,
 }
 
-function AppRoute({ currentUser, pathname = window.location.pathname, navigate, fallback = null }) {
+function AppRoute({ currentUser, accessToken = '', pathname = window.location.pathname, navigate, fallback = null }) {
+  // Development direct access: the Shell passes the Vercel-issued access token so
+  // this MFE can send Authorization: Bearer straight to the local Marketing service.
+  // Set synchronously (child effects fetch on mount before parent effects run).
+  setAccessToken(accessToken)
   const readOnly = !canManageQuotations(currentUser)
   const path = pathname.replace(/\/+$/, '')
   const isQuotationCreate = /^\/marketing\/(quotations|quotation)\/create$/.test(path)

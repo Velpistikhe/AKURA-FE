@@ -4,6 +4,15 @@ import { clearRefreshToken, setRefreshToken } from './tokenStore'
 const BASE_URL = (import.meta.env.VITE_API_BASE_URL
   || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5000/api/v1')).replace(/\/+$/, '')
 
+// Development access token kept in memory only (never localStorage/sessionStorage).
+// Exposed as a getter so microfrontends can send Authorization: Bearer when they
+// call a microservice directly instead of through the API Gateway.
+let accessToken = ''
+
+export function getAccessToken() {
+  return accessToken
+}
+
 const api = axios.create({
   baseURL: BASE_URL,
   headers: { 'Content-Type': 'application/json' },
@@ -35,6 +44,10 @@ function getResponseRefreshToken(response) {
 function captureRefreshToken(response) {
   const token = getResponseRefreshToken(response)
   if (token) setRefreshToken(token)
+  // Login and refresh return data.accessToken; GET /auth/me echoes it at the
+  // top level so a page reload can restore the Bearer token.
+  const issued = response?.data?.data?.accessToken || response?.data?.accessToken
+  if (issued) accessToken = issued
   return response
 }
 
@@ -58,6 +71,7 @@ function refreshSession() {
 
 function redirectToLogin() {
   clearRefreshToken()
+  accessToken = ''
   const publicPaths = ['/', '/login', '/register']
   const isPublicPath = publicPaths.includes(window.location.pathname)
 
@@ -117,7 +131,10 @@ export const authAPI = {
    * Logout — POST /auth/logout
    * Refresh token is read from the HttpOnly cookie.
    */
-  logout: () => api.post('/auth/logout').finally(clearRefreshToken),
+  logout: () => api.post('/auth/logout').finally(() => {
+    clearRefreshToken()
+    accessToken = ''
+  }),
 
   refreshToken: () => refreshSession(),
 
