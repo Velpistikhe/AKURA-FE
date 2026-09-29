@@ -1,9 +1,14 @@
 import { App, Button, Card, Result, Typography } from './components/global'
 import WorkOrderPage from './modules/work-order/WorkOrderPage'
 import { resolveFieldServiceRoute } from './routes/fieldServiceRoutes'
+import { setAccessToken } from './services/api'
 import './FieldServiceApp.css'
 
-export default function FieldServiceApp({ currentUser, pathname = window.location.pathname, navigate = (path) => window.location.assign(path) }) {
+export default function FieldServiceApp({ currentUser, accessToken = '', pathname = window.location.pathname, navigate = (path) => window.location.assign(path) }) {
+  // Development direct access: the Shell passes the Vercel-issued access token so
+  // this MFE can send Authorization: Bearer straight to the local service.
+  // Set synchronously (child effects fetch on mount before parent effects run).
+  setAccessToken(accessToken)
   const route = resolveFieldServiceRoute(pathname)
   return <App><main className="fieldservice-workspace">
     {route === 'work-orders' ? <WorkOrderPage currentUser={currentUser} /> : route === 'overview' ? <Card className="fieldservice-overview-card">

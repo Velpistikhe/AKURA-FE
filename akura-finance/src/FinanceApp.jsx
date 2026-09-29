@@ -6,11 +6,16 @@ import ProformaInvoicePage from './modules/proforma-invoice/ProformaInvoicePage'
 import InvoicePage from './modules/invoice/InvoicePage'
 import TaxPage from './modules/tax/TaxPage'
 import { financeModules, resolveFinanceRoute } from './routes/financeRoutes'
+import { setAccessToken } from './services/api'
 import './FinanceApp.css'
 import './components/ModalMotion.css'
 
 const pages = { finance_quotations: QuotationPage, proforma_invoices: ProformaInvoicePage, invoices: InvoicePage, taxes: TaxPage }
-export default function FinanceApp({ currentUser, pathname = window.location.pathname, navigate = (path) => window.location.assign(path) }) {
+export default function FinanceApp({ currentUser, accessToken = '', pathname = window.location.pathname, navigate = (path) => window.location.assign(path) }) {
+  // Development direct access: the Shell passes the Vercel-issued access token so
+  // this MFE can send Authorization: Bearer straight to the local service.
+  // Set synchronously (child effects fetch on mount before parent effects run).
+  setAccessToken(accessToken)
   const route = resolveFinanceRoute(pathname)
   const Page = pages[route]
   return <App><main className="finance-workspace">

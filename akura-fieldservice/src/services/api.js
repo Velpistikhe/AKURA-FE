@@ -1,16 +1,39 @@
+// Field Service data endpoints. Development default is the directly accessed
+// local microservice (no local gateway); production uses the same-origin gateway.
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL
-  || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5000/api/v1')).replace(/\/+$/, '')
+  || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5005')).replace(/\/+$/, '')
+// Auth endpoints (refresh/logout/profile) always run on the gateway that issued
+// the HttpOnly session cookie (the Vercel gateway in development), never on the
+// directly accessed Field Service.
+const AUTH_BASE_URL = (import.meta.env.VITE_AUTH_BASE_URL
+  || (import.meta.env.PROD ? '/api/v1' : 'https://akura-api-gateway.vercel.app/api/v1')).replace(/\/+$/, '')
 const SHELL_URL = (import.meta.env.VITE_AKURA_SHELL_URL || 'http://localhost:4173').replace(/\/+$/, '')
 const REFRESH_PATH = '/auth/refresh-token'
 
 let refreshPromise = null
 
+// Development access token handed over by the Shell (HttpOnly Vercel cookies
+// are not sent to the local Field Service). Kept in memory only.
+let accessToken = ''
+
+export function setAccessToken(token) {
+  accessToken = typeof token === 'string' ? token : ''
+}
+
+export function getAccessToken() {
+  return accessToken
+}
 
 async function executeRequest(path, options = {}) {
   const { responseType, ...requestOptions } = options
   const headers = new Headers(options.headers)
   if (!(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  // Field Service data goes to the directly accessed local service; auth calls
+  // run on the issuing gateway, which owns those routes. Auth relies on the
+  // HttpOnly cookie only.
+  const isAuthPath = path.startsWith('/auth/')
+  if (!isAuthPath && accessToken && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${accessToken}`)
+  const response = await fetch(`${isAuthPath ? AUTH_BASE_URL : API_BASE_URL}${path}`, {
     ...requestOptions,
     credentials: 'include',
     headers,
@@ -37,6 +60,8 @@ function refreshSession() {
     })
       .then(({ response, payload }) => {
         if (!response.ok) throw createApiError(response, payload)
+        // Keep direct-service requests on the rotated token after gateway refresh.
+        if (payload?.data?.accessToken) setAccessToken(payload.data.accessToken)
       })
       .finally(() => {
         refreshPromise = null

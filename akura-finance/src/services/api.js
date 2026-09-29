@@ -1,16 +1,35 @@
+// Finance data endpoints go to the directly accessed local service in
+// development; production uses the same-origin gateway.
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL
-  || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5000/api/v1')).replace(/\/+$/, '')
+  || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5004')).replace(/\/+$/, '')
+// Auth and other-module paths (e.g. Marketing quotation references) always run
+// on the gateway that issued the HttpOnly session cookie in development, never
+// on the directly accessed Finance service.
+const GATEWAY_BASE_URL = (import.meta.env.VITE_AUTH_BASE_URL
+  || (import.meta.env.PROD ? '/api/v1' : 'https://akura-api-gateway.vercel.app/api/v1')).replace(/\/+$/, '')
 const SHELL_URL = (import.meta.env.VITE_AKURA_SHELL_URL || 'http://localhost:4173').replace(/\/+$/, '')
 const REFRESH_PATH = '/auth/refresh-token'
 
 let refreshPromise = null
 
+// Development access token handed over by the Shell. Kept in memory only.
+let accessToken = ''
+
+export function setAccessToken(token) {
+  accessToken = typeof token === 'string' ? token : ''
+}
+
+export function getAccessToken() {
+  return accessToken
+}
 
 async function executeRequest(path, options = {}) {
   const { responseType, ...requestOptions } = options
   const headers = new Headers(options.headers)
   if (!(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const isGatewayPath = path.startsWith('/auth/') || path.startsWith('/marketing/')
+  if (!isGatewayPath && accessToken && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${accessToken}`)
+  const response = await fetch(`${isGatewayPath ? GATEWAY_BASE_URL : API_BASE_URL}${path}`, {
     ...requestOptions,
     credentials: 'include',
     headers,
@@ -37,6 +56,8 @@ function refreshSession() {
     })
       .then(({ response, payload }) => {
         if (!response.ok) throw createApiError(response, payload)
+        // Keep direct-service requests on the rotated token after gateway refresh.
+        if (payload?.data?.accessToken) setAccessToken(payload.data.accessToken)
       })
       .finally(() => {
         refreshPromise = null

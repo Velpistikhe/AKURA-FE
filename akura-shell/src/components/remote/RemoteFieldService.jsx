@@ -3,6 +3,7 @@ import { Alert, Button } from '../global'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AppLoading } from '../ui'
 import { useAuth } from '../../context/AuthContext'
+import { getAccessToken } from '../../services/api'
 
 const FederatedFieldService = lazy(() => import('akuraFieldService/FieldServiceApp'))
 
@@ -38,7 +39,14 @@ function RemoteFieldService() {
   return (
     <FieldServiceErrorBoundary>
       <Suspense fallback={<AppLoading message="Loading Akura FieldService..." fullScreen={false} />}>
-        <FederatedFieldService currentUser={user} pathname={location.pathname} navigate={navigate} />
+        <FederatedFieldService
+          currentUser={user}
+          pathname={location.pathname}
+          navigate={navigate}
+          // Passed explicitly because the local MFE calls Field Service directly;
+          // its HttpOnly Vercel cookie is not sent to localhost.
+          accessToken={getAccessToken()}
+        />
       </Suspense>
     </FieldServiceErrorBoundary>
   )
