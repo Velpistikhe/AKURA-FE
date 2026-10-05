@@ -16,6 +16,6 @@ export default function FieldServiceApp({ currentUser, accessToken = '', pathnam
       <Typography.Title level={2}>Akura Field Service</Typography.Title>
       <p><Typography.Text tone="secondary">View work orders, schedules, and assigned inspectors for your branch.</Typography.Text></p>
       <Button variant="primary" onClick={() => navigate('/field-service/work-orders')}>Open Work Orders</Button>
-    </Card> : <Result status="404" title="Page not available" subTitle="Field Service currently provides read-only work orders." extra={<Button onClick={() => navigate('/field-service/work-orders')}>Back to Work Orders</Button>} />}
+    </Card> : <Result status="404" title="Page not available" subTitle="Open Work Orders to view schedules, update work, and review change history." extra={<Button onClick={() => navigate('/field-service/work-orders')}>Back to Work Orders</Button>} />}
   </main></App>
 }

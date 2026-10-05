@@ -3,13 +3,13 @@ import { App, Button, Card, Form, Input, Result, Select, Space, Typography, useS
 import { companyService } from '../../services/companyService'
 import { quotationService } from '../../services/quotationService'
 import { workOrderService } from '../../services/workOrderService'
-import { loadAll, displayEnum } from '../quotation/quotationModel'
-import { canAccessWorkOrders, WORK_ORDER_STATUSES, workOrderPayload } from './workOrderModel'
+import { loadAll } from '../quotation/quotationModel'
+import { canCreateWorkOrders, workOrderPayload } from './workOrderModel'
 import '../company/CompanyPage.css'
 import './WorkOrderPage.css'
 
 export default function WorkOrderCreatePage({ currentUser, onBack }) {
-  if (!canAccessWorkOrders(currentUser)) return <Result status="403" title="Access denied" subTitle="Work orders require an active ADMIN, APP_MANAGER, or Field Service user with an assigned branch." />
+  if (!canCreateWorkOrders(currentUser)) return <Result status="403" title="Access denied" subTitle="Creating work orders requires an active Marketing user with an assigned branch." />
   return <CreateForm onBack={onBack} />
 }
 
@@ -59,7 +59,7 @@ function CreateForm({ onBack }) {
       <div><Typography.Title level={2}>Create Work Order</Typography.Title><Typography.Text tone="secondary">Plan the work and assign inspectors. Number and date are generated automatically.</Typography.Text></div>
       <Space><Button disabled={saving} onClick={onBack}>Cancel</Button><Button variant="primary" busy={saving} disabled={loading || Boolean(error)} onClick={() => form.submit()}>Save Work Order</Button></Space>
     </div>
-    <Card><Form form={form} layout="vertical" initialValues={{ basis: 'quotation', status: 'DRAFT', inspectors: [] }} disabled={saving} onFinish={save}
+    <Card><Form form={form} layout="vertical" initialValues={{ basis: 'quotation', inspectors: [] }} disabled={saving} onFinish={save}
       onValuesChange={(changed) => { if (Object.hasOwn(changed, 'basis')) form.setFieldsValue({ quotationId: undefined, companyId: undefined }) }}>
       <div className="work-order-grid">
         <Form.Item name="basis" label="Document Basis" rules={[{ required: true }]}><Select options={[{ value: 'quotation', label: 'Approved Quotation' }, { value: 'company', label: 'Company Contract' }]} /></Form.Item>
@@ -69,7 +69,7 @@ function CreateForm({ onBack }) {
         </Form.Item>
         <Form.Item name="startDate" label="Start Date" rules={[{ required: true, message: 'Start date is required.' }]}><Input type="date" /></Form.Item>
         <Form.Item name="endDate" label="End Date" dependencies={['startDate']} rules={[({ getFieldValue }) => ({ validator: (_, value) => !value || value >= getFieldValue('startDate') ? Promise.resolve() : Promise.reject(new Error('End date must be on or after start date.')) })]}><Input type="date" /></Form.Item>
-        <Form.Item name="status" label="Status" rules={[{ required: true }]}><Select options={WORK_ORDER_STATUSES.map((value) => ({ value, label: displayEnum(value) }))} /></Form.Item>
+        <Form.Item label="Status"><Input value="DRAFT" disabled /></Form.Item>
         <Form.Item name="inspectors" label="Inspectors" extra="Enter a name and press Enter. Maximum 100 unique names."><Select mode="tags" open={false} maxCount={100} placeholder="Enter inspector names" /></Form.Item>
       </div>
       <Form.Item name="summary" label="Work Summary" rules={[{ required: true, whitespace: true, message: 'Work summary is required.' }, { max: 20000 }]}><Input.TextArea rows={5} maxLength={20000} showCount /></Form.Item>

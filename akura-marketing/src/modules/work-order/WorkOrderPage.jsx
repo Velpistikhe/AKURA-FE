@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { Button, Card, EyeOutlined, Modal, PlusOutlined, Result, Table, Tag, Typography } from '../../components/global'
 import { workOrderService } from '../../services/workOrderService'
 import { displayEnum } from '../quotation/quotationModel'
-import { canAccessWorkOrders, WORK_ORDER_STATUSES } from './workOrderModel'
+import { canAccessWorkOrders, canCreateWorkOrders, WORK_ORDER_STATUSES } from './workOrderModel'
 import '../company/CompanyPage.css'
 import './WorkOrderPage.css'
 
@@ -11,8 +11,8 @@ const date = (value) => value ? String(value).slice(0, 10) : '-'
 const companyName = (record) => record.quotationSnapshot?.companySnapshot?.name || record.contractSnapshot?.company?.name || '-'
 
 export default function WorkOrderPage({ currentUser, onCreate }) {
-  if (!canAccessWorkOrders(currentUser)) return <Result status="403" title="Access denied" subTitle="Work orders require an active ADMIN, APP_MANAGER, or Field Service user with an assigned branch." />
-  return <WorkOrderList onCreate={onCreate} />
+  if (!canAccessWorkOrders(currentUser)) return <Result status="403" title="Access denied" subTitle="Work orders require an active ADMIN, APP_MANAGER, Marketing, or Field Service user with an assigned branch." />
+  return <WorkOrderList onCreate={canCreateWorkOrders(currentUser) ? onCreate : undefined} />
 }
 
 function WorkOrderList({ onCreate }) {
@@ -38,7 +38,7 @@ function WorkOrderList({ onCreate }) {
   }, [query, retry])
   return <section className="company-page work-order-page">
     <div className="company-page-heading"><div><Typography.Title level={2}>Work Orders</Typography.Title><Typography.Text tone="secondary">Create and view work orders for your branch.</Typography.Text></div>
-      <Button variant="primary" icon={<PlusOutlined />} onClick={onCreate}>Create Work Order</Button>
+      {onCreate && <Button variant="primary" icon={<PlusOutlined />} onClick={onCreate}>Create Work Order</Button>}
     </div>
     <Card>
       {error && <div role="alert">{error} <Button onClick={() => setRetry((value) => value + 1)}>Retry</Button></div>}

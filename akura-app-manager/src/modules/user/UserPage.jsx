@@ -61,10 +61,19 @@ function UserPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const requestIdRef = useRef(0)
 
-  const officeBranchOptions = useMemo(() => [
-    { value: NO_OFFICE_BRANCH, label: 'No office branch' },
-    ...officeBranches.map((branch) => ({ value: branch.id, label: branch.name })),
-  ], [officeBranches])
+  const officeBranchOptions = useMemo(() => {
+    const options = officeBranches.map((branch) => ({
+      value: branch.id,
+      label: branch.address ? `${branch.name} - (${branch.address})` : branch.name,
+    }))
+    if (editingUser?.officeBranchId && !options.some((option) => option.value === editingUser.officeBranchId)) {
+      options.push({
+        value: editingUser.officeBranchId,
+        label: editingUser.branch || 'Branch name unavailable',
+      })
+    }
+    return [{ value: NO_OFFICE_BRANCH, label: 'No branch' }, ...options]
+  }, [editingUser, officeBranches])
 
   const officeBranchById = useMemo(
     () => new Map(officeBranches.map((branch) => [branch.id, branch.name])),
@@ -74,8 +83,16 @@ function UserPage() {
   const loadOfficeBranches = useCallback(async () => {
     setLoadingOfficeBranches(true)
     try {
-      const response = await officeBranchService.options()
-      setOfficeBranches(Array.isArray(response.data) ? response.data : [])
+      const branches = []
+      let branchPage = 1
+      let totalPages = 1
+      do {
+        const response = await officeBranchService.list({ page: branchPage, limit: 100, sortBy: 'name', sortOrder: 'asc' })
+        branches.push(...(response.data?.officeBranches || []))
+        totalPages = response.data?.pagination?.totalPages || 1
+        branchPage += 1
+      } while (branchPage <= totalPages)
+      setOfficeBranches(branches)
     } catch (error) {
       message.error(error.message)
     } finally {
@@ -159,8 +176,13 @@ function UserPage() {
       }
 
       const nextOfficeBranchId = values.officeBranchId === NO_OFFICE_BRANCH ? null : values.officeBranchId
-      if (nextOfficeBranchId !== editingUser.officeBranchId) {
+      if (nextOfficeBranchId !== (editingUser.officeBranchId || null)) {
+        const nextBranch = nextOfficeBranchId ? officeBranchById.get(nextOfficeBranchId) : null
+        if (nextOfficeBranchId && !nextBranch) {
+          throw new Error('Branch name is unavailable. Please reload the branch options and try again.')
+        }
         changes.officeBranchId = nextOfficeBranchId
+        changes.branch = nextBranch
       }
 
       if (userIsActive !== editingUser.isActive) {
@@ -264,10 +286,12 @@ function UserPage() {
       render: (value) => <Tag color={value ? 'success' : 'default'}>{value ? 'Active' : 'Inactive'}</Tag>,
     },
     {
-      title: 'Office Branch',
-      dataIndex: 'officeBranchId',
-      key: 'officeBranchId',
-      render: (value) => value ? officeBranchById.get(value) || value : 'No office branch',
+      title: 'Branch',
+      dataIndex: 'branch',
+      key: 'branch',
+      render: (value, user) => value || (user.officeBranchId
+        ? officeBranchById.get(user.officeBranchId) || 'Branch name unavailable'
+        : 'No branch'),
     },
     {
       title: 'Actions',
@@ -294,7 +318,7 @@ function UserPage() {
       <div className="menu-page-heading">
         <div>
           <Typography.Title level={2}>User Management</Typography.Title>
-          <Typography.Text tone="secondary">Manage Akura user roles, sections, office branches, and statuses.</Typography.Text>
+          <Typography.Text tone="secondary">Manage Akura user roles, sections, branches, and statuses.</Typography.Text>
         </div>
       </div>
 
@@ -335,13 +359,13 @@ function UserPage() {
           <Form.Item name="section" label="Section">
             <Select options={SECTION_OPTIONS} />
           </Form.Item>
-          <Form.Item name="officeBranchId" label="Office Branch">
+          <Form.Item name="officeBranchId" label="Branch">
             <Select
               showSearch
               optionFilterProp="label"
               loading={loadingOfficeBranches}
               options={officeBranchOptions}
-              placeholder="Select office branch"
+              placeholder="Select branch"
             />
           </Form.Item>
           <Form.Item label="Status">

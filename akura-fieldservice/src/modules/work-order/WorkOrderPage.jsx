@@ -2,7 +2,9 @@ import TableSearchFilter from '../../components/global/TableSearchFilter'
 import { useEffect, useState } from 'react'
 import { Button, Card, EyeOutlined, Modal, Result, Table, Tag, Typography } from '../../components/global'
 import { workOrderService } from '../../services/workOrderService'
-import { canAccessWorkOrders, WORK_ORDER_STATUSES } from './workOrderModel'
+import { canAccessWorkOrders, canEditWorkOrders, WORK_ORDER_STATUSES } from './workOrderModel'
+import WorkOrderEdit from './WorkOrderEdit'
+import WorkOrderHistory from './WorkOrderHistory'
 import './CompanyPage.css'
 import './WorkOrderPage.css'
 
@@ -11,11 +13,11 @@ const date = (value) => value ? String(value).slice(0, 10) : '-'
 const companyName = (record) => record.quotationSnapshot?.companySnapshot?.name || record.contractSnapshot?.company?.name || '-'
 
 export default function WorkOrderPage({ currentUser }) {
-  if (!canAccessWorkOrders(currentUser)) return <Result status="403" title="Access denied" subTitle="Work orders require an active ADMIN, APP_MANAGER, or Field Service user with an assigned branch." />
-  return <WorkOrderList />
+  if (!canAccessWorkOrders(currentUser)) return <Result status="403" title="Access denied" subTitle="Work orders require an active ADMIN, APP_MANAGER, Marketing, or Field Service user with an assigned branch." />
+  return <WorkOrderList currentUser={currentUser} />
 }
 
-function WorkOrderList() {
+function WorkOrderList({ currentUser }) {
   const [query, setQuery] = useState({ page: 1, limit: 20, search: '', status: 'DRAFT', revoked: false })
   const [data, setData] = useState({ workOrders: [], pagination: { total: 0 } })
   const [loading, setLoading] = useState(true)
@@ -62,14 +64,15 @@ function WorkOrderList() {
         }}
         pagination={{ current: query.page, pageSize: query.limit, total: data.pagination.total, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100], onChange: (page, limit) => setQuery({ ...query, page: limit === query.limit ? page : 1, limit }) }} />
     </Card>
-    {selectedId && <WorkOrderDetail id={selectedId} onClose={() => setSelectedId(null)} />}
+    {selectedId && <WorkOrderDetail key={selectedId} id={selectedId} currentUser={currentUser} onChanged={() => setRetry((value) => value + 1)} onClose={() => setSelectedId(null)} />}
   </section>
 }
 
-function WorkOrderDetail({ id, onClose }) {
+function WorkOrderDetail({ id, currentUser, onChanged, onClose }) {
   const [record, setRecord] = useState(null)
   const [error, setError] = useState('')
   const [retry, setRetry] = useState(0)
+  const [editing, setEditing] = useState(false)
   useEffect(() => {
     let active = true
     setError('')
@@ -78,7 +81,11 @@ function WorkOrderDetail({ id, onClose }) {
       .catch((err) => { if (active) setError(err.message) })
     return () => { active = false }
   }, [id, retry])
-  return <Modal title={record?.number || 'Work Order Detail'} visible width={900} onCancel={onClose} footer={<Button onClick={onClose}>Close</Button>} unmountOnClose>
+  return <Modal title={record?.number || 'Work Order Detail'} visible width={900} onCancel={editing ? undefined : onClose} closable={!editing} maskClosable={!editing} keyboard={!editing}
+    footer={<>
+      {record && !record.revoked && canEditWorkOrders(currentUser) && <Button variant="primary" onClick={() => setEditing(true)}>Edit Work Order</Button>}
+      <Button disabled={editing} onClick={onClose}>Close</Button>
+    </>} unmountOnClose>
     {error ? <div role="alert">{error} <Button onClick={() => setRetry((value) => value + 1)}>Retry</Button></div> : !record ? <Typography.Text>Loading work order…</Typography.Text> : <div className="work-order-detail">
       <Card title="Work Order Information"><dl className="company-detail-grid">
         <div><dt>Number</dt><dd>{record.number}</dd></div><div><dt>Date</dt><dd>{date(record.date)}</dd></div>
@@ -89,6 +96,10 @@ function WorkOrderDetail({ id, onClose }) {
       </dl></Card>
       <Card title="Work Summary"><div className="work-order-summary">{record.summary}</div></Card>
       <Card title="Inspectors"><Table rowKey="id" dataSource={record.inspectors || []} pagination={false} columns={[{ title: 'Name', dataIndex: 'name' }]} locale={{ emptyText: 'No inspectors assigned.' }} /></Card>
+      <WorkOrderHistory id={id} version={record.version} />
+      {editing && <WorkOrderEdit record={record} onClose={() => setEditing(false)}
+        onSaved={(updated) => { setRecord(updated); setEditing(false); onChanged() }}
+        onReload={() => { setEditing(false); setRetry((value) => value + 1); onChanged() }} />}
     </div>}
   </Modal>
 }

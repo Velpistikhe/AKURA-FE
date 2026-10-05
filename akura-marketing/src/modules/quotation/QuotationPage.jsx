@@ -5,6 +5,7 @@ import QuotationForm from './QuotationForm'
 import QuotationSkeleton from './QuotationSkeleton'
 import QuotationHistory from './QuotationHistory'
 import CreateInvoiceAction from './CreateInvoiceAction'
+import CreateWorkOrderAction from './CreateWorkOrderAction'
 import { loadQuotationPdf, quotationPdfBlob } from './quotationPdfPreview'
 import { canApproveQuotations, canManageQuotations } from './quotationAccess'
 import { canViewInactiveCatalog } from '../catalogAccess'
@@ -251,6 +252,7 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
       <Button variant="text" icon={<EyeOutlined />} title="View Quotation" aria-label={`View quotation ${quotationNumber(record)}`} busy={openingId === record.id} onClick={() => view(record)} />
       {record.isActive && <Button variant="text" icon={<FilePdfOutlined />} title="Preview PDF" aria-label={`Preview PDF for quotation ${quotationNumber(record)}`} busy={pdfLoading && pdfPreview?.record.id === record.id} onClick={() => openPdf(record)} />}
       <CreateInvoiceAction currentUser={currentUser} quotation={record} onCreated={load} />
+      <CreateWorkOrderAction currentUser={currentUser} quotation={record} />
       {!readOnly && record.isActive && <Popconfirm title="Delete quotation?" description={record.previousQuotationId ? 'This revision will be deactivated and the original quotation restored to approved.' : 'The quotation and its items will be deactivated.'} okText="Delete" cancelText="Cancel" onConfirm={() => remove(record)}>
         <Button variant="text" isDanger icon={<DeleteOutlined />} busy={deletingId === record.id} aria-label={`Delete quotation ${record.no}`} />
       </Popconfirm>}
