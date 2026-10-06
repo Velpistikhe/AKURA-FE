@@ -61,8 +61,6 @@ export default function ItemPage() {
     }
   }, [])
 
-  useEffect(() => { loadServices() }, [loadServices])
-
   useEffect(() => {
     let active = true
     setLoading(true)
@@ -101,6 +99,7 @@ export default function ItemPage() {
     if (item?.isActive === false) return
     if (item) setDetailOpen(false)
     setEditor({ item })
+    if (!item) loadServices()
   }
 
   const initializeEditor = (open) => {
