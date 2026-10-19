@@ -60,7 +60,7 @@ test('Quotation edit defaults survive reopen and retry; unchanged save skips API
   const root = fileURLToPath(new URL('../akura-marketing', import.meta.url))
   const server = await createServer({ configFile: false, root, cacheDir: 'node_modules/.vite-quotation-edit-test',
     optimizeDeps: { include: ['react', 'react-dom/client', 'antd', '@ant-design/icons'] },
-    define: { 'import.meta.env.VITE_API_BASE_URL': JSON.stringify('/api/v1') },
+    define: { 'import.meta.env.VITE_MARKETING_BASE_URL': JSON.stringify('/api/v1') },
     server: { host: '127.0.0.1', port: 0 },
     plugins: [{ name: 'quotation-edit-fixture',
       resolveId(id) { if (id === '/fixture.js') return '\0fixture' },

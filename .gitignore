@@ -33,6 +33,7 @@ Thumbs.db
 # Vite cache
 .vite/
 
-# Cline local rules
+# AI coding assistant local rules
 .clinerules/
-
+CLAUDE.MD
+.claude/

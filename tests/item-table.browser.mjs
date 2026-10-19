@@ -34,7 +34,7 @@ createRoot(document.getElementById('root')).render(React.createElement(React.Str
 test('Item edit uses detail values, skips unchanged saves, and action columns respond to viewport', { timeout: 120000 }, async () => {
   const root = fileURLToPath(new URL('../akura-marketing', import.meta.url))
   const server = await createServer({ configFile: false, root, cacheDir: 'node_modules/.vite-item-table-test',
-    define: { 'import.meta.env.VITE_API_BASE_URL': JSON.stringify('/api/v1') },
+    define: { 'import.meta.env.VITE_MARKETING_BASE_URL': JSON.stringify('/api/v1') },
     server: { host: '127.0.0.1', port: 0 },
     plugins: [{ name: 'item-table-fixture',
       resolveId(id) { if (id === '/fixture.js') return '\0fixture' },

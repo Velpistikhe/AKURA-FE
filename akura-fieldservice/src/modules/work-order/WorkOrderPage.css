@@ -2,6 +2,8 @@
 .work-order-toolbar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
 .work-order-toolbar > .ant-input-affix-wrapper { max-width: 320px; }
 .work-order-toolbar > .ant-select { min-width: 160px; }
+/* Also styles the Before/After cells of the change history table. */
 .work-order-summary { white-space: pre-wrap; overflow-wrap: anywhere; }
 .work-order-detail { display: grid; gap: 20px; }
+.work-order-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 @media (max-width: 700px) { .work-order-grid { grid-template-columns: 1fr; } }

@@ -1,2 +1,2 @@
 export * from './AntdComponents'
-export { EyeOutlined } from '@ant-design/icons'
+export { CheckOutlined, EditOutlined, EyeOutlined } from '@ant-design/icons'

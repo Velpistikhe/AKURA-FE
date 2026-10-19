@@ -45,7 +45,7 @@ test('Contract prices use header filters, enforce role access, validate maintena
   const root = fileURLToPath(new URL('../akura-marketing', import.meta.url))
   const server = await createServer({ configFile: false, root, cacheDir: 'node_modules/.vite-contract-prices-test',
     optimizeDeps: { include: ['react', 'react-dom/client', 'antd', '@ant-design/icons'] },
-    define: { 'import.meta.env.VITE_API_BASE_URL': JSON.stringify('/api/v1') },
+    define: { 'import.meta.env.VITE_MARKETING_BASE_URL': JSON.stringify('/api/v1') },
     server: { host: '127.0.0.1', port: 0 },
     plugins: [{ name: 'contract-prices-fixture',
       resolveId(id) { if (id === '/fixture.js') return '\0fixture' },

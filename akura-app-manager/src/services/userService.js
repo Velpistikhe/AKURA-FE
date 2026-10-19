@@ -14,6 +14,7 @@ function withQuery(params = {}) {
 
 export const userService = {
   list: (params = {}) => apiRequest(`${USER_PATH}?${withQuery(params)}`),
+  syncDeliveries: (params = {}) => apiRequest(`${USER_PATH}/sync/deliveries?${withQuery(params)}`),
   get: (userId) => apiRequest(`${USER_PATH}/${userId}`),
   update: (userId, data) => apiRequest(`${USER_PATH}/${userId}`, {
     method: 'PATCH',

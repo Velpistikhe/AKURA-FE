@@ -1,8 +1,8 @@
 import TableSearchFilter from '../../components/global/TableSearchFilter'
-import { useEffect, useState } from 'react'
-import { Button, Card, EyeOutlined, Modal, Result, Table, Tag, Typography } from '../../components/global'
+import { useEffect, useRef, useState } from 'react'
+import { App, Button, Card, CheckOutlined, EditOutlined, EyeOutlined, Modal, Popconfirm, Result, Table, Tag, Typography } from '../../components/global'
 import { workOrderService } from '../../services/workOrderService'
-import { canAccessWorkOrders, canEditWorkOrders, WORK_ORDER_STATUSES } from './workOrderModel'
+import { canAccessWorkOrders, canEditWorkOrders, canStartWorkOrder, WORK_ORDER_STATUSES } from './workOrderModel'
 import WorkOrderEdit from './WorkOrderEdit'
 import WorkOrderHistory from './WorkOrderHistory'
 import './CompanyPage.css'
@@ -69,10 +69,16 @@ function WorkOrderList({ currentUser }) {
 }
 
 function WorkOrderDetail({ id, currentUser, onChanged, onClose }) {
+  const { message } = App.useApp()
   const [record, setRecord] = useState(null)
   const [error, setError] = useState('')
+  const [closing, setClosing] = useState(false)
   const [retry, setRetry] = useState(0)
   const [editing, setEditing] = useState(false)
+  const [starting, setStarting] = useState(false)
+  // A second start request would otherwise race the first and consume the same
+  // optimistic-lock version twice, returning a spurious 409.
+  const startLock = useRef(false)
   useEffect(() => {
     let active = true
     setError('')
@@ -81,21 +87,49 @@ function WorkOrderDetail({ id, currentUser, onChanged, onClose }) {
       .catch((err) => { if (active) setError(err.message) })
     return () => { active = false }
   }, [id, retry])
-  return <Modal title={record?.number || 'Work Order Detail'} visible width={900} onCancel={editing ? undefined : onClose} closable={!editing} maskClosable={!editing} keyboard={!editing}
-    footer={<>
-      {record && !record.revoked && canEditWorkOrders(currentUser) && <Button variant="primary" onClick={() => setEditing(true)}>Edit Work Order</Button>}
-      <Button disabled={editing} onClick={onClose}>Close</Button>
-    </>} unmountOnClose>
-    {error ? <div role="alert">{error} <Button onClick={() => setRetry((value) => value + 1)}>Retry</Button></div> : !record ? <Typography.Text>Loading work order…</Typography.Text> : <div className="work-order-detail">
-      <Card title="Work Order Information"><dl className="company-detail-grid">
+
+  const reload = () => setRetry((value) => value + 1)
+
+  const start = async () => {
+    if (startLock.current || !record) return
+    if (!canStartWorkOrder(currentUser, record)) return
+    startLock.current = true
+    setStarting(true)
+    try {
+      const { data } = await workOrderService.start(record.id, record.version)
+      setRecord(data)
+      message.success(`Work order ${data.number} started.`)
+      onChanged()
+    } catch (err) {
+      message.error(err?.message || 'Unable to start the work order.')
+      // 409 covers stale version, non-draft state and snapshot mismatches, so the
+      // detail is reloaded to surface the current server truth.
+      if ([404, 409].includes(err?.status)) reload()
+    } finally {
+      startLock.current = false
+      setStarting(false)
+    }
+  }
+
+  const canStart = canStartWorkOrder(currentUser, record)
+  const canEdit = Boolean(record && !record.revoked && canEditWorkOrders(currentUser))
+  const locked = editing || closing || starting
+  return <Modal title={record?.number || 'Work Order Detail'} visible={!closing} width={900} onCancel={locked ? undefined : () => setClosing(true)} closable={!locked} maskClosable={!locked} keyboard={!locked}
+    footer={<Button disabled={locked} onClick={() => setClosing(true)}>Close</Button>} afterClose={onClose} unmountOnClose>
+    {error ? <div role="alert">{error} <Button onClick={reload}>Retry</Button></div> : !record ? <Typography.Text>Loading work order…</Typography.Text> : <div className="work-order-detail">
+      <Card title="Work Order Information" extra={<div className="work-order-detail-actions">
+        {canEdit && <Button variant="primary" icon={<EditOutlined />} disabled={locked} onClick={() => setEditing(true)}>Edit Work Order</Button>}
+        {canStart && <Popconfirm title="Start work order?" description="The work order moves from DRAFT to IN_PROGRESS and its inspectors and quotation are re-validated." onConfirm={start} okText="Start" cancelText="Cancel" disabled={locked}>
+          <Button variant="primary" icon={<CheckOutlined />} busy={starting} disabled={locked}>Approve</Button>
+        </Popconfirm>}
+      </div>}><dl className="company-detail-grid">
         <div><dt>Number</dt><dd>{record.number}</dd></div><div><dt>Date</dt><dd>{date(record.date)}</dd></div>
         <div><dt>Company</dt><dd>{companyName(record)}</dd></div><div><dt>Status</dt><dd><Tag>{displayEnum(record.status)}</Tag>{record.revoked && <Tag color="error">Revoked</Tag>}</dd></div>
         <div><dt>Start Date</dt><dd>{date(record.startDate)}</dd></div><div><dt>End Date</dt><dd>{date(record.endDate)}</dd></div>
         <div><dt>Document Basis</dt><dd>{record.quotationId ? `Quotation ${record.quotationSnapshot?.no || record.quotationId}` : `Contract ${record.contractSnapshot?.number || record.contractId || '-'}`}</dd></div>
         <div><dt>Created By</dt><dd>{record.createdByName || '-'}</dd></div>
+        <div><dt>Inspectors</dt><dd>{record.inspectors?.length ? record.inspectors.map((inspector) => inspector.name).join(', ') : 'No inspectors assigned.'}</dd></div>
       </dl></Card>
-      <Card title="Work Summary"><div className="work-order-summary">{record.summary}</div></Card>
-      <Card title="Inspectors"><Table rowKey="id" dataSource={record.inspectors || []} pagination={false} columns={[{ title: 'Name', dataIndex: 'name' }]} locale={{ emptyText: 'No inspectors assigned.' }} /></Card>
       <WorkOrderHistory id={id} version={record.version} />
       {editing && <WorkOrderEdit record={record} onClose={() => setEditing(false)}
         onSaved={(updated) => { setRecord(updated); setEditing(false); onChanged() }}

@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "oxlint src",
     "test:contract": "node --test tests/api-contract.test.mjs",
+    "test:api-routing": "node --test tests/api-routing.test.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

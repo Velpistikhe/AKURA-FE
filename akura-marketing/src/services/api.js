@@ -1,11 +1,16 @@
 // Marketing data endpoints. Development default is the directly accessed local
 // Marketing microservice (no local gateway); production uses the same-origin gateway.
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL
+const MARKETING_BASE_URL = (import.meta.env.VITE_MARKETING_BASE_URL
   || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5003')).replace(/\/+$/, '')
-// Auth endpoints (refresh/logout/profile) always run on the gateway that issued
-// the HttpOnly session cookie (the Vercel gateway in development), never on the
-// directly accessed Marketing service.
-const AUTH_BASE_URL = (import.meta.env.VITE_AUTH_BASE_URL
+// Field Service endpoints (work orders, inspector options) are owned by the
+// Field Service service. In development they are accessed directly on the local
+// Field Service microservice; production uses the same-origin gateway.
+const FIELD_SERVICE_BASE_URL = (import.meta.env.VITE_FIELDSERVICE_BASE_URL
+  || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5005')).replace(/\/+$/, '')
+// Auth and cross-module paths (e.g. Finance invoices) always run on the gateway
+// that issued the HttpOnly session cookie in development, never on the directly
+// accessed Marketing or Field Service services.
+const GATEWAY_BASE_URL = (import.meta.env.VITE_AUTH_BASE_URL
   || (import.meta.env.PROD ? '/api/v1' : 'https://akura-api-gateway.vercel.app/api/v1')).replace(/\/+$/, '')
 const SHELL_URL = (import.meta.env.VITE_AKURA_SHELL_URL || 'http://localhost:4173').replace(/\/+$/, '')
 const REFRESH_PATH = '/auth/refresh-token'
@@ -28,13 +33,18 @@ async function executeRequest(path, options = {}) {
   const { responseType, ...requestOptions } = options
   const headers = new Headers(options.headers)
   if (!(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
-  // Marketing data goes to the directly accessed local service; auth and other
-  // module calls (e.g. Field Service work orders) run on the issuing gateway,
-  // which owns those routes. Auth relies on the HttpOnly cookie only.
+  // Development direct access: Marketing owns /marketing/*, Field Service owns
+  // /fieldservice/*, and auth plus cross-module paths (e.g. Finance invoices)
+  // run on the issuing gateway. Production routes everything through the
+  // same-origin gateway. Auth relies on the HttpOnly cookie only.
   const isAuthPath = path.startsWith('/auth/')
-  const isDirectMarketing = path.startsWith('/marketing/')
+  const isMarketingPath = path.startsWith('/marketing/')
+  const isFieldServicePath = path.startsWith('/fieldservice/')
+  const baseUrl = isMarketingPath ? MARKETING_BASE_URL
+    : isFieldServicePath ? FIELD_SERVICE_BASE_URL
+      : GATEWAY_BASE_URL
   if (!isAuthPath && accessToken && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${accessToken}`)
-  const response = await fetch(`${isDirectMarketing ? API_BASE_URL : AUTH_BASE_URL}${path}`, {
+  const response = await fetch(`${baseUrl}${path}`, {
     ...requestOptions,
     credentials: 'include',
     headers,

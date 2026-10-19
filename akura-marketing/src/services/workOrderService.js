@@ -1,14 +1,7 @@
 import { apiRequest } from './api'
 
-const PATH = '/fieldservice/work-orders'
+// Work Orders are served by the Field Service MFE; Marketing only creates one
+// from an approved quotation and needs the branch inspector options for that form.
 export const workOrderService = {
-  list: (params = {}) => {
-    const query = new URLSearchParams()
-    Object.entries(params).forEach(([key, value]) => {
-      if (value !== '' && value != null) query.set(key, String(value))
-    })
-    return apiRequest(`${PATH}?${query}`)
-  },
-  get: (id) => apiRequest(`${PATH}/${id}`),
-  create: (payload) => apiRequest(PATH, { method: 'POST', body: JSON.stringify(payload) }),
+  inspectors: () => apiRequest('/fieldservice/options/inspectors'),
 }

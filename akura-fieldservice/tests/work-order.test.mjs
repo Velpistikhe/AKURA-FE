@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { resolveFieldServiceRoute } from '../src/routes/fieldServiceRoutes.js'
-import { canAccessWorkOrders, canEditWorkOrders, workOrderFormValues, workOrderUpdatePayload, formatHistoryValue } from '../src/modules/work-order/workOrderModel.js'
+import { canAccessWorkOrders, canEditWorkOrders, canStartWorkOrder, workOrderFormValues, workOrderUpdatePayload, formatHistoryValue } from '../src/modules/work-order/workOrderModel.js'
 test('Field Service keeps its Work Order route and rejects unsupported creation routes', () => {
   assert.equal(resolveFieldServiceRoute('/field-service/work-orders/'), 'work-orders')
   assert.equal(resolveFieldServiceRoute('/field-service/work-orders/create'), null)
@@ -15,7 +15,7 @@ test('Service preserves filters and exposes versioned PATCH and paginated histor
   const source = (await readFile(new URL('../src/services/workOrderService.js', import.meta.url), 'utf8'))
     .replace("import { apiRequest } from './api'", 'const apiRequest = (path, options = {}) => ({ path, ...options })')
   const { workOrderService: service } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
-  assert.deepEqual(Object.keys(service).sort(), ['get', 'history', 'list', 'update'])
+  assert.deepEqual(Object.keys(service).sort(), ['get', 'history', 'list', 'start', 'update'])
   const request = service.list({ page: 2, limit: 20, status: 'DRAFT', revoked: false, search: 'a & b' })
   const url = new URL(request.path, 'http://localhost')
   assert.equal(url.pathname, '/fieldservice/work-orders')
@@ -25,6 +25,7 @@ test('Service preserves filters and exposes versioned PATCH and paginated histor
   assert.deepEqual(service.get('id'), { path: '/fieldservice/work-orders/id' })
   assert.deepEqual(service.history('id', { page: 2, limit: 10 }), { path: '/fieldservice/work-orders/id/history?page=2&limit=10' })
   assert.deepEqual(service.update('id', { version: 0, status: 'COMPLETED' }), { path: '/fieldservice/work-orders/id', method: 'PATCH', body: '{"version":0,"status":"COMPLETED"}' })
+  assert.deepEqual(service.start('id', 3), { path: '/fieldservice/work-orders/id/start', method: 'POST', body: '{"version":3}' })
 })
 
 test('Read access allows Marketing; editing follows section, never an admin bypass', () => {
@@ -72,4 +73,18 @@ test('Read access follows backend active-user and branch restrictions', () => {
   assert.equal(canAccessWorkOrders(user), true)
   assert.equal(canAccessWorkOrders({ ...user, isActive: false }), false)
   assert.equal(canAccessWorkOrders({ ...user, officeBranchId: null }), false)
+})
+
+test('Starting is Marketing admin only and never reaches non-draft or revoked orders', () => {
+  const admin = { role: 'ADMIN', section: 'MARKETING', isActive: true, officeBranchId: 'branch' }
+  const draft = { id: 'id', status: 'DRAFT', revoked: false, version: 3 }
+  assert.equal(canStartWorkOrder(admin, draft), true)
+  for (const change of [{ role: 'USER' }, { role: 'APP_MANAGER' }, { section: 'FIELD_SERVICE' }, { isActive: false }, { officeBranchId: null }]) {
+    assert.equal(canStartWorkOrder({ ...admin, ...change }, draft), false)
+  }
+  for (const change of [{ status: 'IN_PROGRESS' }, { status: 'COMPLETED' }, { status: 'CANCELED' }, { revoked: true }, { version: undefined }, { id: null }]) {
+    assert.equal(canStartWorkOrder(admin, { ...draft, ...change }), false)
+  }
+  assert.equal(canStartWorkOrder(admin, null), false)
+  assert.equal(canStartWorkOrder(null, draft), false)
 })

@@ -14,4 +14,7 @@ export const workOrderService = {
   get: (id) => apiRequest(`${PATH}/${id}`),
   update: (id, payload) => apiRequest(`${PATH}/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   history: (id, params = {}) => apiRequest(`${PATH}/${id}/history?${withQuery(params)}`),
+  // DRAFT -> IN_PROGRESS is a version-locked transition the backend re-validates
+  // against Auth (inspectors) and Marketing (quotation snapshot) before committing.
+  start: (id, version) => apiRequest(`${PATH}/${id}/start`, { method: 'POST', body: JSON.stringify({ version }) }),
 }

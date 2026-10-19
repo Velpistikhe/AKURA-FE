@@ -10,6 +10,7 @@ import {
   Select,
   Space,
   Switch,
+  Tabs,
   Table,
   TableSearchFilter,
   Tag,
@@ -17,6 +18,7 @@ import {
 } from '../../components/global'
 import { userService } from '../../services/userService'
 import { officeBranchService } from '../../services/officeBranchService'
+import UserSyncStatus from './UserSyncStatus'
 import '../menu/MenuPage.css'
 
 const DEFAULT_PAGE_SIZE = 20
@@ -322,24 +324,34 @@ function UserPage() {
         </div>
       </div>
 
-      <Card>
-        <Table
-          rowKey="id"
-          busy={loading}
-          columns={columns}
-          dataSource={users}
-          scroll={{ x: 1100 }}
-          onChange={handleTableChange}
-          pagination={{
-            current: pagination.page,
-            pageSize,
-            total: pagination.total,
-            showSizeChanger: true,
-            pageSizeOptions: [10, 20, 50, 100],
-            showTotal: (total) => `${total} user`,
-          }}
-        />
-      </Card>
+      <Tabs
+        initialKey="users"
+        items={[
+          {
+            key: 'users',
+            label: 'Users',
+            children: <Card>
+              <Table
+                rowKey="id"
+                busy={loading}
+                columns={columns}
+                dataSource={users}
+                scroll={{ x: 1100 }}
+                onChange={handleTableChange}
+                pagination={{
+                  current: pagination.page,
+                  pageSize,
+                  total: pagination.total,
+                  showSizeChanger: true,
+                  pageSizeOptions: [10, 20, 50, 100],
+                  showTotal: (total) => `${total} user`,
+                }}
+              />
+            </Card>,
+          },
+          { key: 'sync-status', label: 'User Sync Status', children: <UserSyncStatus /> },
+        ]}
+      />
 
       <Modal
         title={`Edit User${editingUser ? `: ${editingUser.username}` : ''}`}

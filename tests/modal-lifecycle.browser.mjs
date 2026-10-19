@@ -25,7 +25,7 @@ test('Item save confirmations release overlays even without animation events', {
     configFile: false,
     root: fileURLToPath(new URL('../akura-marketing', import.meta.url)),
     cacheDir: 'node_modules/.vite-modal-test',
-    define: { 'import.meta.env.VITE_API_BASE_URL': JSON.stringify('/api/v1') },
+    define: { 'import.meta.env.VITE_MARKETING_BASE_URL': JSON.stringify('/api/v1') },
     server: { host: '127.0.0.1', port: 0 },
     plugins: [{
       name: 'modal-lifecycle-fixture',

@@ -5,6 +5,17 @@ export const canAccessWorkOrders = (user) => Boolean(user?.isActive && user.offi
 export const canEditWorkOrders = (user) => Boolean(canAccessWorkOrders(user)
   && ['MARKETING', 'FIELD_SERVICE'].includes(user.section))
 
+// Starting a work order (DRAFT -> IN_PROGRESS) is a Marketing section write the
+// backend re-validates against Auth and Marketing snapshots; only Marketing
+// admins own that transition in the UI. ADMIN/APP_MANAGER roles never bypass
+// the backend's write section restriction.
+export const canStartWorkOrders = (user) => Boolean(user?.isActive && user.officeBranchId
+  && user.role === 'ADMIN' && user.section === 'MARKETING')
+
+export const canStartWorkOrder = (user, workOrder) => Boolean(canStartWorkOrders(user)
+  && workOrder?.id && workOrder.status === 'DRAFT' && !workOrder.revoked
+  && Number.isInteger(workOrder.version))
+
 export const workOrderFormValues = (record) => ({
   startDate: record.startDate?.slice(0, 10) || '',
   endDate: record.endDate?.slice(0, 10) || '',

@@ -78,25 +78,37 @@ async function service(app, name) {
 }
 
 test('Marketing work order requests follow the live Field Service Swagger', async () => {
+  // Marketing only creates a work order from an approved quotation through the
+  // quotation service; the sole remaining Field Service call is inspector options.
   const api = await service('akura-marketing', 'workOrderService')
-  const { workOrderPayload } = await import('../akura-marketing/src/modules/work-order/workOrderModel.js')
-  check(api.list({ page: 2, limit: 20, status: 'DRAFT', revoked: false, search: 'inspection' }))
-  check(api.get(id))
-  const values = { basis: 'company', companyId: id, startDate: '2026-09-16', status: 'DRAFT', summary: 'Inspection', inspectors: ['Budi'] }
-  check(api.create(workOrderPayload(values)))
-  check(api.create(workOrderPayload({ ...values, basis: 'quotation', quotationId: id }, { id, version: 3, status: 'APPROVED', isActive: true, items: [] })))
+  assert.deepEqual(Object.keys(api), ['inspectors'])
+  const operation = check(api.inspectors())
+  assert.equal(operation.summary, 'List inspector options for the current branch')
+  const { quotationWorkOrderPayload } = await import('../akura-marketing/src/modules/work-order/workOrderModel.js')
+  const payload = quotationWorkOrderPayload(
+    { startDate: '2026-09-16', endDate: '2026-09-17', inspectors: [id] },
+    { id, version: 3, status: 'APPROVED', isActive: true, items: [] },
+    [{ id, name: 'Budi Santoso' }],
+  )
+  const quotationRequest = { path: `/marketing/quotations/${id}/work-orders`, method: 'POST', body: JSON.stringify(payload) }
+  check(quotationRequest)
+  const createBody = resolve(swagger.paths['/api/v1/marketing/quotations/{quotationId}/work-orders'].post.requestBody.content['application/json'].schema)
+  validate(createBody, payload)
 })
 
-test('Field Service read requests follow the live Swagger', async () => {
+test('Field Service work order requests follow the live Swagger', async () => {
   const api = await service('akura-fieldservice', 'workOrderService')
   check(api.list({ page: 2, limit: 20, status: 'COMPLETED', revoked: false, search: 'inspection' }))
   check(api.get(id))
-  assert.deepEqual(Object.keys(api).sort(), ['get', 'list'])
+  check(api.history(id, { page: 2, limit: 20 }))
+  check(api.update(id, { version: 0, status: 'COMPLETED' }))
+  check(api.start(id, 0))
+  assert.deepEqual(Object.keys(api).sort(), ['get', 'history', 'list', 'start', 'update'])
 })
 
 for (const app of ['akura-app-manager', 'akura-marketing', 'akura-finance', 'akura-fieldservice']) test(`${app}: expired sessions refresh through cookies and retry the original request`, async () => {
   let source = await readFile(new URL(`../${app}/src/services/api.js`, import.meta.url), 'utf8')
-  source = source.replaceAll('import.meta.env.VITE_API_BASE_URL', 'undefined').replaceAll('import.meta.env.VITE_AUTH_BASE_URL', 'undefined').replaceAll('import.meta.env.VITE_AKURA_SHELL_URL', 'undefined').replaceAll('import.meta.env.PROD', 'false')
+  source = source.replaceAll('import.meta.env.VITE_API_BASE_URL', 'undefined').replaceAll('import.meta.env.VITE_MARKETING_BASE_URL', 'undefined').replaceAll('import.meta.env.VITE_FIELDSERVICE_BASE_URL', 'undefined').replaceAll('import.meta.env.VITE_AUTH_BASE_URL', 'undefined').replaceAll('import.meta.env.VITE_AKURA_SHELL_URL', 'undefined').replaceAll('import.meta.env.PROD', 'false')
   source = `// ${app}
     const calls = []; let retried = false;
     const fetch = async (url, options) => {
