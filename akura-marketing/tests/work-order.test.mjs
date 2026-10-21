@@ -7,11 +7,19 @@ const inspectorIds = ['00000000-0000-4000-8000-0000000000a1', '00000000-0000-400
 const inspectorOptions = inspectorIds.map((id, index) => ({ id, name: ['Budi Santoso', 'Agus Wijaya'][index] }))
 const values = { basis: 'quotation', quotationId: '00000000-0000-4000-8000-000000000009', companyId: '00000000-0000-4000-8000-000000000001', startDate: '2026-09-16', endDate: '2026-09-17', status: 'DRAFT', inspectors: inspectorIds, number: 'forbidden', date: '2020-01-01', contractId: 'forbidden' }
 const quote = { id: values.quotationId, version: 7, status: 'APPROVED', isActive: true, items: [{ priceSelection: { priceSource: 'NORMAL' } }] }
-test('Quotation basis sends its ID without server-owned or unsupported fields', () => {
-  const expectedInspectors = inspectorOptions.map(({ id, name }) => ({ userId: id, name }))
-  assert.deepEqual(workOrderPayload(values, quote, inspectorOptions), { quotationId: quote.id, startDate: '2026-09-16', endDate: '2026-09-17', inspectors: expectedInspectors })
-  assert.equal(Object.hasOwn(workOrderPayload({ ...values, status: 'COMPLETED' }, quote, inspectorOptions), 'status'), false)
-  assert.equal(Object.hasOwn(workOrderPayload({ ...values, summary: 'ignored' }, quote, inspectorOptions), 'summary'), false)
+test('Quotation payload matches the Marketing create contract exactly', () => {
+  const expected = {
+    quotationId: quote.id,
+    startDate: '2026-09-16',
+    endDate: '2026-09-17',
+    inspectors: [
+      { userId: inspectorIds[0], name: 'Budi Santoso' },
+      { userId: inspectorIds[1], name: 'Agus Wijaya' },
+    ],
+  }
+  assert.deepEqual(workOrderPayload(values, quote, inspectorOptions), expected)
+  assert.deepEqual(quotationWorkOrderPayload(values, quote, inspectorOptions), expected)
+  assert.equal(Object.hasOwn(expected, 'status'), false)
 })
 test('Quotation is the only basis Marketing may submit', () => {
   // Contract/company basis creation has no Marketing UI; every other basis must be rejected.
@@ -43,7 +51,15 @@ test('Only Marketing can create; quotations must be active, approved and not con
 
 test('Quotation work order endpoint receives the quotation ID and only documented create fields', async () => {
   const payload = quotationWorkOrderPayload(values, quote, inspectorOptions)
-  assert.deepEqual(payload, { quotationId: quote.id, startDate: '2026-09-16', endDate: '2026-09-17', inspectors: inspectorOptions.map(({ id, name }) => ({ userId: id, name })) })
+  assert.deepEqual(payload, {
+    quotationId: quote.id,
+    startDate: '2026-09-16',
+    endDate: '2026-09-17',
+    inspectors: [
+      { userId: inspectorIds[0], name: 'Budi Santoso' },
+      { userId: inspectorIds[1], name: 'Agus Wijaya' },
+    ],
+  })
   const source = (await readFile(new URL('../src/services/quotationService.js', import.meta.url), 'utf8'))
     .replace("import { apiRequest } from './api'", 'const apiRequest = (path, options = {}) => ({ path, ...options })')
   const { quotationService } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)

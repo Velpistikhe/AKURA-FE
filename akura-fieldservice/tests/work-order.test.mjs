@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { resolveFieldServiceRoute } from '../src/routes/fieldServiceRoutes.js'
-import { canAccessWorkOrders, canEditWorkOrders, canStartWorkOrder, workOrderFormValues, workOrderUpdatePayload, formatHistoryValue } from '../src/modules/work-order/workOrderModel.js'
+import { canAccessWorkOrders, canEditWorkOrders, canStartWorkOrder, workOrderFormValues, workOrderUpdatePayload, formatHistoryValue, activeQuotationItems, money, quotationNumber } from '../src/modules/work-order/workOrderModel.js'
 test('Field Service keeps its Work Order route and rejects unsupported creation routes', () => {
   assert.equal(resolveFieldServiceRoute('/field-service/work-orders/'), 'work-orders')
   assert.equal(resolveFieldServiceRoute('/field-service/work-orders/create'), null)
@@ -59,6 +59,21 @@ test('PATCH validates dates, names, status, summary and editable record', () => 
   assert.throws(() => workOrderUpdatePayload(values, { ...record, revoked: true }), /Revoked/)
   assert.throws(() => workOrderUpdatePayload(values, { ...record, version: undefined }), /Reload/)
   assert.deepEqual(workOrderUpdatePayload({ ...values, endDate: values.startDate }, record), { endDate: '2026-10-02', version: 0 })
+})
+
+test('Quotation snapshot presentation data keeps stored fields and handles missing item values', () => {
+  const snapshot = {
+    no: 3, numberYear: 2026, subject: 'Annual inspection', companySnapshot: { name: 'KONECRANES' },
+    customerSnapshot: 'Customer Contact', date: '2026-10-20', status: 'APPROVED',
+    items: [{ id: 'item-1', serviceName: 'Inspection', itemName: 'Crane', quantityInspection: '2', subTotal: '150.00' }],
+    subTotal: '150.00', tax: 11, taxAmount: '16.50', total: '166.50',
+  }
+  assert.equal(quotationNumber(snapshot), '3/2026')
+  assert.equal(money(snapshot.total), '166.50')
+  assert.equal(activeQuotationItems(snapshot).length, 1)
+  assert.deepEqual(activeQuotationItems({ ...snapshot, items: [{ id: 'inactive', isActive: false }] }), [])
+  assert.deepEqual(activeQuotationItems({ ...snapshot, items: [] }), [])
+  assert.equal(activeQuotationItems(null).length, 0)
 })
 
 test('History values render empty, boolean, inspector names and snapshots', () => {

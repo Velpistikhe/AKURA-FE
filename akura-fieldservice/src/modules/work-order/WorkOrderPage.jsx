@@ -2,7 +2,7 @@ import TableSearchFilter from '../../components/global/TableSearchFilter'
 import { useEffect, useRef, useState } from 'react'
 import { App, Button, Card, CheckOutlined, EditOutlined, EyeOutlined, Modal, Popconfirm, Result, Table, Tag, Typography } from '../../components/global'
 import { workOrderService } from '../../services/workOrderService'
-import { canAccessWorkOrders, canEditWorkOrders, canStartWorkOrder, WORK_ORDER_STATUSES } from './workOrderModel'
+import { canAccessWorkOrders, canEditWorkOrders, canStartWorkOrder, WORK_ORDER_STATUSES, activeQuotationItems, money, quotationNumber } from './workOrderModel'
 import WorkOrderEdit from './WorkOrderEdit'
 import WorkOrderHistory from './WorkOrderHistory'
 import './CompanyPage.css'
@@ -11,6 +11,16 @@ import './WorkOrderPage.css'
 const displayEnum = (value) => value ? value.replaceAll('_', ' ') : '-'
 const date = (value) => value ? String(value).slice(0, 10) : '-'
 const companyName = (record) => record.quotationSnapshot?.companySnapshot?.name || record.contractSnapshot?.company?.name || '-'
+const quotationItemColumns = [
+  { title: 'Service', dataIndex: 'serviceName', render: (value) => value || 'Standalone' },
+  { title: 'Item', dataIndex: 'itemName', render: (value) => value || '-' },
+  { title: 'Size', dataIndex: 'size', render: (value) => value ?? 'Without size' },
+  { title: 'Inspection Quantity', dataIndex: 'quantityInspection', render: (value) => value ?? '-' },
+  { title: 'Maintenance Quantity', dataIndex: 'quantityMaintenance', render: (value) => value ?? '-' },
+  { title: 'Inspection Price', dataIndex: 'priceInspection', align: 'right', render: money },
+  { title: 'Maintenance Price', dataIndex: 'priceMaintenance', align: 'right', render: money },
+  { title: 'Subtotal', dataIndex: 'subTotal', align: 'right', render: money },
+]
 
 export default function WorkOrderPage({ currentUser }) {
   if (!canAccessWorkOrders(currentUser)) return <Result status="403" title="Access denied" subTitle="Work orders require an active ADMIN, APP_MANAGER, Marketing, or Field Service user with an assigned branch." />
@@ -126,10 +136,30 @@ function WorkOrderDetail({ id, currentUser, onChanged, onClose }) {
         <div><dt>Number</dt><dd>{record.number}</dd></div><div><dt>Date</dt><dd>{date(record.date)}</dd></div>
         <div><dt>Company</dt><dd>{companyName(record)}</dd></div><div><dt>Status</dt><dd><Tag>{displayEnum(record.status)}</Tag>{record.revoked && <Tag color="error">Revoked</Tag>}</dd></div>
         <div><dt>Start Date</dt><dd>{date(record.startDate)}</dd></div><div><dt>End Date</dt><dd>{date(record.endDate)}</dd></div>
-        <div><dt>Document Basis</dt><dd>{record.quotationId ? `Quotation ${record.quotationSnapshot?.no || record.quotationId}` : `Contract ${record.contractSnapshot?.number || record.contractId || '-'}`}</dd></div>
+        <div><dt>Document Basis</dt><dd>{record.quotationId ? `Quotation ${record.quotationSnapshot ? quotationNumber(record.quotationSnapshot) : record.quotationId}` : `Contract ${record.contractSnapshot?.number || record.contractId || '-'}`}</dd></div>
         <div><dt>Created By</dt><dd>{record.createdByName || '-'}</dd></div>
         <div><dt>Inspectors</dt><dd>{record.inspectors?.length ? record.inspectors.map((inspector) => inspector.name).join(', ') : 'No inspectors assigned.'}</dd></div>
       </dl></Card>
+      {record.quotationSnapshot && <Card title="Quotation Snapshot">
+        <dl className="company-detail-grid">
+          <div><dt>Quotation</dt><dd>{quotationNumber(record.quotationSnapshot)}</dd></div>
+          <div><dt>Subject</dt><dd>{record.quotationSnapshot.subject || '-'}</dd></div>
+          <div><dt>Company</dt><dd>{record.quotationSnapshot.companySnapshot?.name || '-'}</dd></div>
+          <div><dt>Customer Contact</dt><dd>{record.quotationSnapshot.customerSnapshot || '-'}</dd></div>
+          <div><dt>Date</dt><dd>{date(record.quotationSnapshot.date)}</dd></div>
+          <div><dt>Status</dt><dd>{displayEnum(record.quotationSnapshot.status)}</dd></div>
+        </dl>
+        <div className="work-order-quotation-items">
+          <Typography.Title level={5}>Quotation Items</Typography.Title>
+          <Table rowKey={(item) => item.id || `${item.itemName}-${item.size}`} dataSource={activeQuotationItems(record.quotationSnapshot)}
+            columns={quotationItemColumns} pagination={false} scroll={{ x: 1100 }} locale={{ emptyText: 'No quotation items in this snapshot.' }} />
+        </div>
+        <div className="work-order-quotation-totals">
+          <span>Subtotal: <strong>{money(record.quotationSnapshot.subTotal)}</strong></span>
+          <span>Tax ({record.quotationSnapshot.tax ?? '-'}%): <strong>{money(record.quotationSnapshot.taxAmount)}</strong></span>
+          <span>Total: <strong>{money(record.quotationSnapshot.total)}</strong></span>
+        </div>
+      </Card>}
       <WorkOrderHistory id={id} version={record.version} />
       {editing && <WorkOrderEdit record={record} onClose={() => setEditing(false)}
         onSaved={(updated) => { setRecord(updated); setEditing(false); onChanged() }}

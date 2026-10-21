@@ -10,7 +10,7 @@ export const canCreateWorkOrderFromQuotation = (user, quotation) => Boolean(canC
 export function workOrderPayload(values, quotation, inspectorOptions = []) {
   const validDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value || '') && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value
   if (!validDate(values.startDate)) throw new Error('Start date is required and must be valid.')
-  if (values.endDate && (!validDate(values.endDate) || values.endDate < values.startDate)) throw new Error('End date must be on or after start date.')
+  if (!validDate(values.endDate) || values.endDate < values.startDate) throw new Error('End date must be on or after start date.')
   const inspectorIds = (values.inspectors || []).map((id) => typeof id === 'string' ? id.trim() : '')
   if (inspectorIds.length > 100 || inspectorIds.some((id) => !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id))) throw new Error('Select up to 100 valid inspectors.')
   if (new Set(inspectorIds.map((id) => id.toLowerCase())).size !== inspectorIds.length) throw new Error('Inspectors must be unique.')
@@ -27,7 +27,7 @@ export function workOrderPayload(values, quotation, inspectorOptions = []) {
   if (quotation.items?.some((item) => item.priceSelection?.priceSource === 'CONTRACT')) throw new Error('This quotation uses contract prices and cannot back a work order.')
   if (!validDate(values.endDate) || values.endDate < values.startDate) throw new Error('A valid end date on or after the start date is required for a quotation work order.')
   if (inspectors.length < 1) throw new Error('Select at least one inspector for a quotation work order.')
-  return { quotationId: quotation.id, startDate: values.startDate, endDate: values.endDate || null, inspectors }
+  return { quotationId: quotation.id, startDate: values.startDate, endDate: values.endDate, inspectors }
 }
 
 export function quotationWorkOrderPayload(values, quotation, inspectorOptions) {

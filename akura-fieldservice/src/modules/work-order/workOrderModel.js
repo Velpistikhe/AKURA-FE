@@ -53,3 +53,15 @@ export function formatHistoryValue(value) {
   if (typeof value === 'object') return value.name || value.number || value.no || JSON.stringify(value)
   return String(value)
 }
+
+// Snapshot presentation helpers: the detail modal renders the quotation snapshot
+// stored on the work order and never recalculates document totals.
+export const money = (value) => value == null ? '-'
+  : new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(value))
+
+export const quotationNumber = (snapshot) => snapshot?.no == null || snapshot?.numberYear == null
+  ? snapshot?.no || 'Draft'
+  : `${snapshot.no}/${snapshot.numberYear}`
+
+// Only active snapshot lines are part of the document the work order was built from.
+export const activeQuotationItems = (snapshot) => (snapshot?.items || []).filter((item) => item.isActive !== false)
