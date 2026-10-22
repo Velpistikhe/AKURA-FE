@@ -5,6 +5,7 @@ export const canCreateWorkOrders = (user) => Boolean(user?.isActive && user.offi
 
 export const canCreateWorkOrderFromQuotation = (user, quotation) => Boolean(canCreateWorkOrders(user)
   && quotation?.id && quotation.isActive && quotation.status === 'APPROVED'
+  && !quotation.hasWorkOrder && !quotation.workOrderId
   && !quotation.items?.some((item) => item.priceSelection?.priceSource === 'CONTRACT'))
 
 export function workOrderPayload(values, quotation, inspectorOptions = []) {

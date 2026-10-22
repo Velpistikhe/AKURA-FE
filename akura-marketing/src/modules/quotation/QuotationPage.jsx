@@ -232,7 +232,7 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
       filteredValue: listFilters.dateFrom || listFilters.dateTo ? [listFilters.dateFrom || '', listFilters.dateTo || ''] : null,
       filterDropdown: (props) => <QuotationDateFilter {...props} /> },
     { title: 'Subject', dataIndex: 'subject', width: 260 },
-    { title: 'Company', key: 'company', render: (_, record) => record.companyName ?? record.companySnapshot?.name ?? '-', width: 200,
+    { title: 'Company', key: 'company', dataIndex: 'companyName', render: (value) => value ?? '-', width: 200,
       filteredValue: listFilters.company ? [listFilters.company] : null, filterDropdown: (props) => <TableSearchFilter {...props} placeholder="Search company name" maxLength={255} /> },
     { title: 'Customer Contact', dataIndex: 'customerSnapshot', width: 200 },
     { title: 'Status', dataIndex: 'status', width: 200, render: (value) => <Tag>{displayEnum(value)}</Tag>,
@@ -242,7 +242,12 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
     { title: 'State', dataIndex: 'isActive', width: 110, render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag>,
       filters: canViewInactive ? [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }] : undefined,
       filterMultiple: false, filteredValue: canViewInactive && activeFilter ? [activeFilter] : null },
-    { title: 'Total', dataIndex: 'total', width: 150, render: (value) => <span style={{ whiteSpace: 'nowrap' }}>{money(value)}</span> },
+    ...[['subTotal', 'Subtotal'], ['taxAmount', 'Tax Amount'], ['total', 'Total']].map(([dataIndex, title]) => ({
+      title, dataIndex, width: 150, align: 'right', render: (value) => <span style={{ whiteSpace: 'nowrap' }}>{money(value)}</span>,
+    })),
+    { title: 'Work Order', dataIndex: 'hasWorkOrder', width: 150, render: (value, record) => <Tag>{value === true || record.workOrderId ? 'Created' : value === false ? 'Not Created' : '-'}</Tag> },
+    { title: 'Created At', dataIndex: 'createdAt', width: 150, render: (value) => dateValue(value) || '-' },
+    { title: 'Updated At', dataIndex: 'updatedAt', width: 150, render: (value) => dateValue(value) || '-' },
     { title: 'Actions', key: 'actions', width: 220, fixed: 'right', render: (_, record) => <Space>
       {!readOnly && canUpdateQuotation(record, currentUser) && <Button variant="text" icon={<EditOutlined />} title="Edit Quotation" aria-label={`Edit quotation ${quotationNumber(record)}`} busy={openingId === record.id} disabled={approving || deletingId === record.id} onClick={() => view(record, true)} />}
       {!readOnly && canSubmitQuotation(record) && <Popconfirm title="Submit quotation?" description={record.status === 'REJECTED' ? 'Resubmit this quotation for approval.' : 'Submit this quotation for approval.'} onConfirm={() => transition('submit', record)} okText="Submit" cancelText="Cancel" disabled={approving}>
@@ -252,8 +257,10 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
       <Button variant="text" icon={<EyeOutlined />} title="View Quotation" aria-label={`View quotation ${quotationNumber(record)}`} busy={openingId === record.id} onClick={() => view(record)} />
       {record.isActive && <Button variant="text" icon={<FilePdfOutlined />} title="Preview PDF" aria-label={`Preview PDF for quotation ${quotationNumber(record)}`} busy={pdfLoading && pdfPreview?.record.id === record.id} onClick={() => openPdf(record)} />}
       <CreateInvoiceAction currentUser={currentUser} quotation={record} onCreated={load} />
-      <CreateWorkOrderAction currentUser={currentUser} quotation={record} />
-      {!readOnly && record.isActive && <Popconfirm title="Delete quotation?" description={record.previousQuotationId ? 'This revision will be deactivated and the original quotation restored to approved.' : 'The quotation and its items will be deactivated.'} okText="Delete" cancelText="Cancel" onConfirm={() => remove(record)}>
+      <CreateWorkOrderAction currentUser={currentUser} quotation={record} onCreated={(workOrder) => {
+        setRecords((current) => current.map((row) => row.id === record.id ? { ...row, hasWorkOrder: true, workOrderId: workOrder.id } : row))
+      }} />
+      {!readOnly && record.isActive && <Popconfirm title="Delete quotation?" description="The quotation and its items will be deactivated. If this is a revision, the previous quotation will be restored to approved." okText="Delete" cancelText="Cancel" onConfirm={() => remove(record)}>
         <Button variant="text" isDanger icon={<DeleteOutlined />} busy={deletingId === record.id} aria-label={`Delete quotation ${record.no}`} />
       </Popconfirm>}
     </Space> },

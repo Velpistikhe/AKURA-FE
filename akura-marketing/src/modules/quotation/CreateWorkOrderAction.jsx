@@ -17,7 +17,7 @@ function WorkOrderModalSkeleton() {
   </div>
 }
 
-export default function CreateWorkOrderAction({ currentUser, quotation }) {
+export default function CreateWorkOrderAction({ currentUser, quotation, onCreated }) {
   const { message } = App.useApp()
   const [form] = Form.useForm()
   const [open, setOpen] = useState(false)
@@ -119,6 +119,7 @@ export default function CreateWorkOrderAction({ currentUser, quotation }) {
       message.success(`Work order ${data.number} created successfully.`)
       closePdfPreview()
       setOpen(false)
+      onCreated?.(data)
     } catch (err) { message.error(err?.message || 'Unable to create the work order.') }
     finally { lock.current = false; setSaving(false) }
   }

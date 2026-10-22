@@ -4,7 +4,8 @@
 .work-order-toolbar > .ant-select { min-width: 160px; }
 /* Also styles the Before/After cells of the change history table. */
 .work-order-summary { white-space: pre-wrap; overflow-wrap: anywhere; }
-.work-order-detail { display: grid; gap: 20px; }
+.work-order-detail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; min-width: 0; }
+.work-order-detail > .ant-card { min-width: 0; }
 .work-order-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .work-order-quotation-items { margin-top: 20px; }
 .work-order-quotation-items > h5 { margin-bottom: 12px; }
