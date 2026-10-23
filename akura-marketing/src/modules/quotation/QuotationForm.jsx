@@ -4,7 +4,7 @@ import QuotationItemPicker from './QuotationItemPicker'
 import QuotationSkeleton from './QuotationSkeleton'
 import { companyStaffService } from '../../services/companyStaffService'
 import { companyService } from '../../services/companyService'
-import { INQUIRY_METHODS, TEXT_FIELDS, QUANTITY_PATTERN, displayEnum, loadAll, money, quotationFormValues, quotationTextMaxLength } from './quotationModel'
+import { INQUIRY_METHODS, TEXT_FIELDS, QUANTITY_PATTERN, DISCOUNT_PATTERN, displayEnum, loadAll, money, quotationFormValues, quotationTextMaxLength } from './quotationModel'
 
 const options = (values) => values.map((value) => ({ value, label: displayEnum(value) }))
 
@@ -99,7 +99,7 @@ export default function QuotationForm({ form, record, copySource, saving, blocke
               rowKey="key"
               dataSource={fields}
               pagination={false}
-              scroll={{ x: 1700 }}
+              scroll={{ x: 1850 }}
               locale={{ emptyText: 'No quotation items yet. Click Add Item to select an item size.' }}
               columns={[
                 { title: 'No.', width: 60, render: (_, field) => field.name + 1 },
@@ -125,6 +125,15 @@ export default function QuotationForm({ form, record, copySource, saving, blocke
                     <InputNumber aria-label={`${label} item ${name + 1}`} disabled={Boolean(record) || saving || currentItems[name]?.[price] === null} stringMode min="0" max="999999999999.999" step="1" />
                   </Form.Item>,
                 })),
+                { title: 'Discount', width: 150, render: (_, { name, key: _key, ...rest }) => (
+                  <Form.Item {...rest} name={[name, 'discount']} style={{ marginBottom: 0 }} rules={[
+                    { required: true, message: 'Enter discount.' },
+                    { pattern: DISCOUNT_PATTERN, message: 'Use 0 to 100 with up to 2 decimal places.' },
+                    { validator: async (_, value) => { if (value != null && value !== '' && Number(value) > 100) throw new Error('Discount must be between 0 and 100.') } },
+                  ]}>
+                    <InputNumber aria-label={`Discount item ${name + 1}`} disabled={Boolean(record) || saving} stringMode min="0" max="100" step="1" placeholder="0" />
+                  </Form.Item>
+                ) },
                 ...[['priceInspection', 'quantityInspection', 'Inspection Estimate'], ['priceMaintenance', 'quantityMaintenance', 'Maintenance Estimate']].map(([property, quantityProperty, label]) => ({
                   title: label, width: 180, render: (_, field) => {
                     const item = currentItems[field.name] || {}
@@ -132,7 +141,10 @@ export default function QuotationForm({ form, record, copySource, saving, blocke
                     const quantity = item[quantityProperty]
                     if (quantity == null || quantity === '' || !Number.isFinite(Number(quantity)) || Number(quantity) < 0) return money(null)
                     if (Number(quantity) === 0) return money(0)
-                    return amount === undefined ? <Typography.Text tone="secondary">Calculated on save</Typography.Text> : money(amount == null ? null : Number(amount) * Number(quantity))
+                    if (amount === undefined) return <Typography.Text tone="secondary">Calculated on save</Typography.Text>
+                    if (amount == null) return money(null)
+                    // The per-unit discount is subtracted from the unit price; the effective unit price never falls below zero.
+                    return money(Math.max(0, Number(amount) - Number(item.discount ?? 0)) * Number(quantity))
                   },
                 })),
                 { title: 'Action', width: 85, fixed: 'right', render: (_, field) => record

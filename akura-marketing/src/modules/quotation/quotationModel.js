@@ -6,6 +6,7 @@ export const TEXT_FIELDS = [
   ['accomplished', 'Completion Time'], ['deliveryReports', 'Delivery Reports'], ['deliveryInvoice', 'Delivery Invoice'],
 ]
 export const QUANTITY_PATTERN = /^\d{1,12}(\.\d{1,3})?$/
+export const DISCOUNT_PATTERN = /^\d{1,3}(\.\d{1,2})?$/
 export const quotationTextMaxLength = (key) => ['supplyAkura', 'supplyCustomer'].includes(key) ? 5000 : 255
 export function quotationOptionValues(size) {
   const priceInspection = size.priceInspection ?? size.priceService
@@ -13,7 +14,7 @@ export function quotationOptionValues(size) {
   const catalog = size.catalogSnapshot || { itemName: size.item?.name, serviceName: size.item?.service?.name, size: size.size }
   return {
     itemSizeId: size.id, itemName: catalog.itemName, serviceName: catalog.serviceName, size: catalog.size,
-    quantityInspection: '1', quantityMaintenance: '0',
+    quantityInspection: '1', quantityMaintenance: '0', discount: '0',
     priceInspection, priceMaintenance: size.priceMaintenance,
   }
 }
@@ -48,6 +49,7 @@ export function quotationPayload(values, { create = false } = {}) {
       ...(item.note !== undefined ? { note: item.note || null } : {}),
       quantityInspection: decimal(item.quantityInspection),
       quantityMaintenance: decimal(item.quantityMaintenance ?? '0'),
+      discount: decimal(item.discount ?? '0'),
     })),
   }
 }
@@ -65,6 +67,7 @@ export function quotationFormValues(record) {
     items: record.items.filter((item) => item.isActive !== false).map((item) => ({
       id: item.id, version: item.version, itemSizeId: item.itemSizeId,
       note: item.note,
+      discount: item.discount ?? '0',
       quantityInspection: decimal(item.quantityInspection), quantityMaintenance: decimal(item.quantityMaintenance ?? '0'),
       priceInspection: item.priceInspection, priceMaintenance: item.priceMaintenance,
       itemName: item.itemName, serviceName: item.serviceName, serviceType: item.serviceType, size: item.size,

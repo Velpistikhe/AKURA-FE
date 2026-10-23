@@ -127,7 +127,7 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
       const response = deleting
         ? await quotationService.removeItem(editing.id, item.id, editing.version, item.version)
         : await quotationService.addItem(editing.id, { version: editing.version, itemSizeId: item.itemSizeId,
-          quantityInspection: item.quantityInspection, quantityMaintenance: item.quantityMaintenance, note: item.note || null })
+          quantityInspection: item.quantityInspection, quantityMaintenance: item.quantityMaintenance, discount: item.discount, note: item.note || null })
       setEditing(response.data)
       setDetail(response.data)
       message.success(deleting ? 'Quotation item deleted.' : 'Quotation item added.')

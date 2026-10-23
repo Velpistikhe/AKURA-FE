@@ -266,14 +266,13 @@ function ServiceCatalogPage({
     if (!await confirmSave('service')) return
     setSaving(true)
     try {
+      const hasMaintenance = supportsMaintenance ? Boolean(values.hasMaintenance) : false
       const payload = {
         name: values.name.trim(),
         type: values.type,
+        hasMaintenance,
         inspectionScopes,
-        ...(supportsMaintenance ? {
-          hasMaintenance: Boolean(values.hasMaintenance),
-          maintenanceScopes: values.hasMaintenance ? maintenanceScopes : [],
-        } : {}),
+        maintenanceScopes: supportsMaintenance && hasMaintenance ? maintenanceScopes : [],
       }
 
       if (editingRecord) {

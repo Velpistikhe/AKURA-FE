@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { App, Button, Form, Input, InputNumber, Space, Typography } from '../../components/global'
-import { QUANTITY_PATTERN } from './quotationModel'
+import { DISCOUNT_PATTERN, QUANTITY_PATTERN } from './quotationModel'
 
 export default function QuotationItemDetails({ item, saving, blocked, onBack, onConfirm }) {
   const [form] = Form.useForm()
@@ -27,7 +27,7 @@ export default function QuotationItemDetails({ item, saving, blocked, onBack, on
   return <div>
     <Typography.Title level={5}>{item.itemName}</Typography.Title>
     <p><Typography.Text tone="secondary">{item.serviceName || 'Standalone'} · {item.size ?? 'Without size'}</Typography.Text></p>
-    <Form form={form} component="div" layout="vertical" disabled={disabled} initialValues={{ quantityInspection: item.quantityInspection || '1', quantityMaintenance: '0', note: '' }}>
+    <Form form={form} component="div" layout="vertical" disabled={disabled} initialValues={{ quantityInspection: item.quantityInspection || '1', quantityMaintenance: '0', discount: item.discount ?? '0', note: '' }}>
       <div className="quotation-form-grid">
         <Form.Item name="quantityInspection" label="Inspection Quantity" dependencies={['quantityMaintenance']} rules={[...quantityRules, {
           validator: async (_, value) => {
@@ -39,6 +39,13 @@ export default function QuotationItemDetails({ item, saving, blocked, onBack, on
         {maintenanceAvailable && <Form.Item name="quantityMaintenance" label="Maintenance Quantity" rules={quantityRules}>
           <InputNumber aria-label="New item maintenance quantity" stringMode min="0" max="999999999999.999" step="1" />
         </Form.Item>}
+        <Form.Item name="discount" label="Discount" rules={[
+          { required: true, message: 'Enter discount.' },
+          { pattern: DISCOUNT_PATTERN, message: 'Use 0 to 100 with up to 2 decimal places.' },
+          { validator: async (_, value) => { if (value != null && value !== '' && Number(value) > 100) throw new Error('Discount must be between 0 and 100.') } },
+        ]}>
+          <InputNumber aria-label="New item discount" stringMode min="0" max="100" step="1" placeholder="0" />
+        </Form.Item>
       </div>
       <Form.Item name="note" label="Note (Optional)" rules={[{ max: 5000, message: 'Note must be 5,000 characters or fewer.' }]}>
         <Input.TextArea aria-label="New item note" maxLength={5000} autoSize={{ minRows: 3, maxRows: 6 }} />
