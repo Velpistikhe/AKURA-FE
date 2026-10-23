@@ -12,6 +12,7 @@ function withQuery(params = {}) {
 export const workOrderService = {
   list: (params = {}) => apiRequest(`${PATH}?${withQuery(params)}`),
   get: (id) => apiRequest(`${PATH}/${id}`),
+  revoke: (id, version) => apiRequest(`${PATH}/${id}`, { method: 'DELETE', body: JSON.stringify({ version }) }),
   update: (id, payload) => apiRequest(`${PATH}/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   history: (id, params = {}) => apiRequest(`${PATH}/${id}/history?${withQuery(params)}`),
   // DRAFT -> IN_PROGRESS is a version-locked transition the backend re-validates

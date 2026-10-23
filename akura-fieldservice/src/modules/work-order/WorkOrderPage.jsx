@@ -1,8 +1,8 @@
 import TableSearchFilter from '../../components/global/TableSearchFilter'
 import { useEffect, useRef, useState } from 'react'
-import { App, Button, Card, CheckOutlined, EditOutlined, EyeOutlined, Modal, Popconfirm, Result, Table, Tag, Typography } from '../../components/global'
+import { App, Button, Card, CheckOutlined, DeleteOutlined, EditOutlined, EyeOutlined, Modal, Popconfirm, Result, Table, Tag, Typography } from '../../components/global'
 import { workOrderService } from '../../services/workOrderService'
-import { canAccessWorkOrders, canEditWorkOrders, canStartWorkOrder, WORK_ORDER_STATUSES, activeQuotationItems, money, quotationNumber } from './workOrderModel'
+import { canAccessWorkOrders, canEditWorkOrders, canRevokeWorkOrder, canStartWorkOrder, WORK_ORDER_STATUSES, activeQuotationItems, quotationNumber } from './workOrderModel'
 import WorkOrderEdit from './WorkOrderEdit'
 import WorkOrderHistory from './WorkOrderHistory'
 import './CompanyPage.css'
@@ -17,9 +17,6 @@ const quotationItemColumns = [
   { title: 'Size', dataIndex: 'size', render: (value) => value ?? 'Without size' },
   { title: 'Inspection Quantity', dataIndex: 'quantityInspection', render: (value) => value ?? '-' },
   { title: 'Maintenance Quantity', dataIndex: 'quantityMaintenance', render: (value) => value ?? '-' },
-  { title: 'Inspection Price', dataIndex: 'priceInspection', align: 'right', render: money },
-  { title: 'Maintenance Price', dataIndex: 'priceMaintenance', align: 'right', render: money },
-  { title: 'Subtotal', dataIndex: 'subTotal', align: 'right', render: money },
 ]
 
 export default function WorkOrderPage({ currentUser }) {
@@ -28,7 +25,11 @@ export default function WorkOrderPage({ currentUser }) {
 }
 
 function WorkOrderList({ currentUser }) {
-  const [query, setQuery] = useState({ page: 1, limit: 20, search: '', status: 'DRAFT', revoked: false })
+  const { message } = App.useApp()
+  const [revokingId, setRevokingId] = useState(null)
+  const revokeLock = useRef(false)
+  // Start unfiltered so the list includes every status and both active/revoked orders.
+  const [query, setQuery] = useState({ page: 1, limit: 20, search: '' })
   const [data, setData] = useState({ workOrders: [], pagination: { total: 0 } })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -48,16 +49,35 @@ function WorkOrderList({ currentUser }) {
     }, 300)
     return () => { active = false; clearTimeout(timer) }
   }, [query, retry])
+  const revoke = async (row) => {
+    if (revokeLock.current || !canRevokeWorkOrder(currentUser, row)) return
+    revokeLock.current = true
+    setRevokingId(row.id)
+    try {
+      await workOrderService.revoke(row.id, row.version)
+      message.success(`Work order ${row.number} revoked.`)
+      setRetry((value) => value + 1)
+    } catch (err) {
+      message.error(err?.message || 'Unable to revoke the work order.')
+      if ([404, 409].includes(err?.status)) setRetry((value) => value + 1)
+    } finally {
+      revokeLock.current = false
+      setRevokingId(null)
+    }
+  }
   return <section className="company-page work-order-page">
     <div className="company-page-heading"><div><Typography.Title level={2}>Work Orders</Typography.Title><Typography.Text tone="secondary">View work orders for your branch.</Typography.Text></div>
     </div>
     <Card>
       {error && <div role="alert">{error} <Button onClick={() => setRetry((value) => value + 1)}>Retry</Button></div>}
-      <Table rowKey="id" busy={loading} dataSource={data.workOrders} scroll={{ x: 1000 }}
+      <Table rowKey="id" busy={loading} dataSource={data.workOrders} tableLayout="auto" scroll={{ x: 'max-content' }}
         columns={[
           { title: 'Number', dataIndex: 'number', key: 'search', filteredValue: query.search ? [query.search] : null,
             filterDropdown: (props) => <TableSearchFilter {...props} placeholder="Search number or summary" /> },
           { title: 'Company', render: (_, row) => companyName(row) },
+          { title: 'Quotation Number', dataIndex: 'quotationNo', render: (value) => value ?? '-' },
+          { title: 'Quotation Date', dataIndex: 'quotationDate', render: date },
+          { title: 'Contract Number', dataIndex: 'contractNumber', render: (value) => value || '-' },
           { title: 'Date', dataIndex: 'date', render: date },
           { title: 'Start Date', dataIndex: 'startDate', render: date },
           { title: 'End Date', dataIndex: 'endDate', render: date },
@@ -65,7 +85,13 @@ function WorkOrderList({ currentUser }) {
             filters: WORK_ORDER_STATUSES.map((value) => ({ text: displayEnum(value), value })), render: (value) => <Tag>{displayEnum(value)}</Tag> },
           { title: 'Activity', dataIndex: 'revoked', filteredValue: query.revoked == null ? null : [String(query.revoked)], filterMultiple: false,
             filters: [{ text: 'Active', value: 'false' }, { text: 'Revoked', value: 'true' }], render: (value) => <Tag>{value ? 'Revoked' : 'Active'}</Tag> },
-          { title: 'Actions', key: 'actions', width: 90, render: (_, row) => <Button variant="text" icon={<EyeOutlined />} title="View Work Order" onClick={() => setSelectedId(row.id)} /> },
+          { title: 'Actions', key: 'actions', fixed: 'right', render: (_, row) => <div className="work-order-detail-actions">
+            <Button variant="text" icon={<EyeOutlined />} title="View Work Order" disabled={Boolean(revokingId)} onClick={() => setSelectedId(row.id)} />
+            {canRevokeWorkOrder(currentUser, row) && <Popconfirm title="Delete work order?" description={`Work order ${row.number} will be revoked. Its history will be retained.`}
+              okText="Delete" cancelText="Cancel" okButtonProps={{ danger: true }} disabled={loading || Boolean(revokingId)} onConfirm={() => revoke(row)}>
+              <Button variant="text" isDanger icon={<DeleteOutlined />} title="Delete Work Order" aria-label="Delete Work Order" busy={revokingId === row.id} disabled={loading || Boolean(revokingId)} />
+            </Popconfirm>}
+          </div> },
         ]}
         onChange={(_, filters, _sorter, extra) => {
           if (extra.action === 'filter') setQuery((current) => ({ ...current, page: 1,
@@ -122,7 +148,7 @@ function WorkOrderDetail({ id, currentUser, onChanged, onClose }) {
   }
 
   const canStart = canStartWorkOrder(currentUser, record)
-  const canEdit = Boolean(record && !record.revoked && canEditWorkOrders(currentUser))
+  const canEdit = Boolean(record?.status === 'DRAFT' && !record.revoked && canEditWorkOrders(currentUser))
   const locked = editing || closing || starting
   return <Modal title={record?.number || 'Work Order Detail'} visible={!closing} width={900} onCancel={locked ? undefined : () => setClosing(true)} closable={!locked} maskClosable={!locked} keyboard={!locked}
     footer={<Button disabled={locked} onClick={() => setClosing(true)}>Close</Button>} afterClose={onClose} unmountOnClose>
@@ -152,16 +178,11 @@ function WorkOrderDetail({ id, currentUser, onChanged, onClose }) {
         <div className="work-order-quotation-items">
           <Typography.Title level={5}>Quotation Items</Typography.Title>
           <Table rowKey={(item) => item.id || `${item.itemName}-${item.size}`} dataSource={activeQuotationItems(record.quotationSnapshot)}
-            columns={quotationItemColumns} pagination={false} scroll={{ x: 1100 }} locale={{ emptyText: 'No quotation items in this snapshot.' }} />
-        </div>
-        <div className="work-order-quotation-totals">
-          <span>Subtotal: <strong>{money(record.quotationSnapshot.subTotal)}</strong></span>
-          <span>Tax ({record.quotationSnapshot.tax ?? '-'}%): <strong>{money(record.quotationSnapshot.taxAmount)}</strong></span>
-          <span>Total: <strong>{money(record.quotationSnapshot.total)}</strong></span>
+            columns={quotationItemColumns} pagination={false} tableLayout="auto" scroll={{ x: 'max-content' }} locale={{ emptyText: 'No quotation items in this snapshot.' }} />
         </div>
       </Card>}
       <WorkOrderHistory id={id} version={record.version} />
-      {editing && <WorkOrderEdit record={record} onClose={() => setEditing(false)}
+      {editing && canEdit && <WorkOrderEdit record={record} onClose={() => setEditing(false)}
         onSaved={(updated) => { setRecord(updated); setEditing(false); onChanged() }}
         onReload={() => { setEditing(false); setRetry((value) => value + 1); onChanged() }} />}
     </div>}

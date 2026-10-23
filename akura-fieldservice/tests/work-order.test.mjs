@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { resolveFieldServiceRoute } from '../src/routes/fieldServiceRoutes.js'
-import { canAccessWorkOrders, canEditWorkOrders, canStartWorkOrder, workOrderFormValues, workOrderUpdatePayload, formatHistoryValue, activeQuotationItems, money, quotationNumber } from '../src/modules/work-order/workOrderModel.js'
+import { canAccessWorkOrders, canEditWorkOrders, canRevokeWorkOrder, canStartWorkOrder, workOrderFormValues, workOrderUpdatePayload, formatHistoryValue, activeQuotationItems, money, quotationNumber } from '../src/modules/work-order/workOrderModel.js'
 test('Field Service keeps its Work Order route and rejects unsupported creation routes', () => {
   assert.equal(resolveFieldServiceRoute('/field-service/work-orders/'), 'work-orders')
   assert.equal(resolveFieldServiceRoute('/field-service/work-orders/create'), null)
@@ -15,7 +15,7 @@ test('Service preserves filters and exposes versioned PATCH and paginated histor
   const source = (await readFile(new URL('../src/services/workOrderService.js', import.meta.url), 'utf8'))
     .replace("import { apiRequest } from './api'", 'const apiRequest = (path, options = {}) => ({ path, ...options })')
   const { workOrderService: service } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`)
-  assert.deepEqual(Object.keys(service).sort(), ['get', 'history', 'list', 'start', 'update'])
+  assert.deepEqual(Object.keys(service).sort(), ['get', 'history', 'list', 'revoke', 'start', 'update'])
   const request = service.list({ page: 2, limit: 20, status: 'DRAFT', revoked: false, search: 'a & b' })
   const url = new URL(request.path, 'http://localhost')
   assert.equal(url.pathname, '/fieldservice/work-orders')
@@ -26,6 +26,7 @@ test('Service preserves filters and exposes versioned PATCH and paginated histor
   assert.deepEqual(service.history('id', { page: 2, limit: 10 }), { path: '/fieldservice/work-orders/id/history?page=2&limit=10' })
   assert.deepEqual(service.update('id', { version: 0, status: 'COMPLETED' }), { path: '/fieldservice/work-orders/id', method: 'PATCH', body: '{"version":0,"status":"COMPLETED"}' })
   assert.deepEqual(service.start('id', 3), { path: '/fieldservice/work-orders/id/start', method: 'POST', body: '{"version":3}' })
+  assert.deepEqual(service.revoke('id', 0), { path: '/fieldservice/work-orders/id', method: 'DELETE', body: '{"version":0}' })
 })
 
 test('Read access allows Marketing; editing follows section, never an admin bypass', () => {
@@ -42,6 +43,27 @@ test('Read access allows Marketing; editing follows section, never an admin bypa
 })
 
 const record = { version: 0, startDate: '2026-10-02T00:00:00.000Z', endDate: '2026-10-03T00:00:00.000Z', status: 'DRAFT', summary: 'Inspection', inspectors: [{ id: 'a', name: 'Budi', position: 0 }, { id: 'b', name: 'Agus', position: 1 }], quotationId: 'quotation', quotationVersion: 4 }
+
+test('Revoke requires an active Marketing admin and a non-revoked versioned draft order', () => {
+  const admin = { role: 'ADMIN', section: 'MARKETING', isActive: true, officeBranchId: 'branch' }
+  const order = { id: 'id', version: 0, status: 'DRAFT', revoked: false }
+  for (const status of ['DRAFT', 'IN_PROGRESS', 'COMPLETED', 'CANCELED']) {
+    assert.equal(canRevokeWorkOrder(admin, { ...order, status }), status === 'DRAFT')
+  }
+  for (const role of ['USER', 'ADMIN', 'APP_MANAGER']) {
+    for (const section of ['MARKETING', 'FIELD_SERVICE', 'FINANCE']) {
+      assert.equal(canRevokeWorkOrder({ ...admin, role, section }, order), role === 'ADMIN' && section === 'MARKETING')
+    }
+  }
+  for (const change of [{ isActive: false }, { officeBranchId: null }]) {
+    assert.equal(canRevokeWorkOrder({ ...admin, ...change }, order), false)
+  }
+  for (const change of [{ revoked: true }, { id: null }, { version: undefined }, { version: -1 }, { version: 0.5 }, { version: 2147483647 }]) {
+    assert.equal(canRevokeWorkOrder(admin, { ...order, ...change }), false)
+  }
+  assert.equal(canRevokeWorkOrder(null, order), false)
+  assert.equal(canRevokeWorkOrder(admin, null), false)
+})
 
 test('PATCH sends changes only and preserves document snapshots and server fields', () => {
   const values = workOrderFormValues(record)

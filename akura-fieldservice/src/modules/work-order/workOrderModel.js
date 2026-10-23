@@ -16,6 +16,11 @@ export const canStartWorkOrder = (user, workOrder) => Boolean(canStartWorkOrders
   && workOrder?.id && workOrder.status === 'DRAFT' && !workOrder.revoked
   && Number.isInteger(workOrder.version))
 
+export const canRevokeWorkOrder = (user, workOrder) => Boolean(user?.isActive && user.officeBranchId
+  && user.role === 'ADMIN' && user.section === 'MARKETING'
+  && workOrder?.id && workOrder.status === 'DRAFT' && !workOrder.revoked
+  && Number.isInteger(workOrder.version) && workOrder.version >= 0 && workOrder.version < 2147483647)
+
 export const workOrderFormValues = (record) => ({
   startDate: record.startDate?.slice(0, 10) || '',
   endDate: record.endDate?.slice(0, 10) || '',
