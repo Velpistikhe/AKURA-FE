@@ -1,4 +1,4 @@
-.finance-workspace { width: min(100%, 1480px); min-height: 100%; margin-inline: auto; min-width: 0; color: var(--text-primary, #1a2e5e); }
+.finance-workspace { width: min(100%, 1680px); min-height: 100%; margin-inline: auto; min-width: 0; color: var(--text-primary, #1a2e5e); }
 .finance-page { min-width: 0; animation: finance-enter 360ms cubic-bezier(.22, 1, .36, 1) both; }
 .finance-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
 .finance-heading .ant-typography { margin-block: 0; }

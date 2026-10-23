@@ -1,39 +1,51 @@
-:root {
-  color-scheme: light;
-  --bg-light: #f3f5f9;
-  --surface: #ffffff;
-  --surface-subtle: #f6f8fc;
-  --surface-muted: #eaf0f8;
-  --text-primary: #20304b;
-  --text-secondary: #5c6c84;
-  --text-muted: #718097;
-  --border: #e1e7f0;
-  --header-bg: rgba(255, 255, 255, .9);
-  --primary: #284b8f;
-  --primary-light: #365fa8;
-  --shadow-sm: 0 4px 20px rgb(25 42 70 / 4%);
-}
+/* =============================================
+   THEME LAYER
+   - Dark mode tokens
+   - Override layout dashboard yang butuh !important
+   Light mode tokens didefinisikan di index.css.
+   ============================================= */
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg-light: #0d1420;
-  --bg-card: #151f2e;
-  --surface: #151f2e;
-  --surface-subtle: #1a2638;
-  --surface-muted: #24334a;
+  --bg-light: #0b1120;
+  --bg-card: #121b2e;
+  --surface: #121b2e;
+  --surface-subtle: #172033;
+  --surface-muted: #1e2a42;
   --text-primary: #e6edf8;
   --text-secondary: #afbed3;
   --text-muted: #91a3bd;
-  --border: #2a3a50;
-  --header-bg: rgba(21, 31, 46, .92);
-  --primary: #486db4;
-  --primary-light: #597fc8;
+  --border: #24304a;
+  --header-bg: rgba(18, 27, 46, 0.92);
+  --primary: #4d72be;
+  --primary-light: #5d83cc;
   --primary-lighter: #829fe0;
-  --shadow-sm: 0 4px 20px rgb(0 0 0 / 12%);
+  --gradient-primary: linear-gradient(135deg, #4d72be 0%, #5d83cc 100%);
+  --gradient-primary-hover: linear-gradient(135deg, #4064ad 0%, #5275bd 100%);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 20%), 0 2px 8px rgb(0 0 0 / 16%);
+  --shadow-md: 0 2px 4px rgb(0 0 0 / 22%), 0 8px 24px rgb(0 0 0 / 24%);
+  --shadow-lg: 0 4px 8px rgb(0 0 0 / 26%), 0 18px 44px rgb(0 0 0 / 32%);
+  --shadow-xl: 0 8px 16px rgb(0 0 0 / 30%), 0 32px 72px rgb(0 0 0 / 44%);
+  --shadow-primary: 0 6px 18px rgb(77 114 190 / 34%);
+  --shadow-accent: 0 6px 18px rgb(224 32 32 / 30%);
 }
 
-html .dashboard-root, html .dashboard-main, html .dashboard-content {
+:root[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: rgba(175, 190, 211, 0.24);
+}
+
+:root[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-lighter);
+}
+
+html .dashboard-root, html .dashboard-main {
   background: var(--bg-light) !important;
+}
+html .dashboard-content {
+  background:
+    radial-gradient(circle at 100% 0, rgba(61, 90, 158, 0.10), transparent 36%),
+    radial-gradient(circle at 0 100%, rgba(224, 32, 32, 0.05), transparent 32%),
+    var(--bg-light) !important;
 }
 html .dashboard-header {
   background: var(--header-bg) !important;
@@ -42,24 +54,30 @@ html .dashboard-header {
   height: 72px !important;
 }
 html .dashboard-sider {
-  background: linear-gradient(180deg, #16243c, #101a2c) !important;
+  background: linear-gradient(180deg, #172957, #101d38) !important;
   box-shadow: none;
   border-right: 1px solid rgb(255 255 255 / 6%);
 }
 .dashboard-sider .ant-layout-sider-children { display: flex; flex-direction: column; height: 100%; }
 html .sider-logo { min-height: 88px; padding-block: 20px; }
 html .sider-menu .ant-menu-item-selected {
-  background: #2b4368 !important;
-  box-shadow: inset 3px 0 #a9c6ff !important;
+  background: linear-gradient(135deg, rgba(224, 32, 32, 0.92), rgba(255, 68, 68, 0.82)) !important;
+  box-shadow: 0 4px 14px rgb(224 32 32 / 32%), inset 3px 0 rgb(255 255 255 / 55%) !important;
 }
-html .sider-menu .ant-menu-item, html .sider-menu .ant-menu-submenu-title { border-radius: 8px !important; }
+/* Netralkan overlay background dari Ant Design dark agar gradient brand tampil */
+html .sider-menu .ant-menu-item-selected::before,
+html .sider-menu .ant-menu-item-selected::after {
+  background: transparent !important;
+  border-color: transparent !important;
+}
+html .sider-menu .ant-menu-item, html .sider-menu .ant-menu-submenu-title { border-radius: 10px !important; }
 html .sider-user { background: transparent; }
 html .header-toggle-btn, html .header-icon-btn,
 html .header-user-name, html .header-breadcrumb .ant-breadcrumb-link,
 html .header-breadcrumb .ant-breadcrumb-link:last-child { color: var(--text-primary) !important; }
 html .header-user-role { color: var(--text-muted); }
 html .header-user-btn { background: transparent; border: 1px solid transparent; color: var(--text-primary); text-align: left; }
-html .header-user-btn:hover, html .header-toggle-btn:hover { background: var(--surface-subtle) !important; }
+html .header-user-btn:hover, html .header-toggle-btn:hover { background: var(--surface-muted) !important; }
 html .header-divider { background: var(--border); margin-inline: 10px; }
 
 .theme-toggle {
@@ -77,17 +95,17 @@ html :focus-visible { outline: 3px solid #739de6; outline-offset: 3px; }
 .auth-theme-toggle { position: absolute; top: 20px; right: 24px; z-index: 5; }
 
 html .welcome-banner {
-  background: linear-gradient(115deg, #1c3152, #304e77);
-  box-shadow: 0 8px 24px rgb(15 30 61 / 10%);
+  background: linear-gradient(115deg, #14224a 0%, #1e3468 55%, #2a4080 100%);
+  box-shadow: 0 10px 28px rgb(15 30 61 / 16%);
   border-radius: 20px;
 }
-html .welcome-name { font-weight: 700; letter-spacing: -.035em; }
+html .welcome-name { font-weight: 800; letter-spacing: -.035em; }
 html .welcome-desc { color: #c6d4e7; line-height: 1.7; }
 html .welcome-greeting { color: #b9cae2; letter-spacing: .1em; }
 html .ws-1, html .ws-2, html .marketing-overview-decoration { animation: none; }
 html .app-card--default, html .app-card--outlined { border-color: var(--border) !important; box-shadow: var(--shadow-sm) !important; }
 html .app-card .ant-card-head { border-color: var(--border) !important; }
-html .app-card--hover:hover { transform: translateY(-2px) !important; }
+html .app-card--hover:hover { transform: translateY(-3px) !important; box-shadow: var(--shadow-lg) !important; }
 html .app-btn--outline { color: var(--text-primary) !important; border-color: var(--border) !important; }
 html .ant-table-wrapper .ant-table-thead > tr > th { background: var(--surface-subtle) !important; color: var(--text-secondary) !important; }
 html .ant-table-wrapper .ant-table-tbody > tr:hover > td { background: var(--surface-muted) !important; }

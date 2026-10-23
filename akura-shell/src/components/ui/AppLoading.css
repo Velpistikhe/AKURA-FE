@@ -8,12 +8,16 @@
   background: var(--bg-light);
 }
 
+.app-loading .ant-spin {
+  color: var(--primary) !important;
+}
+
 .app-loading-full-screen {
   min-height: 100vh;
 }
 
 .app-loading-message {
-  color: var(--text-secondary, #5a6a8a);
+  color: var(--text-secondary, #56678a);
   font-size: 14px;
   font-weight: 500;
 }

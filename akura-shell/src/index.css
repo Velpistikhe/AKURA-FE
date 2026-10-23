@@ -1,6 +1,8 @@
 /* =============================================
-   AKURA BINA CITRA - Global CSS
-   Brand Colors: Navy Blue #1a2e5e, Red #e02020, White
+   AKURA BINA CITRA - Global Design Tokens
+   Brand Colors: Navy Blue #1a2e5e, Red #e02020, Gold #ffaa00, White
+   Satu sumber kebenaran token visual (light mode).
+   Dark mode didefinisikan di theme.css.
    ============================================= */
 
 *, *::before, *::after {
@@ -18,37 +20,47 @@
   --accent: #e02020;
   --accent-dark: #b01818;
   --accent-light: #ff3333;
+  --gold: #ffaa00;
 
   /* Neutral */
   --white: #ffffff;
-  --bg-light: #f0f4ff;
-  --bg-card: #f7f9fc;
-  --border: #dce4f0;
-  --text-primary: #1a2e5e;
-  --text-secondary: #5a6a8a;
-  --text-muted: #8a9ab8;
+  --bg-light: #eef2f9;
+  --bg-card: #ffffff;
+  --border: #e3e9f4;
+  --text-primary: #1b2b4e;
+  --text-secondary: #56678a;
+  --text-muted: #8695b5;
 
-  /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(26, 46, 94, 0.08);
-  --shadow-md: 0 4px 20px rgba(26, 46, 94, 0.12);
-  --shadow-lg: 0 8px 40px rgba(26, 46, 94, 0.16);
-  --shadow-xl: 0 20px 60px rgba(26, 46, 94, 0.2);
+  /* Surfaces */
+  --surface: #ffffff;
+  --surface-subtle: #f7f9fe;
+  --surface-muted: #edf1fa;
+
+  /* Shadows — layered agar terasa ringan & modern */
+  --shadow-sm: 0 1px 2px rgba(26, 46, 94, 0.05), 0 2px 8px rgba(26, 46, 94, 0.05);
+  --shadow-md: 0 2px 4px rgba(26, 46, 94, 0.05), 0 8px 24px rgba(26, 46, 94, 0.08);
+  --shadow-lg: 0 4px 8px rgba(26, 46, 94, 0.06), 0 18px 44px rgba(26, 46, 94, 0.12);
+  --shadow-xl: 0 8px 16px rgba(15, 30, 61, 0.08), 0 32px 72px rgba(15, 30, 61, 0.16);
+  --shadow-primary: 0 6px 18px rgba(26, 46, 94, 0.28);
+  --shadow-accent: 0 6px 18px rgba(224, 32, 32, 0.28);
+
+  /* Gradients */
+  --gradient-primary: linear-gradient(135deg, #1a2e5e 0%, #2a4080 100%);
+  --gradient-primary-hover: linear-gradient(135deg, #152650 0%, #22356a 100%);
+  --gradient-accent: linear-gradient(135deg, #e02020 0%, #ff4444 100%);
 
   /* Transitions */
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-fast: all 0.15s ease;
+  --transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.16s ease;
 
   /* Border Radius */
-  --radius-sm: 6px;
+  --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
   --radius-full: 9999px;
 
-  --surface: #ffffff;
-  --surface-subtle: #f8faff;
-  --surface-muted: #eef3fb;
-  --content-max: 1480px;
+  --content-max: 1680px;
   --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
   --motion-fast: 180ms;
   --motion-base: 320ms;
@@ -95,19 +107,33 @@ button, input, textarea, select { font: inherit; }
    ============================================= */
 
 .ant-btn-primary {
-  background: var(--primary) !important;
-  border-color: var(--primary) !important;
+  background: var(--gradient-primary) !important;
+  border-color: transparent !important;
+  box-shadow: var(--shadow-primary);
 }
 
 .ant-btn-primary:hover {
-  background: var(--primary-light) !important;
-  border-color: var(--primary-light) !important;
+  background: var(--gradient-primary-hover) !important;
+  border-color: transparent !important;
+  box-shadow: 0 8px 22px rgba(26, 46, 94, 0.34);
+  transform: translateY(-1px);
+}
+
+.ant-btn-primary:active {
+  transform: translateY(0);
+}
+
+.ant-input, .ant-input-affix-wrapper,
+.ant-select-selector, .ant-input-number,
+.ant-picker {
+  border-radius: 10px !important;
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease !important;
 }
 
 .ant-input:focus, .ant-input-focused,
 .ant-input-affix-wrapper:focus, .ant-input-affix-wrapper-focused {
   border-color: var(--primary) !important;
-  box-shadow: 0 0 0 3px rgba(26, 46, 94, 0.1) !important;
+  box-shadow: 0 0 0 3px rgba(26, 46, 94, 0.12) !important;
 }
 
 .ant-input:hover,
@@ -117,7 +143,7 @@ button, input, textarea, select { font: inherit; }
 
 .ant-form-item-label > label {
   color: var(--text-primary) !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
 }
 
 .ant-checkbox-checked .ant-checkbox-inner {
@@ -126,9 +152,9 @@ button, input, textarea, select { font: inherit; }
 }
 
 .ant-modal .ant-modal-content {
-  border: 1px solid rgba(26, 46, 94, 0.08);
+  border: 1px solid var(--border);
   border-radius: 18px;
-  box-shadow: 0 24px 70px rgba(15, 30, 61, 0.22);
+  box-shadow: var(--shadow-xl);
   overflow: hidden;
 }
 
@@ -142,7 +168,7 @@ button, input, textarea, select { font: inherit; }
 
 .ant-table-wrapper .ant-table-thead > tr > th {
   background: var(--surface-subtle) !important;
-  color: #465574;
+  color: var(--text-secondary);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -154,10 +180,43 @@ button, input, textarea, select { font: inherit; }
 }
 
 .ant-table-wrapper .ant-table-tbody > tr:hover > td {
-  background: #f7f9fe !important;
+  background: var(--surface-muted) !important;
 }
 
 .ant-pagination { align-items: center; }
+
+/* Empty state di dalam table lebih ringkas */
+.ant-table .ant-empty {
+  margin: 24px 8px;
+}
+
+.ant-table .ant-empty .ant-empty-description {
+  margin-top: 6px;
+}
+
+.ant-pagination .ant-pagination-item-active {
+  border-color: var(--primary) !important;
+}
+
+.ant-pagination .ant-pagination-item-active a {
+  color: var(--primary) !important;
+  font-weight: 700;
+}
+
+.ant-dropdown .ant-dropdown-menu {
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  padding: 6px;
+}
+
+.ant-select-dropdown .ant-select-item {
+  border-radius: 8px;
+}
+
+.ant-tooltip .ant-tooltip-inner {
+  border-radius: 8px;
+  font-size: 12px;
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -170,14 +229,14 @@ button, input, textarea, select { font: inherit; }
 
 /* Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-light);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--primary-lighter);
+  background: rgba(26, 46, 94, 0.22);
   border-radius: var(--radius-full);
 }
 ::-webkit-scrollbar-thumb:hover {

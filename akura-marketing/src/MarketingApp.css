@@ -1,5 +1,5 @@
 .marketing-overview {
-  width: min(100%, 1480px);
+  width: min(100%, 1680px);
   min-height: 100%;
   margin-inline: auto;
   animation: marketing-enter 360ms cubic-bezier(0.22, 1, 0.36, 1) both;

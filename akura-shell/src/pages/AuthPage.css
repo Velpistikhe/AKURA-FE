@@ -12,7 +12,10 @@
 /* ---- LEFT PANEL ---- */
 .auth-left {
   flex: 0 0 420px;
-  background: linear-gradient(160deg, #1a2e5e 0%, #0f1e3d 50%, #1a1a2e 100%);
+  background:
+    radial-gradient(circle at 20% 15%, rgba(224, 32, 32, 0.16), transparent 42%),
+    radial-gradient(circle at 85% 80%, rgba(61, 90, 158, 0.35), transparent 50%),
+    linear-gradient(160deg, #172957 0%, #101d38 55%, #0d1730 100%);
   padding: 48px 40px;
   display: flex;
   align-items: flex-start;
@@ -120,18 +123,19 @@
 
 .auth-feature-item {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.78);
   font-weight: 500;
-  padding: 10px 14px;
+  padding: 11px 14px;
   background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 10px;
-  border-left: 3px solid rgba(224, 32, 32, 0.6);
-  transition: var(--transition);
+  border-left: 3px solid rgba(255, 170, 0, 0.75);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .auth-feature-item:hover {
   background: rgba(255, 255, 255, 0.1);
-  border-left-color: #e02020;
+  border-left-color: var(--gold, #ffaa00);
 }
 
 /* Decoration circles */
@@ -181,7 +185,9 @@
   align-items: center;
   justify-content: center;
   padding: 40px 24px;
-  background: var(--surface-subtle, #f5f7ff);
+  background:
+    radial-gradient(circle at 100% 0, rgba(61, 90, 158, 0.10), transparent 36%),
+    var(--surface-subtle, #f7f9fe);
   overflow-y: auto;
 }
 
@@ -191,8 +197,8 @@
   background: var(--surface, white);
   border-radius: 24px;
   padding: 48px 44px;
-  box-shadow: 0 8px 40px rgba(26, 46, 94, 0.1);
-  border: 1px solid rgba(26, 46, 94, 0.05);
+  box-shadow: 0 4px 8px rgba(26, 46, 94, 0.05), 0 24px 56px rgba(26, 46, 94, 0.12);
+  border: 1px solid rgba(26, 46, 94, 0.06);
   animation: akura-enter 480ms 80ms var(--ease-standard) both;
 }
 
@@ -261,17 +267,19 @@
   font-size: 16px !important;
   font-weight: 700 !important;
   border-radius: 12px !important;
-  background: linear-gradient(135deg, #1a2e5e, #2a4080) !important;
+  background: var(--gradient-primary, linear-gradient(135deg, #1a2e5e, #2a4080)) !important;
   border: none !important;
   box-shadow: 0 6px 20px rgba(26, 46, 94, 0.3) !important;
-  transition: var(--transition) !important;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease !important;
 }
 
 .auth-submit-btn:hover {
-  background: linear-gradient(135deg, #0f1e3d, #1a2e5e) !important;
-  box-shadow: 0 8px 28px rgba(26, 46, 94, 0.4) !important;
+  background: var(--gradient-primary-hover, linear-gradient(135deg, #0f1e3d, #1a2e5e)) !important;
+  box-shadow: 0 10px 26px rgba(26, 46, 94, 0.4) !important;
   transform: translateY(-1px) !important;
 }
+
+.auth-submit-btn:active { transform: translateY(0) !important; }
 
 /* Divider */
 .auth-divider {
@@ -289,16 +297,16 @@
 /* Alt button */
 .btn-alt {
   height: 46px !important;
-  border: 1.5px solid rgba(26, 46, 94, 0.2) !important;
+  border: 1.5px solid var(--border, #e3e9f4) !important;
   color: var(--text-primary, #1a2e5e) !important;
   font-weight: 600 !important;
   border-radius: 10px !important;
   background: var(--surface, white) !important;
-  transition: var(--transition) !important;
+  transition: background-color 0.2s ease, border-color 0.2s ease !important;
 }
 
 .btn-alt:hover {
-  border-color: #1a2e5e !important;
+  border-color: var(--primary-lighter, #3d5a9e) !important;
   background: rgba(26, 46, 94, 0.04) !important;
 }
 

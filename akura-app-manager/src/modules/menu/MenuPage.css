@@ -1,5 +1,5 @@
 .menu-page {
-  width: min(100%, 1480px);
+  width: min(100%, 1680px);
   min-height: 100%;
   margin-inline: auto;
   color: var(--text-primary, #1a2e5e);

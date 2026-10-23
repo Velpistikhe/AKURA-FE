@@ -54,10 +54,11 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.97);
+  background: rgba(255, 255, 255, 0.92);
   border-bottom: 1px solid #ececf1;
-  box-shadow: 0 4px 24px rgba(0, 0, 72, 0.06);
-  backdrop-filter: blur(14px);
+  box-shadow: 0 1px 0 rgba(0, 0, 72, 0.04), 0 8px 24px rgba(0, 0, 72, 0.05);
+  backdrop-filter: blur(14px) saturate(1.5);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
 }
 
 .landing-nav-inner {
@@ -160,7 +161,7 @@
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(0, 0, 72, 0.98) 0%, rgba(0, 0, 72, 0.83) 42%, rgba(0, 0, 72, 0.18) 78%, rgba(0, 0, 72, 0.06) 100%);
+  background: linear-gradient(90deg, rgba(0, 0, 72, 0.97) 0%, rgba(0, 0, 72, 0.86) 42%, rgba(0, 0, 72, 0.24) 78%, rgba(0, 0, 72, 0.08) 100%);
 }
 
 .hero-inner {
@@ -353,15 +354,16 @@
   min-height: 330px;
   padding: 34px 26px 28px;
   overflow: hidden;
+  border: 1px solid rgba(0, 0, 72, 0.06);
   border-top: 3px solid var(--akura-gold);
   background: #fff;
-  box-shadow: 0 8px 28px rgba(0, 0, 72, 0.065);
-  transition: transform 200ms ease, box-shadow 200ms ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 72, 0.04), 0 12px 32px rgba(0, 0, 72, 0.07);
+  transition: transform 220ms ease, box-shadow 220ms ease;
 }
 
 .service-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 18px 44px rgba(0, 0, 72, 0.13);
+  box-shadow: 0 4px 10px rgba(0, 0, 72, 0.06), 0 22px 48px rgba(0, 0, 72, 0.14);
 }
 
 .service-number {
@@ -445,9 +447,10 @@
   z-index: 2;
   width: 190px;
   padding: 24px;
-  background: var(--akura-navy);
+  background: linear-gradient(150deg, #000048 0%, #111162 100%);
   color: #fff;
-  box-shadow: 0 16px 36px rgba(0, 0, 72, 0.24);
+  border: 1px solid rgba(255, 170, 0, 0.35);
+  box-shadow: 0 8px 16px rgba(0, 0, 72, 0.18), 0 24px 48px rgba(0, 0, 72, 0.28);
 }
 
 .experience-card strong {

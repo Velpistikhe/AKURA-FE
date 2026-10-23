@@ -17,9 +17,9 @@
   z-index: 200;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #172957 0%, #102044 100%) !important;
-  box-shadow: 8px 0 32px rgba(15, 30, 61, 0.16);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background: linear-gradient(180deg, #172957 0%, #111f42 55%, #0e1a36 100%) !important;
+  box-shadow: 8px 0 32px rgba(15, 30, 61, 0.18);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
   overflow: hidden;
 }
 
@@ -112,22 +112,29 @@
   border-radius: 10px !important;
   width: calc(100% - 16px) !important;
   font-weight: 500 !important;
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: rgba(255, 255, 255, 0.72) !important;
   height: 44px !important;
   line-height: 44px !important;
-  transition: var(--transition) !important;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease !important;
 }
 
 .sider-menu .ant-menu-item:hover,
 .sider-menu .ant-menu-submenu-title:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.09) !important;
   color: white !important;
 }
 
 .sider-menu .ant-menu-item-selected {
-  background: linear-gradient(135deg, #e02020, #ff4444) !important;
+  background: linear-gradient(135deg, #e02020 0%, #ff4444 100%) !important;
   color: white !important;
-  box-shadow: 0 4px 12px rgba(224, 32, 32, 0.4) !important;
+  box-shadow: 0 4px 14px rgba(224, 32, 32, 0.38), inset 3px 0 rgba(255, 255, 255, 0.55) !important;
+}
+
+/* Netralkan overlay background bawaan Ant Design dark agar gradient brand tampil */
+.sider-menu .ant-menu-item-selected::before,
+.sider-menu .ant-menu-item-selected::after {
+  background: transparent !important;
+  border-color: transparent !important;
 }
 
 .sider-menu .ant-menu-item-selected .ant-menu-item-icon,
@@ -190,7 +197,7 @@
 
 /* ---- MAIN AREA ---- */
 .dashboard-main {
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
   height: 100vh;
   overflow: hidden;
   display: flex;
@@ -201,16 +208,16 @@
 
 /* ---- HEADER ---- */
 .dashboard-header {
-  background: rgba(255, 255, 255, 0.9) !important;
+  background: rgba(255, 255, 255, 0.86) !important;
   height: 64px !important;
   line-height: 64px !important;
   padding: 0 24px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
-  box-shadow: 0 8px 30px rgba(26, 46, 94, 0.06) !important;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 1px 0 rgba(26, 46, 94, 0.05) !important;
+  backdrop-filter: blur(16px) saturate(1.6);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6);
   position: sticky !important;
   top: 0 !important;
   z-index: 100 !important;
