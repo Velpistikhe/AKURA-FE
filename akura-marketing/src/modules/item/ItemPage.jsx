@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  App, Button, Card, DeleteOutlined, DownloadOutlined, EyeOutlined, Form, Input,
+  App, Button, Card, DeleteOutlined, DownloadOutlined, EyeOutlined, Form, Input, PriceInput,
   Modal, PlusOutlined, Popconfirm, Select, Space, Table, TableSearchFilter, Typography, useSaveConfirmation,
 } from '../../components/global'
 import { itemService } from '../../services/itemService'
@@ -8,11 +8,19 @@ import { serviceService } from '../../services/serviceService'
 import { downloadFile } from '../../services/downloadFile'
 import ItemDetail from './ItemDetail'
 import { createItemPayload } from './itemModel'
+import { decimalPrice } from '../../components/global/priceFormat'
 import '../company/CompanyPage.css'
 import '../service/ServiceCatalogPage.css'
 import './ItemPage.css'
 
 const labelKey = (value) => value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLowerCase()
+const priceFields = [
+  ['priceServicePrimary', 'Primary Service'],
+  ['priceServiceSisterCompany', 'Sister Service'],
+  ['priceMaintenancePrimary', 'Primary Maintenance'],
+  ['priceMaintenanceSisterCompany', 'Sister Maintenance'],
+]
+
 
 export default function ItemPage() {
   const { message } = App.useApp()
@@ -276,13 +284,30 @@ export default function ItemPage() {
                 <Button variant="dashed" icon={<PlusOutlined />} disabled={fields.length >= 100 || sizeValues.some((value) => value?.size === null)} onClick={() => add({ size: '' })}>Add Size</Button>
               </Space>
             </div>
-            <p><Typography.Text tone="secondary">Leave this list empty to create one variant without a size, or add named sizes. A variant without a size cannot be combined with other sizes. Set standard prices from the item detail.</Typography.Text></p>
-            {fields.map(({ key, ...field }) => <div className="catalog-scope-row" key={key}>
+            <p><Typography.Text tone="secondary">Leave this list empty to create one variant without a size, or add named sizes. A variant without a size cannot be combined with other sizes. Prices are optional.</Typography.Text></p>
+            {fields.map(({ key, ...field }) => <div className="catalog-scopes-size-row" key={key}>
               <Form.Item {...field} name={[field.name, 'size']} getValueProps={(value) => ({ value: value ?? '' })}
                 rules={sizeValues[field.name]?.size === null ? [] : [{ required: true, whitespace: true, message: 'Size is required.' }, { max: 100 }]}>
                 <Input maxLength={100} disabled={sizeValues[field.name]?.size === null}
                   placeholder={sizeValues[field.name]?.size === null ? 'Without size' : 'Size'} />
               </Form.Item>
+              <div className="item-price-grid">
+                {priceFields.map(([name, label]) => <Form.Item key={name} name={[field.name, name]} label={label}
+                  rules={[{ validator: async (_, value) => {
+                    const anyPrice = priceFields.some(([priceName]) => {
+                      const current = sizeValues[field.name]?.[priceName]
+                      return current !== undefined && current !== null && current !== ''
+                    })
+                    if (name === 'priceServicePrimary' && anyPrice && (value === undefined || value === null || value === '')) {
+                      throw new Error('Primary service price is required when entering prices.')
+                    }
+                    if (value !== undefined && value !== null && value !== '' && !/^\\d{1,16}(\\.\\d{1,2})?$/.test(decimalPrice(value))) {
+                      throw new Error('Enter a price with up to 16 digits and two decimal places.')
+                    }
+                  } }]}>
+                  <PriceInput placeholder="Optional" prefix="Rp" />
+                </Form.Item>)}
+              </div>
               <Button variant="text" isDanger icon={<DeleteOutlined />} onClick={() => removeSize(field.name)} aria-label="Delete size" />
             </div>)}
             <Form.ErrorList errors={errors} />

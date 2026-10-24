@@ -11,8 +11,19 @@
 .item-size-table .ant-table-cell { white-space: nowrap; overflow-wrap: normal; }
 .item-size-table .ant-tag { white-space: nowrap; overflow-wrap: normal; }
 .item-size-table .ant-pagination { flex-wrap: wrap; }
+
+.catalog-scopes-size-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr) auto;
+  align-items: start;
+  gap: 12px;
+}
+.catalog-scopes-size-row .item-price-grid { gap: 0 12px; }
+
 .item-error { margin-bottom: 16px; color: var(--text-secondary, #5c6c84); }
 @media (max-width: 600px) {
   .item-add-size-form, .item-price-grid { grid-template-columns: 1fr; }
+  .catalog-scopes-size-row { grid-template-columns: 1fr auto; }
+  .catalog-scopes-size-row .item-price-grid { grid-column: 1 / -1; grid-row: 2; }
   .item-page .company-page-heading > .ant-space { width: 100%; }
 }
