@@ -64,6 +64,9 @@
   --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
   --motion-fast: 180ms;
   --motion-base: 320ms;
+
+  /* Tinggi header dashboard — dipakai bersama oleh header dan container logo sidebar */
+  --header-height: 72px;
 }
 
 html, body {

@@ -28,17 +28,19 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 20px 16px;
+  height: 64px;
+  min-height: 64px;
+  box-sizing: border-box;
+  padding: 0 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   cursor: default;
   flex-shrink: 0;
-  min-height: 72px;
   transition: var(--transition);
 }
 
 .sider-logo-collapsed {
   justify-content: center;
-  padding: 20px 16px 16px;
+  padding: 0 16px;
 }
 
 .sider-logo-icon {

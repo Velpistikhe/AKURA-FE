@@ -51,7 +51,8 @@ html .dashboard-header {
   background: var(--header-bg) !important;
   border-bottom: 1px solid var(--border) !important;
   box-shadow: none !important;
-  height: 72px !important;
+  height: var(--header-height) !important;
+  line-height: var(--header-height) !important;
 }
 html .dashboard-sider {
   background: linear-gradient(180deg, #172957, #101d38) !important;
@@ -59,7 +60,12 @@ html .dashboard-sider {
   border-right: 1px solid rgb(255 255 255 / 6%);
 }
 .dashboard-sider .ant-layout-sider-children { display: flex; flex-direction: column; height: 100%; }
-html .sider-logo { min-height: 88px; padding-block: 20px; }
+html .sider-logo {
+  height: var(--header-height) !important;
+  min-height: var(--header-height) !important;
+  padding-block: 0 !important;
+  box-sizing: border-box;
+}
 html .sider-menu .ant-menu-item-selected {
   background: linear-gradient(135deg, rgba(224, 32, 32, 0.92), rgba(255, 68, 68, 0.82)) !important;
   box-shadow: 0 4px 14px rgb(224 32 32 / 32%), inset 3px 0 rgb(255 255 255 / 55%) !important;
@@ -125,7 +131,8 @@ html[data-theme='dark'] .landing-root .strength-item { background: var(--surface
 html[data-theme='dark'] .landing-logo { padding: 5px 8px; border-radius: 8px; background: #fff; }
 
 @media (max-width: 768px) {
-  html .dashboard-header { height: 64px !important; }
+  html .dashboard-header { height: 64px !important; line-height: 64px !important; }
+  html .sider-logo { height: 64px !important; min-height: 64px !important; }
   .theme-toggle span:not(.anticon) { display: none; }
   .theme-toggle { padding-inline: 10px; }
   .auth-theme-toggle { top: 14px; right: 14px; }
