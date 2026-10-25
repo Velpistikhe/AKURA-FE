@@ -16,6 +16,10 @@ const priceFields = [
 const currency = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 2 })
 const formatPrice = (value) => value == null ? '-' : currency.format(value)
 const sizeRules = [{ required: true, whitespace: true, message: 'Size is required.' }, { max: 100 }]
+const optionalPriceRule = { validator: async (_, value) => {
+  if (value == null || value === '') return
+  if (!/^\d{1,16}(\.\d{1,2})?$/.test(String(value))) throw new Error('Enter a price with up to 16 digits and two decimal places.')
+} }
 const priceRule = { validator: async (_, value) => {
   if (value == null || value === '') throw new Error('Price is required.')
   if (!/^\d{1,16}(\.\d{1,2})?$/.test(String(value))) throw new Error('Enter a price with up to 16 digits and two decimal places.')
@@ -25,6 +29,10 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
   const { message } = App.useApp()
   const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [sizeForm] = Form.useForm()
+  const [sizeFormOpen, setSizeFormOpen] = useState(false)
+  const [scopeForm] = Form.useForm()
+  const [scopeSaving, setScopeSaving] = useState(false)
+  const [scopeFormOpen, setScopeFormOpen] = useState(false)
   const [editForm] = Form.useForm()
   const [query, setQuery] = useState({ page: 1, limit: 20, size: '', sortBy: '', sortOrder: '' })
   const [data, setData] = useState({ sizes: [], pagination: { total: 0 } })
@@ -43,6 +51,8 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
     && !loading && !error
     && sizeEligibility?.itemId === itemId && sizeEligibility?.allowed === true
   const canAddNoSize = canAddSize && sizeEligibility?.empty === true
+  // Scopes are only owned by standalone items, and the scope endpoint is inspection-only.
+  const canAddScope = Boolean(itemId) && !readOnly && !item?.serviceId && !item?.service
 
   useEffect(() => {
     if (!editor || editorReadOnly) return
@@ -117,8 +127,23 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
 
   const addSize = async (values) => {
     if (!canAddSize || lock.current || !await confirmSave('item size')) return
-    await mutate('add', () => itemService.addSize({ itemId, itemVersion: item.version, size: values.size.trim() }),
-      'Item size added successfully.', () => sizeForm.resetFields())
+    await mutate('add', () => {
+      const payload = { itemId, itemVersion: item.version, size: values.size.trim() }
+      const suppliedPrices = priceFields.filter(([key]) => values[key] != null && values[key] !== '')
+      if (suppliedPrices.length) {
+        for (const [key] of priceFields.slice(0, 2)) {
+          if (values[key] == null || values[key] === '') throw new Error('Primary and sister service prices are both required when adding prices.')
+        }
+        if (item.service?.hasMaintenance && priceFields.slice(2).some(([key]) => values[key] == null || values[key] === '')) {
+          throw new Error('Both maintenance prices are required for this service.')
+        }
+        for (const [key] of suppliedPrices) payload[key] = String(values[key])
+      }
+      return itemService.addSize(payload)
+    }, 'Item size added successfully.', () => {
+      sizeForm.resetFields()
+      setSizeFormOpen(false)
+    })
   }
 
   const addNoSize = async () => {
@@ -126,9 +151,36 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
     await mutate('add-no-size', () => itemService.addSize({ itemId, itemVersion: item.version, size: null }),
       'Item without size added successfully.', () => {
         sizeForm.resetFields()
+        setSizeFormOpen(false)
         setSizeEligibility({ itemId, allowed: false, empty: false })
         setQuery((current) => ({ ...current, page: 1, size: '' }))
       })
+  }
+
+  const cancelSizeForm = () => {
+    sizeForm.resetFields()
+    setSizeFormOpen(false)
+  }
+
+  const saveScopes = async (values) => {
+    if (!canAddScope || lock.current) return
+    const label = values.inspectionScope.trim()
+    if (!label) return
+    // The endpoint skips active duplicates and reactivates matching revoked scopes.
+    if (!await confirmSave('inspection scope')) return
+    setScopeSaving(true)
+    try {
+      await itemService.addScopes(itemId, [label])
+      message.success('Inspection scope added successfully.')
+      scopeForm.resetFields()
+      setScopeFormOpen(false)
+      await refreshDetail()
+    } catch (err) {
+      message.error(err.message)
+      if (err.status === 409) await refreshDetail()
+    } finally {
+      setScopeSaving(false)
+    }
   }
 
   const openEditor = async (row) => {
@@ -184,27 +236,52 @@ export default function ItemDetail({ item, visible, onClose, afterClose, onUpdat
             <div><dt>Created By</dt><dd>{item.createdByName || '-'}</dd></div>
             <div><dt>Updated By</dt><dd>{item.updatedByName || '-'}</dd></div>
           </dl>
-          {!item.serviceId && !item.service && [
-            ['inspectionScopes', 'Inspection Scopes', 'inspectionScope'],
-            ['maintenanceScopes', 'Maintenance Scopes', 'scope'],
-          ].map(([key, title, field]) => <div key={key}>
-            <h4>{title}</h4>
-            {item[key]?.some((scope) => scope.revoked !== true) ? <ul>
-              {item[key].filter((scope) => scope.revoked !== true).map((scope) => <li key={scope.id}>{scope[field]}</li>)}
-            </ul> : <Typography.Text tone="secondary">No scopes</Typography.Text>}
-          </div>)}
         </section>
+        {!item.serviceId && !item.service && <section className="company-view-section">
+          <div className="company-view-section-heading">
+            <h3>Inspection Scopes</h3>
+            {canAddScope && !scopeFormOpen && <Button variant="dashed" icon={<PlusOutlined />}
+              onClick={() => setScopeFormOpen(true)}>Add Inspection scope</Button>}
+          </div>
+          {canAddScope && scopeFormOpen && <Form form={scopeForm} className="item-scope-form" layout="vertical" preserve={false} clearOnDestroy onFinish={saveScopes} disabled={scopeSaving}>
+            <Form.Item name="inspectionScope" rules={[{ required: true, whitespace: true, message: 'Inspection scope is required.' }, { max: 500, message: 'Maximum length is 500 characters.' }]}>
+              <Input maxLength={500} placeholder="Enter a new inspection scope" aria-label="New inspection scope" />
+            </Form.Item>
+            <Button variant="primary" icon={<PlusOutlined />} htmlType="submit" busy={scopeSaving}>Add</Button>
+          </Form>}
+          {item.inspectionScopes?.some((scope) => scope.revoked !== true) ? <ul className="item-scope-list">
+            {item.inspectionScopes.filter((scope) => scope.revoked !== true).map((scope) => <li key={scope.id}>{scope.inspectionScope}</li>)}
+          </ul> : <Typography.Text tone="secondary">No inspection scopes</Typography.Text>}
+        </section>}
         <section className="company-view-section">
           <div className="company-view-section-heading">
             <div><h3>Sizes and Standard Prices</h3><Typography.Text tone="secondary">Add sizes and manage their standard prices.</Typography.Text></div>
+            {canAddSize && !sizeFormOpen && <Button variant="primary" icon={<PlusOutlined />} onClick={() => setSizeFormOpen(true)}>Add Size</Button>}
           </div>
-          {canAddSize && <Form form={sizeForm} className="item-add-size-form" onFinish={addSize} disabled={Boolean(busy)} preserve={false} clearOnDestroy>
-            <Form.Item name="size" rules={sizeRules}><Input maxLength={100} placeholder="Enter a new size" aria-label="New size" /></Form.Item>
-            <Space wrap>
-              <Button variant="primary" icon={<PlusOutlined />} htmlType="submit" busy={busy === 'add'}>Add Size</Button>
-              {canAddNoSize && <Button icon={<PlusOutlined />} htmlType="button" busy={busy === 'add-no-size'} onClick={addNoSize}>Add No Size</Button>}
-            </Space>
-          </Form>}
+          {canAddSize && <div className={`item-add-size-panel${sizeFormOpen ? ' is-open' : ''}`} aria-hidden={!sizeFormOpen}>
+            {sizeFormOpen && <Form form={sizeForm} className="item-add-size-form" layout="vertical" onFinish={addSize} disabled={Boolean(busy)} preserve={false} clearOnDestroy>
+            <div className="item-add-size-top">
+              <Form.Item name="size" rules={sizeRules}><Input maxLength={100} placeholder="Enter a new size" aria-label="New size" /></Form.Item>
+              <Space wrap>
+                <Button variant="primary" icon={<PlusOutlined />} htmlType="submit" busy={busy === 'add'}>Add Size</Button>
+                {canAddNoSize && <Button icon={<PlusOutlined />} htmlType="button" busy={busy === 'add-no-size'} onClick={addNoSize}>Add No Size</Button>}
+                <Button htmlType="button" disabled={Boolean(busy)} onClick={cancelSizeForm}>Cancel</Button>
+              </Space>
+            </div>
+            <div className="item-add-size-prices">
+              <div className="item-add-size-prices-heading">
+                <Typography.Text strong>Optional standard prices</Typography.Text>
+                <Typography.Text tone="secondary">Leave all fields blank to create the size without prices.</Typography.Text>
+              </div>
+              <div className="item-price-grid">
+                {priceFields.filter((_, index) => index < 2 || hasMaintenance).map(([key, label]) =>
+                  <Form.Item key={key} name={key} label={label} rules={[optionalPriceRule]}>
+                    <PriceInput placeholder="Optional price" prefix="Rp" />
+                  </Form.Item>)}
+              </div>
+            </div>
+            </Form>}
+          </div>}
           {error && <div className="item-error" role="alert">{error} <Button onClick={() => setRefresh((value) => value + 1)}>Retry</Button></div>}
           <Table className="item-size-table" rowKey="id" busy={loading} dataSource={data.sizes}
             tableLayout="auto" scroll={{ x: 'max-content' }}

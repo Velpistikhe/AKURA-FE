@@ -61,23 +61,36 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
   const requestRef = useRef(0)
   const detailRequestRef = useRef(0)
   const savingRef = useRef(false)
+  const refreshListOnClose = useRef(false)
 
-  const load = useCallback(async () => {
+  // A background refresh updates the table in place, so the list never flashes
+  // its loading skeleton while the edit modal is open or closing.
+  const load = useCallback(async ({ background = false } = {}) => {
     const request = ++requestRef.current
-    setLoading(true)
-    setLoadError(false)
+    if (!background) { setLoading(true); setLoadError(false) }
     try {
       const response = await quotationService.list({ ...listFilters, page, limit: pageSize, isActive: canViewInactive ? activeFilter : 'true' })
       if (request !== requestRef.current) return
       setRecords(response.data?.quotations || [])
       setTotal(response.data?.pagination?.total || 0)
     } catch (error) {
-      if (request === requestRef.current) { setLoadError(true); message.error(error.message) }
+      if (request !== requestRef.current) return
+      // A failed background refresh only reports the error and keeps the current rows.
+      if (background) message.error(error.message)
+      else { setLoadError(true); message.error(error.message) }
     } finally {
-      if (request === requestRef.current) setLoading(false)
+      if (request === requestRef.current && !background) setLoading(false)
     }
   }, [page, pageSize, message, canViewInactive, activeFilter, listFilters])
   useEffect(() => { load(); return () => { requestRef.current++ } }, [load])
+
+  // Refreshes the table list exactly once per edit session, right after the edit modal
+  // closes, so the table always shows the changes made inside the modal.
+  const refreshListAfterEdit = () => {
+    if (!refreshListOnClose.current) return
+    refreshListOnClose.current = false
+    load({ background: true })
+  }
 
   const view = async (record, edit = false) => {
     if (edit && readOnly) return
@@ -88,10 +101,19 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
       if (request !== detailRequestRef.current) return
       if (!response.data?.id) throw new Error('Invalid quotation detail.')
       if (edit && !canUpdateQuotation(response.data, currentUser)) throw new Error('This quotation cannot be edited in its current state by your account.')
-      if (edit) { setEditingLoading(true); setEditing(response.data); setStale(false); setDetailOpen(false); setOpen(true) }
+      if (edit) { setEditingLoading(true); setEditing(response.data); setStale(false); setDetailOpen(false); refreshListOnClose.current = true; setOpen(true) }
       else { setDetail(response.data); setDetailOpen(true) }
     } catch (error) { message.error(error.message) }
     finally { if (request === detailRequestRef.current) setOpeningId(null) }
+  }
+
+  // Refetches a single quotation for the open modal. Every change made inside the edit
+  // modal refreshes only this record; the table list is refreshed once, when the modal closes.
+  const fetchQuotation = async (id) => {
+    try {
+      const response = await quotationService.get(id)
+      return response.data?.id ? response.data : null
+    } catch { return null }
   }
 
   const save = async (values) => {
@@ -103,17 +125,17 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
     try {
       if (!await confirmSave('quotation')) return
       const response = await quotationService.update(editing.id, { ...changes, version: editing.version })
+      // Refresh only this quotation (edit/detail modal). The table list waits for the modal to close.
+      const quotation = await fetchQuotation(editing.id) || response.data
       message.success('Quotation updated successfully.')
-      setEditing(response.data)
+      setEditing(quotation)
       setOpen(false)
-      setDetail(response.data)
+      setDetail(quotation)
       setDetailOpen(true)
-      await load()
     } catch (error) {
       message.error(error.message)
       if (error.status === 409) {
         if (editing) { setStale(true); message.warning('This quotation has changed. Reopen it to review the latest data before saving again.') }
-        await load()
       }
     } finally { savingRef.current = false; setSaving(false) }
   }
@@ -128,17 +150,17 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
         ? await quotationService.removeItem(editing.id, item.id, editing.version, item.version)
         : await quotationService.addItem(editing.id, { version: editing.version, itemSizeId: item.itemSizeId,
           quantityInspection: item.quantityInspection, quantityMaintenance: item.quantityMaintenance, discount: item.discount, note: item.note || null })
-      setEditing(response.data)
-      setDetail(response.data)
+      // Item add/delete never refetches the table list; only this quotation is refreshed.
+      const quotation = await fetchQuotation(editing.id) || response.data
+      setEditing(quotation)
+      setDetail(quotation)
       message.success(deleting ? 'Quotation item deleted.' : 'Quotation item added.')
-      await load()
       return true
     } catch (error) {
       message.error(error.message)
       if (error.status === 409) {
         setStale(true)
         message.warning('Reopen the quotation to review its latest data before changing items again.')
-        await load()
       }
       return false
     } finally { savingRef.current = false; setSaving(false) }
@@ -284,7 +306,7 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
       {readOnly ? <Tag>View only</Tag> : <Button variant="primary" icon={<PlusOutlined />} onClick={onCreate}>Add Quotation</Button>}
     </div>
     <Card>{loading ? <QuotationSkeleton variant="table" /> : loadError ? <div className="quotation-load-error" role="alert">
-      <Typography.Text>Unable to load quotations.</Typography.Text><Button onClick={load}>Retry</Button>
+      <Typography.Text>Unable to load quotations.</Typography.Text><Button onClick={() => load()}>Retry</Button>
     </div> : <Table className="quotation-content-ready" rowKey="id" columns={columns} dataSource={records} scroll={{ x: 'max-content' }} pagination={{
       current: page, pageSize, total, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100], showTotal: (count) => `${count} quotations`,
       onChange: (next, size) => { setPage(size !== pageSize ? 1 : next); setPageSize(size) },
@@ -299,7 +321,7 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
     }} />}</Card>
     <Modal title={editing ? `Edit Quotation ${quotationNumber(editing)}` : 'Edit Quotation'} visible={!readOnly && open} width={1080}
       okText="Save" cancelText="Cancel" busy={saving} onOk={() => form.submit()} okButtonProps={{ disabled: stale || editingLoading }}
-      onCancel={() => { if (!saving) setOpen(false) }} cancelButtonProps={{ disabled: saving }} closable={!saving} mask={{ closable: !saving }} unmountOnClose>
+      onCancel={() => { if (!saving) setOpen(false) }} afterClose={refreshListAfterEdit} cancelButtonProps={{ disabled: saving }} closable={!saving} mask={{ closable: !saving }} unmountOnClose>
       {editing && <QuotationForm key={editing.id} form={form} record={editing} saving={saving} blocked={stale} onFinish={save} onLoadingChange={setEditingLoading} onAddItem={(item) => changeItem(item)} onRemoveItem={(item) => changeItem(item, true)} />}
       {stale && <Typography.Text tone="warning">Close this form and reopen the quotation to load the latest data.</Typography.Text>}
     </Modal>

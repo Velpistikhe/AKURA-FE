@@ -18,6 +18,7 @@ export const itemService = {
   download: (params = {}) => apiRequest(`${ITEM_PATH}/sizes/export?${withQuery(params)}`, { responseType: 'blob' }),
   get: (itemId) => apiRequest(`${ITEM_PATH}/${itemId}`),
   update: (itemId, data) => apiRequest(`${ITEM_PATH}/${itemId}`, { method: 'PATCH', body: JSON.stringify(data) }),
+  addScopes: (itemId, inspectionScopes) => apiRequest(`${ITEM_PATH}/${itemId}/scopes`, { method: 'POST', body: JSON.stringify({ inspectionScopes }) }),
   getSize: (id) => apiRequest(`${ITEM_PATH}/sizes/${id}`),
   createPrice: (id, data) => apiRequest(`${ITEM_PATH}/sizes/${id}/price`, { method: 'POST', body: JSON.stringify(data) }),
   updatePrice: (id, data) => apiRequest(`${ITEM_PATH}/sizes/${id}/price`, { method: 'PATCH', body: JSON.stringify(data) }),

@@ -3,27 +3,106 @@
 .item-detail { min-width: 0; }
 .item-detail > section { min-width: 0; }
 .item-history-detail > .ant-card { min-width: 0; border-radius: 14px; background: var(--surface-subtle, #fafbfe); }
-.item-add-size-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 10px; margin-bottom: 18px; }
+.item-add-size-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: grid-template-rows .22s ease, opacity .18s ease, transform .22s ease;
+}
+.item-add-size-panel.is-open { grid-template-rows: 1fr; opacity: 1; transform: translateY(0); }
+.item-add-size-panel > .item-add-size-form { min-height: 0; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) {
+  .item-add-size-panel { transition: none; transform: none; }
+}
+
+.item-add-size-form {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border, #e5eaf3);
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, .04);
+}
 .item-add-size-form .ant-form-item { margin-bottom: 0; }
+.item-add-size-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 10px; }
+.item-add-size-top .ant-space { padding-top: 4px; }
+.item-add-size-prices {
+  display: grid;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border, #e5eaf3);
+}
+.item-add-size-prices-heading { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.item-add-size-prices .ant-form-item-label { padding-bottom: 4px; }
+.item-add-size-prices .ant-form-item-label > label { color: var(--text-secondary, #5c6c84); font-size: 12px; font-weight: 600; }
+.item-add-size-prices .ant-form-item-explain { font-size: 11px; }
 .item-price-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
 .item-price-grid .ant-input-number { width: 100%; }
+.item-scope-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+}
+.item-scope-list li { overflow-wrap: anywhere; }
+.item-scope-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.item-scope-form .ant-form-item { margin-bottom: 0; }
+.item-scope-form .ant-form-item-control-input-content { min-width: 0; }
+.item-scope-form .ant-input { width: 100%; }
 .item-size-table { min-width: 0; max-width: 100%; }
 .item-size-table .ant-table-cell { white-space: nowrap; overflow-wrap: normal; }
 .item-size-table .ant-tag { white-space: nowrap; overflow-wrap: normal; }
 .item-size-table .ant-pagination { flex-wrap: wrap; }
 
-.catalog-scopes-size-row {
+.item-create-form .catalog-scopes {
+  padding: 18px;
+  margin-bottom: 22px;
+  border: 1px solid var(--border, #e5eaf3);
+  border-radius: 16px;
+  background: var(--surface-subtle, #f7f9fe);
+}
+.item-create-form .catalog-scopes-heading { margin-bottom: 8px; }
+.item-create-form .catalog-scopes-size-help { margin: 0 0 16px; max-width: 620px; line-height: 1.55; }
+.item-create-form .catalog-scopes-size-row {
   display: grid;
-  grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
+  gap: 14px;
+  padding: 16px;
+  margin-top: 12px;
+  border: 1px solid var(--border, #e5eaf3);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+.item-create-form .catalog-scopes-size-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
 }
-.catalog-scopes-size-row .item-price-grid { gap: 0 12px; }
+.item-create-form .catalog-scopes-size-title { font-size: 13px; }
+.item-create-form .catalog-scopes-size-row .item-price-grid { gap: 0 14px; }
+.item-create-form .catalog-scopes-size-row .ant-form-item-label { padding-bottom: 5px; }
+.item-create-form .catalog-scopes-size-row .ant-form-item-label > label { font-size: 12px; font-weight: 600; }
+.item-create-form .catalog-scopes-size-row .ant-input-number { width: 100%; }
+.item-create-form .catalog-scopes-size-row .ant-form-item-explain { font-size: 11px; }
+.item-create-form .catalog-scopes-size-delete { margin-top: 0; }
 
 .item-error { margin-bottom: 16px; color: var(--text-secondary, #5c6c84); }
 @media (max-width: 600px) {
-  .item-add-size-form, .item-price-grid { grid-template-columns: 1fr; }
-  .catalog-scopes-size-row { grid-template-columns: 1fr auto; }
-  .catalog-scopes-size-row .item-price-grid { grid-column: 1 / -1; grid-row: 2; }
+  .item-add-size-top, .item-price-grid, .item-scope-form { grid-template-columns: 1fr; }
+  .item-add-size-form { padding: 14px; }
+  .item-create-form .catalog-scopes-size-row { grid-template-columns: 1fr; }
+  .item-create-form .catalog-scopes-size-row .item-price-grid { grid-template-columns: 1fr; }
+  .item-create-form .catalog-scopes-size-delete { margin-top: 0; }
   .item-page .company-page-heading > .ant-space { width: 100%; }
 }
