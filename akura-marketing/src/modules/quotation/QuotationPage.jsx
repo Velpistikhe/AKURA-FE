@@ -281,9 +281,9 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
       <CreateWorkOrderAction currentUser={currentUser} quotation={record} onCreated={(workOrder) => {
         setRecords((current) => current.map((row) => row.id === record.id ? { ...row, hasWorkOrder: true, workOrderId: workOrder.id } : row))
       }} />
-      <Popconfirm title="Delete quotation?" description="The quotation and its items will be deactivated. If this is a revision, the previous quotation will be restored to approved." okText="Delete" cancelText="Cancel" onConfirm={() => remove(record)}>
+      {record.status === 'CREATED' && <Popconfirm title="Delete quotation?" description="The quotation and its items will be deactivated." okText="Delete" cancelText="Cancel" onConfirm={() => remove(record)}>
         <Button variant="text" isDanger icon={<DeleteOutlined />} busy={deletingId === record.id} aria-label={`Delete quotation ${record.no}`} />
-      </Popconfirm>
+      </Popconfirm>}
     </Space> },
   ]
   const detailFields = detail ? [

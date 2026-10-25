@@ -124,7 +124,7 @@ export default function ItemPage() {
       name: editor.item?.name ?? '',
       uom: editor.item?.uom ?? '',
       serviceId: editor.item?.serviceId ?? editor.item?.service?.id,
-      sizes: [], inspectionScopes: [], maintenanceScopes: [],
+      sizes: [], inspectionScopes: [],
     })
   }
 
@@ -250,7 +250,7 @@ export default function ItemPage() {
       busy={saving} okText={editor?.item ? 'Save' : 'Add'} onOk={() => form.submit()} onCancel={() => setEditor(null)}
       cancelButtonProps={{ disabled: saving }} closable={!saving} keyboard={!saving} mask={{ closable: !saving }} unmountOnClose>
       {editor && <Form key={editor.item?.id || 'create'} className="item-create-form" form={form} layout="vertical" preserve={false} clearOnDestroy
-        initialValues={{ name: editor.item?.name || '', uom: editor.item?.uom || '', sizes: [], inspectionScopes: [], maintenanceScopes: [] }} onFinish={save} disabled={saving}>
+        initialValues={{ name: editor.item?.name || '', uom: editor.item?.uom || '', sizes: [], inspectionScopes: [] }} onFinish={save} disabled={saving}>
         <>
           {servicesError && <div role="alert" className="item-error">{servicesError} <Button onClick={() => loadServices(editor.item ? Boolean(editor.item.service?.hasMaintenance) : null)}>Retry</Button></div>}
           <Form.Item name="serviceId" label="Service (optional)"
@@ -269,28 +269,25 @@ export default function ItemPage() {
         <Form.Item name="uom" label="UOM (Unit of Measure)" rules={[{ required: true, whitespace: true, message: 'UOM is required.' }, { max: 50 }]}>
           <Input maxLength={50} placeholder="e.g. JOINT" />
         </Form.Item>
-        {!editor.item && !serviceId && [
-          ['inspectionScopes', 'Inspection Scopes', 'Inspection scope'],
-          ['maintenanceScopes', 'Maintenance Scopes', 'Maintenance scope'],
-        ].map(([name, title, label]) => <Form.List key={name} name={name} rules={[{ validator: async (_, scopes = []) => {
+        {!editor.item && !serviceId && <Form.List name="inspectionScopes" rules={[{ validator: async (_, scopes = []) => {
           if (scopes.length > 100) throw new Error('A maximum of 100 scopes is allowed.')
           const names = scopes.map((scope) => labelKey(scope || ''))
           if (new Set(names).size !== names.length) throw new Error('Scopes must be unique.')
         } }]}>
           {(fields, { add, remove: removeScope }, { errors }) => <div className="catalog-scopes">
             <div className="catalog-scopes-heading">
-              <Typography.Text strong>{title}</Typography.Text>
-              <Button variant="dashed" icon={<PlusOutlined />} disabled={fields.length >= 100} onClick={() => add('')}>Add {label}</Button>
+              <Typography.Text strong>Inspection Scopes</Typography.Text>
+              <Button variant="dashed" icon={<PlusOutlined />} disabled={fields.length >= 100} onClick={() => add('')}>Add Inspection scope</Button>
             </div>
             {fields.map(({ key, ...field }) => <div className="catalog-scope-row" key={key}>
-              <Form.Item {...field} rules={[{ required: true, whitespace: true, message: `${label} is required.` }, { max: 500 }]}>
-                <Input maxLength={500} placeholder={label} aria-label={`${label} ${field.name + 1}`} />
+              <Form.Item {...field} rules={[{ required: true, whitespace: true, message: 'Inspection scope is required.' }, { max: 500 }]}>
+                <Input maxLength={500} placeholder="Inspection scope" aria-label={`Inspection scope ${field.name + 1}`} />
               </Form.Item>
-              <Button variant="text" isDanger icon={<DeleteOutlined />} onClick={() => removeScope(field.name)} aria-label={`Delete ${label.toLowerCase()} ${field.name + 1}`} />
+              <Button variant="text" isDanger icon={<DeleteOutlined />} onClick={() => removeScope(field.name)} aria-label={`Delete inspection scope ${field.name + 1}`} />
             </div>)}
             <Form.ErrorList errors={errors} />
           </div>}
-        </Form.List>)}
+        </Form.List>}
         {!editor.item && <Form.List name="sizes" rules={[{ validator: async (_, sizes = []) => {
           if (sizes.length > 100) throw new Error('A maximum of 100 sizes is allowed.')
           if (sizes.length > 1 && sizes.some((size) => size?.size === null)) throw new Error('A variant without a size cannot be combined with other sizes.')

@@ -11,8 +11,8 @@ export function createItemPayload(values) {
   }
   return {
     ...(values.serviceId ? { serviceId: values.serviceId } : {
+      // Swagger CreateItemRequest: a standalone item accepts inspectionScopes only.
       inspectionScopes: (values.inspectionScopes || []).map((scope) => scope.trim()),
-      maintenanceScopes: (values.maintenanceScopes || []).map((scope) => scope.trim()),
     }),
     name: values.name.trim(),
     uom: values.uom.trim(),
