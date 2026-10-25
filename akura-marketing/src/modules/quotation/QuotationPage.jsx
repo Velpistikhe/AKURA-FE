@@ -258,15 +258,15 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
     { title: 'Customer Contact', dataIndex: 'customerSnapshot', width: 200 },
     { title: 'Status', dataIndex: 'status', width: 200, render: (value) => <Tag>{displayEnum(value)}</Tag>,
       filters: QUOTATION_STATUSES.map((value) => ({ text: displayEnum(value), value })), filterMultiple: false, filteredValue: listFilters.status ? [listFilters.status] : null },
-    { title: 'Invoice Status', dataIndex: 'invoiceStatus', width: 170, render: (value) => <Tag>{displayEnum(value)}</Tag>,
-      filters: [{ text: 'No Invoice', value: 'null' }, ...QUOTATION_INVOICE_STATUSES.map((value) => ({ text: displayEnum(value), value }))], filterMultiple: false, filteredValue: listFilters.invoiceStatus ? [listFilters.invoiceStatus] : null },
     { title: 'State', dataIndex: 'isActive', width: 110, render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag>,
       filters: canViewInactive ? [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }] : undefined,
       filterMultiple: false, filteredValue: canViewInactive && activeFilter ? [activeFilter] : null },
+    { title: 'Invoice Status', dataIndex: 'invoiceStatus', width: 170, render: (value) => <Tag>{displayEnum(value)}</Tag>,
+      filters: [{ text: 'No Invoice', value: 'null' }, ...QUOTATION_INVOICE_STATUSES.map((value) => ({ text: displayEnum(value), value }))], filterMultiple: false, filteredValue: listFilters.invoiceStatus ? [listFilters.invoiceStatus] : null },
+    { title: 'Work Order Status', dataIndex: 'workOrderStatus', width: 170, render: (value) => <Tag>{value ? displayEnum(value) : '-'}</Tag> },
     ...[['subTotal', 'Subtotal'], ['taxAmount', 'Tax Amount'], ['total', 'Total']].map(([dataIndex, title]) => ({
       title, dataIndex, width: 150, align: 'right', render: (value) => <span style={{ whiteSpace: 'nowrap' }}>{money(value)}</span>,
     })),
-    { title: 'Work Order', dataIndex: 'hasWorkOrder', width: 150, render: (value, record) => <Tag>{value === true || record.workOrderId ? 'Created' : value === false ? 'Not Created' : '-'}</Tag> },
     { title: 'Created At', dataIndex: 'createdAt', width: 150, render: (value) => dateValue(value) || '-' },
     { title: 'Updated At', dataIndex: 'updatedAt', width: 150, render: (value) => dateValue(value) || '-' },
     { title: 'Actions', key: 'actions', width: 220, fixed: 'right', render: (_, record) => <Space>
