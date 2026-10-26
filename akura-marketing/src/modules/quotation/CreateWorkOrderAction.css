@@ -1,4 +1,4 @@
-.work-order-modal-skeleton { display: grid; gap: 24px; padding: 8px 0 18px; }
+﻿.work-order-modal-skeleton { display: grid; gap: 24px; padding: 8px 0 18px; }
 .work-order-modal-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
 .work-order-modal-form { min-width: 0; }
 .work-order-modal-form__row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
@@ -20,3 +20,8 @@
 .work-order-modal-skeleton__sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @keyframes work-order-modal-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .work-order-modal-skeleton__label, .work-order-modal-skeleton__input { animation: none; } }
+.work-order-modal-items { display: grid; gap: 12px; margin: 4px 0 20px; }
+.work-order-modal-items .ant-card-body { display: grid; gap: 12px; }
+.work-order-modal-items__heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.work-order-modal-items .ant-table-cell { vertical-align: top; }
+@media (max-width: 600px) { .work-order-modal-items__heading { align-items: flex-start; flex-direction: column; } }
