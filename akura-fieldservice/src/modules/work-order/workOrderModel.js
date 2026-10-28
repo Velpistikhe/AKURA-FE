@@ -29,6 +29,63 @@ export const workOrderFormValues = (record) => ({
   inspectors: (record.inspectors || []).map((inspector) => inspector.name),
 })
 
+// Creating a Work Order is a MARKETING or FIELD_SERVICE write: the backend
+// guards the section on the create route, so the button is hidden for the
+// read-only roles instead of failing after submission.
+export const canCreateWorkOrders = (user) => Boolean(canAccessWorkOrders(user)
+  && ['MARKETING', 'FIELD_SERVICE'].includes(user.section))
+
+// The quantities sent to the backend are Decimal(15,3) values, so the client
+// keeps at most three decimals and never sends a negative amount.
+export const MAX_QUANTITY = 999999999999.999
+
+export function normalizeQuantity(value) {
+  if (value === '' || value == null) return null
+  const number = Number(value)
+  if (!Number.isFinite(number) || number < 0 || number > MAX_QUANTITY) return null
+  // Decimal(15,3) accepts three decimals; more precision would be rounded by
+  // the database, so it is rejected before the request is sent.
+  if (!/^\d{1,12}(\.\d{1,3})?$/.test(String(number))) return null
+  return number
+}
+
+export function workOrderCreatePayload(values, { quotation, items, inspectors }) {
+  if (!quotation?.id) throw new Error('Select an approved quotation.')
+  if (!validDate(values.startDate)) throw new Error('Enter a valid start date.')
+  if (!validDate(values.endDate)) throw new Error('Enter a valid end date.')
+  if (values.endDate < values.startDate) throw new Error('End date must be on or after start date.')
+  const inspectorIds = (values.inspectors || []).map((id) => (typeof id === 'string' ? id.trim() : ''))
+  if (inspectorIds.length < 1 || inspectorIds.length > 100) throw new Error('Select at least one and up to 100 inspectors.')
+  if (new Set(inspectorIds.map((id) => id.toLowerCase())).size !== inspectorIds.length) throw new Error('Inspectors must be unique.')
+  const inspectorById = new Map((inspectors || []).map((inspector) => [inspector.id?.toLowerCase(), inspector]))
+  const inspectorPairs = inspectorIds.map((userId) => {
+    const snapshot = inspectorById.get(userId.toLowerCase())
+    if (!snapshot?.name) throw new Error('An inspector option is no longer available. Reload the inspector list and try again.')
+    return { userId, name: snapshot.name }
+  })
+  const lines = (items || []).filter((item) => item.selected)
+  if (lines.length < 1) throw new Error('Select at least one item for the work order.')
+  if (lines.length > 100) throw new Error('A work order accepts at most 100 items.')
+  const quotationItemSizeIds = new Set((quotation.items || []).map((item) => item.itemSizeId?.toLowerCase()))
+  const payloadItems = lines.map((item) => {
+    if (!quotationItemSizeIds.has(item.itemSizeId.toLowerCase())) {
+      throw new Error('Every selected item must belong to the selected quotation. Reload the quotation items and try again.')
+    }
+    const quantityInspection = normalizeQuantity(item.quantityInspection)
+    const quantityMaintenance = normalizeQuantity(item.quantityMaintenance)
+    if (quantityInspection === null) throw new Error(`Enter a valid inspection quantity for ${item.itemName || 'the item'}.`)
+    if (quantityMaintenance === null) throw new Error(`Enter a valid maintenance quantity for ${item.itemName || 'the item'}.`)
+    return { itemSizeId: item.itemSizeId, quantityInspection, quantityMaintenance }
+  })
+  return { quotationId: quotation.id, startDate: values.startDate, endDate: values.endDate, inspectors: inspectorPairs, items: payloadItems }
+}
+
+export function workOrderCreateComplete(values = {}, itemCount = 0) {
+  return validDate(values.startDate) && validDate(values.endDate) && values.endDate >= values.startDate
+    && Array.isArray(values.inspectors) && values.inspectors.length > 0
+    && itemCount > 0 && itemCount <= 100
+}
+
 function validDate(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value || '')
     && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value

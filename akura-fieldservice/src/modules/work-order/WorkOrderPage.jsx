@@ -2,7 +2,8 @@ import TableSearchFilter from '../../components/global/TableSearchFilter'
 import { useEffect, useRef, useState } from 'react'
 import { App, Button, Card, CheckOutlined, DeleteOutlined, EditOutlined, EyeOutlined, Modal, Popconfirm, Result, Table, Tag, Typography } from '../../components/global'
 import { workOrderService } from '../../services/workOrderService'
-import { canAccessWorkOrders, canEditWorkOrders, canRevokeWorkOrder, canStartWorkOrder, WORK_ORDER_STATUSES, activeQuotationItems, quotationNumber } from './workOrderModel'
+import { canAccessWorkOrders, canCreateWorkOrders, canEditWorkOrders, canRevokeWorkOrder, canStartWorkOrder, WORK_ORDER_STATUSES, activeQuotationItems, quotationNumber } from './workOrderModel'
+import WorkOrderCreate from './WorkOrderCreate'
 import WorkOrderEdit from './WorkOrderEdit'
 import WorkOrderHistory from './WorkOrderHistory'
 import './CompanyPage.css'
@@ -67,6 +68,7 @@ function WorkOrderList({ currentUser }) {
   }
   return <section className="company-page work-order-page">
     <div className="company-page-heading"><div><Typography.Title level={2}>Work Orders</Typography.Title><Typography.Text tone="secondary">View work orders for your branch.</Typography.Text></div>
+      {canCreateWorkOrders(currentUser) && <WorkOrderCreate currentUser={currentUser} onCreated={() => setRetry((value) => value + 1)} />}
     </div>
     <Card>
       {error && <div role="alert">{error} <Button onClick={() => setRetry((value) => value + 1)}>Retry</Button></div>}

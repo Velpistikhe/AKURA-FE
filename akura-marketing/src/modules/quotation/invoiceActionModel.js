@@ -1,11 +1,38 @@
-export const canCreateInvoice = (user, quotation) => user?.section === 'FINANCE'
-  && quotation?.isActive === true && quotation.status === 'APPROVED'
-  && (quotation.invoiceStatus == null || quotation.invoiceStatus === '')
+import { canManageQuotations } from './quotationAccess'
 
-export function invoicePayload(values, quotation) {
+export const FINANCE_DOCUMENT_KINDS = [
+  { value: 'INVOICE', label: 'Invoice' },
+  { value: 'PROFORMA_INVOICE', label: 'Proforma Invoice' },
+]
+
+export const canCreateFinanceDocument = (user, quotation) => canManageQuotations(user)
+  && quotation?.isActive === true && quotation.status === 'APPROVED'
+  && (!(quotation.hasWorkOrder || quotation.workOrderId || quotation.workOrderStatus)
+    || quotation.workOrderStatus === 'COMPLETED')
+
+export function financeDocumentDate(now = new Date()) {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
+
+export function validateFinanceDocumentDate(value, documentDate = financeDocumentDate()) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'Due date is required.'
+  const parsed = new Date(`${value}T00:00:00Z`)
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) return 'Enter a valid due date.'
+  if (value < documentDate) return 'Due date cannot precede the document date.'
+  return null
+}
+
+export function financeDocumentPayload(quotationId, values) {
+  const dateError = validateFinanceDocumentDate(values.dueDate)
+  if (dateError) throw new Error(dateError)
+  const location = values.location?.trim()
+  if (!location || location.length > 255) throw new Error('Location is required and must not exceed 255 characters.')
+  if (!FINANCE_DOCUMENT_KINDS.some(({ value }) => value === values.kind)) throw new Error('Select a valid document type.')
   return {
-    title: values.title.trim(),
-    dueDate: values.dueDate || null, notes: values.notes?.trim() || null,
-    status: 'DRAFT', quotationId: quotation.id, quotationVersion: quotation.version,
+    quotationId,
+    kind: values.kind,
+    dueDate: values.dueDate,
+    location,
   }
 }
+

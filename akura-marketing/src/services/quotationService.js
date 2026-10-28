@@ -7,6 +7,7 @@ export const quotationService = {
       .filter(([, value]) => value !== '' && value != null),
   )}`),
   get: (id) => apiRequest(`${PATH}/${id}`),
+  createInvoice: (id, { kind, dueDate, location }) => apiRequest(`${PATH}/${encodeURIComponent(id)}/invoices`, { method: 'POST', body: JSON.stringify({ quotationId: id, kind, dueDate, location }) }),
   createWorkOrder: (id, payload) => apiRequest(`${PATH}/${id}/work-orders`, { method: 'POST', body: JSON.stringify(payload) }),
   history: (id, { page = 1, limit = 20, action, sortBy = 'version', sortOrder = 'desc' } = {}) => apiRequest(`${PATH}/${encodeURIComponent(id)}/history?${new URLSearchParams({
     page, limit, sortBy, sortOrder, ...(action ? { action } : {}),

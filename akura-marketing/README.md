@@ -9,6 +9,16 @@ In development, `src/services/api.js` routes by path prefix so the MFE talks to 
 - `/auth/*` and cross-module paths (e.g. `/finance/invoices`) → issuing gateway (`https://akura-api-gateway.vercel.app/api/v1` by default; override with `VITE_AUTH_BASE_URL`)
 
 In production all three prefixes resolve to the same-origin `/api/v1` gateway. Direct-service calls send `Authorization: Bearer` using the access token handed over by the Shell; auth calls rely on the HttpOnly cookie only. Start the backend services on ports `5003` (Marketing) and `5005` (Field Service) alongside the gateway, then run `npm.cmd run dev` and open the Shell at `http://localhost:4173`.
+## Finance documents
+
+- Marketing creates a DRAFT Invoice or Proforma Invoice from an **approved, active quotation** through the action button on each row of the quotation table (`src/modules/quotation/CreateInvoiceAction.jsx`), posting to `POST /api/v1/marketing/quotations/{quotationId}/invoices`.
+- The create payload (`CreateFinanceDocumentFromQuotationRequest`) sends only required `quotationId` (matching the URL), `kind` (`INVOICE` or `PROFORMA_INVOICE`), `dueDate` and trimmed `location` (1-255 characters). The client never selects billed lines or prices and cannot set the document number, date, tax or totals: Marketing forwards these four fields and Finance re-fetches the quotation to verify branch ownership, APPROVED status, version and every billed item value before generating the document as DRAFT.
+- `dueDate` cannot precede the document date. Finance unavailability returns `503`; a quotation that is not APPROVED or no longer matches Marketing returns `409`. Responses 403, 404 and 409 refresh the quotation list; 503 displays an availability error without automatic retry.
+- Requires section MARKETING and an assigned office branch. An existing Work Order must be COMPLETED; the backend revalidates live Work Order status and branch ownership. `src/modules/quotation/invoiceActionModel.js` holds the create guard (`canCreateFinanceDocument`) and the payload builder (`financeDocumentPayload`); `src/services/quotationService.js` calls the endpoint.
+- Backend: `/api/v1/marketing/quotations/{quotationId}/invoices`, following local Swagger at `http://localhost:5000/api-docs.json`.
+- Validation: from the workspace root, run `node --test tests/marketing-invoice.test.mjs` for access rules, payload validation, mocked API requests, error responses and concurrent submit protection.
+
+
 
 ## Work orders
 
