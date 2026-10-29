@@ -77,8 +77,8 @@ export default function QuotationForm({ form, record, copySource, saving, blocke
             { required: true, whitespace: true, message: `${label} is required.` },
             { max: quotationTextMaxLength(key) },
           ]}>
-            {['supplyAkura', 'supplyCustomer'].includes(key)
-              ? <Input.TextArea maxLength={quotationTextMaxLength(key)} autoSize={{ minRows: 3, maxRows: 6 }} />
+            {['jobStart', 'accomplished', 'deliveryReports', 'deliveryInvoice', 'supplyAkura', 'supplyCustomer'].includes(key)
+              ? <Input.TextArea maxLength={quotationTextMaxLength(key)} autoSize={{ minRows: 3, maxRows: 6 }} placeholder={key === 'jobStart' ? 'e.g. Within 7 days after purchase order approval' : undefined} />
               : <Input maxLength={quotationTextMaxLength(key)} placeholder={key === 'jobStart' ? 'e.g. Within 7 days after purchase order approval' : undefined} />}
           </Form.Item>
         ))}

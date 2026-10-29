@@ -4,7 +4,6 @@ import { Table } from '../../components/ResponsiveTable'
 import { Button, Modal } from '../../components/FinanceControls'
 import { EyeOutlined, ReloadOutlined } from '@ant-design/icons'
 import { quotationService } from '../../services/quotationService'
-import CreateInvoiceAction from './CreateInvoiceAction'
 import './QuotationPage.css'
 
 const money = (value) => value == null ? '-' : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value)
@@ -20,7 +19,7 @@ const errorText = (error) => error.status === 403
   ? 'Your account cannot read quotation references in the current branch.'
   : error.message
 
-export default function QuotationPage({ currentUser }) {
+export default function QuotationPage() {
   const [query, setQuery] = useState({ page: 1, limit: 20 })
   const [data, setData] = useState({ quotations: [], pagination: { total: 0 } })
   const [loading, setLoading] = useState(true)
@@ -85,7 +84,6 @@ export default function QuotationPage({ currentUser }) {
       { title: 'Total', dataIndex: 'total', width: 180, render: money },
       { title: 'Actions', key: 'actions', width: 140, fixed: 'right', render: (_, row) => <Space>
         <Button type="text" icon={<EyeOutlined />} loading={openingId === row.id} aria-label={`View quotation ${number(row)}`} onClick={() => view(row)} />
-        <CreateInvoiceAction currentUser={currentUser} quotation={row} onCreated={() => setRetry((value) => value + 1)} />
       </Space> },
     ]} locale={{ emptyText: error ? 'Quotations could not be loaded.' : 'No quotations available.' }} pagination={{
       current: query.page, pageSize: query.limit, total: data.quotations?.length || 0, showSizeChanger: true,

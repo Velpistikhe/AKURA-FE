@@ -1,13 +1,13 @@
 import TableSearchFilter from '../../components/global/TableSearchFilter'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Alert, App, Card, Form, Input, Popconfirm, Select, Space, Tag, Typography } from 'antd'
+import { Alert, App, Card, Form, Popconfirm, Space, Tag, Typography } from 'antd'
 import { Table } from '../../components/ResponsiveTable'
 import { EyeOutlined, HistoryOutlined, PlusOutlined } from '@ant-design/icons'
 import { Button, Modal } from '../../components/FinanceControls'
-import { documentService, getQuotationReference, resolveBillingPrices } from '../../services/documentService'
-import { canEdit, canFinalize, dateValue, documentDate, documentPayload, formValues, money, validateDueDate } from './documentModel'
+import { documentService } from '../../services/documentService'
+import { canEdit, canFinalize, dateValue, documentPayload, formValues, money } from './documentModel'
+import DocumentForm from './DocumentForm'
 
-const uuidRule = { pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, message: 'Enter a valid quotation ID.' }
 const displayEnum = (value) => value ? String(value).replaceAll('_', ' ') : '-'
 const itemColumns = [
   { title: 'Service', dataIndex: 'serviceName', width: 240, render: (value) => value || 'Standalone' },
@@ -23,12 +23,10 @@ const itemColumns = [
   { title: 'Maintenance Price', dataIndex: 'priceMaintenance', width: 160, align: 'right', render: money },
   { title: 'Subtotal', dataIndex: 'subTotal', width: 150, align: 'right', render: money },
 ]
-export default function DocumentPage({ kind, title, currentUser }) {
+export default function DocumentPage({ kind, title }) {
   const service = useMemo(() => documentService(kind), [kind])
   const { message } = App.useApp()
   const [form] = Form.useForm()
-  const source = Form.useWatch('source', form) || 'QUOTATION'
-  const canCreateDirect = currentUser?.section === 'FINANCE'
   const [query, setQuery] = useState({ page: 1, limit: 20, search: '', status: undefined })
   const [data, setData] = useState({ documents: [], pagination: {} })
   const [loading, setLoading] = useState(true)
@@ -90,18 +88,7 @@ export default function DocumentPage({ kind, title, currentUser }) {
   })
   const save = (values) => run(async () => {
     if (stale) return
-    let quotation
-    let prices
-    if (!editor.record && values.source !== 'DIRECT') {
-      quotation = (await getQuotationReference(values.quotationId.trim())).data
-      if (!quotation?.isActive || quotation.status !== 'APPROVED') throw new Error('Select an active approved quotation.')
-    } else if (!editor.record) {
-      if (!canCreateDirect) throw new Error('Direct documents require Finance access.')
-      const ids = (values.items || []).map(item => item.itemSizeId)
-      if (!ids.length || new Set(ids).size !== ids.length) throw new Error('Select unique item sizes.')
-      prices = (await resolveBillingPrices(values.companyId.trim(), ids)).data
-    }
-    const payload = documentPayload(values, editor.record, quotation, prices)
+    const payload = documentPayload(values, editor.record)
     if (!payload) { message.info('No changes were made.'); return }
     const response = editor.record ? await service.update(editor.record.id, payload) : await service.create(payload)
     setEditor(null); setDetail(response.data); setReload((value) => value + 1); message.success(`${title} saved.`)
@@ -122,13 +109,14 @@ export default function DocumentPage({ kind, title, currentUser }) {
   })
   const detailFields = detail ? [
     ['Number', detail.number], ['Title', detail.title], ['Source', displayEnum(detail.source)], ['Status', displayEnum(detail.status)],
+    ['Purchase Order Number', detail.purchaseOrderNumber], ['Purchase Order Date', dateValue(detail.purchaseOrderDate)],
     ['Date', dateValue(detail.date)], ['Due Date', dateValue(detail.dueDate)], ['Location', detail.location],
     ['Company', detail.companySnapshot?.name || detail.quotationSnapshot?.companySnapshot?.name],
     ...(['QUOTATION'].includes(detail.source) ? [['Quotation', detail.quotationSnapshot?.subject]] : []),
     ['State', detail.isActive === false ? 'Inactive' : 'Active'], ['Notes', detail.notes],
   ] : []
   return <section className="finance-page">
-    <div className="finance-heading"><div><Typography.Title level={2}>{title}</Typography.Title><Typography.Text type="secondary">Manage documents created from customer quotations.</Typography.Text></div>
+    <div className="finance-heading"><div><Typography.Title level={2}>{title}</Typography.Title><Typography.Text type="secondary">Manage invoices and proforma invoices from purchase orders.</Typography.Text></div>
       <Button icon={<PlusOutlined />} type="primary" onClick={() => edit()} disabled={busy}>Add {title}</Button></div>
     {error && <Alert className="finance-error" type="error" showIcon title="Unable to load documents" description={error} />}
     <Card><Table rowKey="id" loading={loading} dataSource={data.documents} scroll={{ x: 1100 }} columns={[
@@ -140,33 +128,8 @@ export default function DocumentPage({ kind, title, currentUser }) {
      ]} onChange={(_, filters, _sorter, extra) => {
       if (extra.action === 'filter') setQuery((current) => ({ ...current, page: 1, search: (filters.search?.[0] || '').trim(), status: filters.status?.[0] }))
     }} pagination={{ current: query.page, pageSize: query.limit, total: data.pagination.total || 0, showSizeChanger: true, pageSizeOptions: [10, 20, 50, 100], onChange: (page, limit) => setQuery((value) => ({ ...value, page: limit !== value.limit ? 1 : page, limit })) }} /></Card>
-    <Modal title={`${editor?.record ? 'Edit' : 'Add'} ${title}`} open={Boolean(editor)} onCancel={() => { if (!busy) setEditor(null) }} onOk={() => form.submit()} confirmLoading={busy} okButtonProps={{ disabled: stale }} cancelButtonProps={{ disabled: busy }} closable={!busy} mask={{ closable: !busy }} destroyOnHidden>
-      <Form form={form} layout="vertical" onFinish={save} disabled={busy || stale}>
-        {!editor?.record && <Form.Item name="source" label="Source" rules={[{ required: true }]}><Select options={[{ value: 'QUOTATION', label: 'Quotation' }, ...(canCreateDirect ? [{ value: 'DIRECT', label: 'Direct' }] : [])]} /></Form.Item>}
-        {!editor?.record && source === 'QUOTATION' && <Form.Item name="quotationId" label="Quotation ID" extra="Use the ID of an active, approved quotation." rules={[{ required: true }, uuidRule]}><Input /></Form.Item>}
-        {(editor?.record || source === 'DIRECT') && <Form.Item name="title" label="Title" rules={[{ required: true, whitespace: true }, { max: 255 }]}><Input maxLength={255} /></Form.Item>}
-        {!editor?.record && source === 'DIRECT' && <>
-          <Form.Item name="companyId" label="Company ID" rules={[{ required: true }, uuidRule]}><Input /></Form.Item>
-          <Typography.Paragraph type="secondary">Current company prices are selected automatically when creating the document.</Typography.Paragraph>
-          <Form.List name="items" rules={[{ validator: (_, items) => items?.length > 0 && items.length <= 100 ? Promise.resolve() : Promise.reject(new Error('Add 1–100 items.')) }]}>{(fields, { add, remove }, { errors }) => <>
-            {fields.map(({ key, name, ...field }) => <Card key={key} size="small" style={{ marginBottom: 12 }}>
-              <Form.Item {...field} name={[name, 'itemSizeId']} label="Item Size ID" rules={[{ required: true }, uuidRule]}><Input /></Form.Item>
-              {['quantityInspection', 'quantityMaintenance'].map((quantity, index) => <Form.Item key={quantity} {...field} name={[name, quantity]} label={index ? 'Maintenance Quantity' : 'Inspection Quantity'} initialValue={index ? '0' : '1'} rules={[{ required: true }, { pattern: /^\d{1,12}(\.\d{1,3})?$/, message: 'Enter a nonnegative quantity with up to 3 decimal places.' }]}><Input inputMode="decimal" /></Form.Item>)}
-              <Form.Item {...field} name={[name, 'note']} label="Note" rules={[{ max: 5000 }]}><Input.TextArea maxLength={5000} /></Form.Item>
-              <Button danger onClick={() => remove(name)}>Remove item</Button>
-            </Card>)}
-            <Form.ErrorList errors={errors} /><Button disabled={fields.length >= 100} onClick={() => add()}>Add item</Button>
-          </>}</Form.List>
-        </>}
-        <Typography.Paragraph type="secondary">Document number and date are assigned automatically.</Typography.Paragraph>
-        <Form.Item name="dueDate" label="Due Date" dependencies={['source']} rules={[{ required: source === 'QUOTATION' }, { validator: (_, value) => {
-          const error = validateDueDate(value, editor?.record ? dateValue(editor.record.date) : documentDate(), source === 'QUOTATION')
-          return error ? Promise.reject(new Error(error)) : Promise.resolve()
-        } }]}><Input type="date" min={editor?.record ? dateValue(editor.record.date) : documentDate()} /></Form.Item>
-        <Form.Item name="notes" label="Notes" rules={[{ max: 20000 }]}><Input.TextArea rows={4} maxLength={20000} /></Form.Item>
-        <Typography.Text type="secondary">Subtotal comes from the quotation. Tax and total are calculated automatically for the document date.</Typography.Text>
-        {stale && <Alert type="warning" title="Close and reopen this form before retrying." />}
-      </Form>
+    <Modal width={1180} rootClassName="finance-document-modal" title={`${editor?.record ? 'Edit' : 'Add'} ${title}`} open={Boolean(editor)} onCancel={() => { if (!busy) setEditor(null) }} onOk={() => form.submit()} confirmLoading={busy} okButtonProps={{ disabled: stale }} cancelButtonProps={{ disabled: busy }} closable={!busy} mask={{ closable: !busy }} destroyOnHidden>
+      {editor && <DocumentForm form={form} record={editor.record} busy={busy} stale={stale} onFinish={save} />}
     </Modal>
     <Modal title={detail?.number ? `${title} ${detail.number}` : title} open={Boolean(detail)} onCancel={() => { if (!busy) setDetail(null) }} closable={!busy} mask={{ closable: !busy }} width={1080} footer={detail && <Space wrap>
       {canEdit(detail) && <><Button disabled={busy} onClick={() => open(detail, true)}>Edit</Button><Popconfirm title="Approve document?" description="Move this draft to ON_PROGRESS." onConfirm={() => approve(detail)}><Button type="primary" disabled={busy}>Approve</Button></Popconfirm></>}

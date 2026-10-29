@@ -86,3 +86,20 @@
   .finance-button.ant-btn, .finance-modal .ant-modal-footer .ant-btn { transition: none; }
   .finance-button.ant-btn:hover:not(:disabled), .finance-modal .ant-modal-footer .ant-btn:hover:not(:disabled) { transform: none; }
 }
+
+.finance-document-modal .ant-modal { top: 32px; padding-bottom: 32px; }
+.finance-document-modal .ant-modal-body { max-height: calc(100dvh - 200px); overflow-y: auto; padding-right: 4px; }
+.finance-document-form { min-width: 0; }
+.finance-document-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
+.finance-document-full-width { grid-column: 1 / -1; }
+.finance-document-form .ant-select { width: 100%; }
+.finance-document-form > .ant-alert { margin-bottom: 20px; }
+.finance-document-lines { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-width: 0; }
+.finance-document-lines-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.finance-document-lines .ant-table-cell { vertical-align: top; }
+.finance-document-form .finance-document-help { margin: 20px 0 0; }
+@media (max-width: 700px) {
+  .finance-document-form-grid { grid-template-columns: minmax(0, 1fr); }
+  .finance-document-modal .ant-modal { top: 12px; padding-bottom: 12px; }
+  .finance-document-modal .ant-modal-body { max-height: calc(100dvh - 160px); }
+}
