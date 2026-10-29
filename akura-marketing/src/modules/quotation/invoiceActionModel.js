@@ -11,7 +11,7 @@ export const canCreateFinanceDocument = (user, quotation) => canManageQuotations
     || quotation.workOrderStatus === 'COMPLETED')
 
 export function financeDocumentDate(now = new Date()) {
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta', year: 'numeric', month: '2-digit', day: '2-digit' }).format(now)
 }
 
 export function validateFinanceDocumentDate(value, documentDate = financeDocumentDate()) {

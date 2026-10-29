@@ -1,8 +1,8 @@
 import { apiRequest } from './api'
 
-const PATH = '/marketing/quotations'
+const PATH = '/marketing/quotation-references'
 // Finance deliberately exposes only the documented read operations.
 export const quotationService = {
-  list: ({ page = 1, limit = 20 } = {}, { signal } = {}) => apiRequest(`${PATH}?${new URLSearchParams({ page, limit })}`, { method: 'GET', signal }),
+  list: (_params = {}, { signal } = {}) => apiRequest(PATH, { method: 'GET', signal }),
   get: (id, { signal } = {}) => apiRequest(`${PATH}/${encodeURIComponent(id)}`, { method: 'GET', signal }),
 }

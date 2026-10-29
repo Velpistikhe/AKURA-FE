@@ -17,7 +17,7 @@ const terms = [
   ['accomplished', 'Completion Time'], ['deliveryReports', 'Delivery Reports'],
 ]
 const errorText = (error) => error.status === 403
-  ? 'Your account cannot read quotations through the current API. Ask an administrator to enable quotation read access for Finance.'
+  ? 'Your account cannot read quotation references in the current branch.'
   : error.message
 
 export default function QuotationPage({ currentUser }) {
@@ -36,13 +36,13 @@ export default function QuotationPage({ currentUser }) {
     const controller = new AbortController()
     setLoading(true)
     setError('')
-    quotationService.list(query, { signal: controller.signal }).then((response) => {
+    quotationService.list({}, { signal: controller.signal }).then((response) => {
       if (!controller.signal.aborted) setData(response.data)
     }).catch((err) => {
       if (!controller.signal.aborted) { setError(errorText(err)); setData({ quotations: [], pagination: { total: 0 } }) }
     }).finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
-  }, [query, retry])
+  }, [retry])
 
   const view = async (row) => {
     detailController.current?.abort()
@@ -69,12 +69,12 @@ export default function QuotationPage({ currentUser }) {
   ] : []
   return <section className="finance-page">
     <div className="finance-heading"><div><Typography.Title level={2}>Quotations</Typography.Title>
-      <Typography.Text type="secondary">Check quotation and invoice status, then review details before creating an invoice.</Typography.Text></div>
+      <Typography.Text type="secondary">Review active approved quotation references in your branch (up to 1000 records).</Typography.Text></div>
       <Space><Tag>View only</Tag><Button icon={<ReloadOutlined />} loading={loading} onClick={() => setRetry((value) => value + 1)}>Refresh</Button></Space>
     </div>
     {error && <Alert className="finance-error" type="error" showIcon title="Unable to load quotations" description={error} action={<Button onClick={() => setRetry((value) => value + 1)}>Retry</Button>} />}
     {detailError && <Alert className="finance-error" type="error" showIcon title="Unable to open quotation" description={detailError} />}
-    <Card><Table rowKey="id" loading={loading} dataSource={data.quotations || []} scroll={{ x: 1350 }} columns={[
+    <Card><Table rowKey="id" loading={loading} dataSource={(data.quotations || []).slice((query.page - 1) * query.limit, query.page * query.limit)} scroll={{ x: 1350 }} columns={[
       { title: 'Number', dataIndex: 'no', width: 190, render: (value) => value ?? 'Draft' },
       { title: 'Date', dataIndex: 'date', width: 130, render: date },
       { title: 'Subject', dataIndex: 'subject', width: 240 },
@@ -88,7 +88,7 @@ export default function QuotationPage({ currentUser }) {
         <CreateInvoiceAction currentUser={currentUser} quotation={row} onCreated={() => setRetry((value) => value + 1)} />
       </Space> },
     ]} locale={{ emptyText: error ? 'Quotations could not be loaded.' : 'No quotations available.' }} pagination={{
-      current: query.page, pageSize: query.limit, total: data.pagination?.total || 0, showSizeChanger: true,
+      current: query.page, pageSize: query.limit, total: data.quotations?.length || 0, showSizeChanger: true,
       pageSizeOptions: [10, 20, 50, 100], onChange: (page, limit) => setQuery({ page: limit !== query.limit ? 1 : page, limit }),
     }} /></Card>
     <Modal rootClassName="finance-quotation-modal" title={detail ? `Quotation ${detail.no ?? 'Draft'}` : 'Quotation'} open={detailOpen} width={1080}

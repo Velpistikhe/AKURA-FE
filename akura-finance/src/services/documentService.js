@@ -9,8 +9,12 @@ export function documentService(kind) {
     get: (id) => apiRequest(resource(id)),
     create: (body) => apiRequest(path, { method: 'POST', body: JSON.stringify(body) }),
     update: (id, body) => apiRequest(resource(id), { method: 'PATCH', body: JSON.stringify(body) }),
+    approve: (id, version) => apiRequest(`${resource(id)}/approve`, { method: 'POST', body: JSON.stringify({ version }) }),
     remove: (id, version) => apiRequest(resource(id), { method: 'DELETE', body: JSON.stringify({ version }) }),
     history: (id, params, { signal } = {}) => apiRequest(`${resource(id)}/history?${query(params)}`, { signal }),
   }
 }
 export const getQuotationReference = (id) => apiRequest(`/marketing/quotation-references/${encodeURIComponent(id)}`)
+export const resolveBillingPrices = (companyId, itemSizeIds) => apiRequest('/marketing/billing-price-references', {
+  method: 'POST', body: JSON.stringify({ companyId, itemSizeIds }),
+})

@@ -54,6 +54,7 @@ for (const app of apps) {
       }
     }
     if (mod.getQuotationReference) capture(mod.getQuotationReference(id), app, `${source.file}: getQuotationReference`, sources.filter(s => s.file !== source.file && s.text.includes('getQuotationReference')).map(s => s.file))
+    if (mod.resolveBillingPrices) capture(mod.resolveBillingPrices(id, [id]), app, `${source.file}: resolveBillingPrices`, sources.filter(s => s.file !== source.file && s.text.includes('resolveBillingPrices')).map(s => s.file))
   }
   // Direct request sites, shell auth/menu calls and automatic cookie refresh.
   for (const source of sources) {

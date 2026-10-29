@@ -4,6 +4,7 @@ import { Modal } from '../../components/FinanceControls'
 import { FileAddOutlined } from '@ant-design/icons'
 import { apiRequest } from '../../services/api'
 import { canCreateInvoice, invoicePayload } from './invoiceActionModel'
+import { documentDate, validateDueDate } from '../documents/documentModel'
 
 export default function CreateInvoiceAction({ currentUser, quotation, onCreated }) {
   const { message } = App.useApp()
@@ -37,9 +38,11 @@ export default function CreateInvoiceAction({ currentUser, quotation, onCreated 
       onCancel={() => { if (!busy) setOpen(false) }} closable={!busy} mask={{ closable: !busy }} keyboard={!busy} cancelButtonProps={{ disabled: busy }} destroyOnHidden>
       <Form form={form} layout="vertical" onFinish={save} disabled={busy}>
         <Form.Item label="Quotation"><Input value={String(quotation.no ?? quotation.id)} disabled /></Form.Item>
-        <Form.Item name="title" label="Title" rules={[{ required: true, whitespace: true }, { max: 255 }]}><Input maxLength={255} /></Form.Item>
         <Form.Item label="Invoice Number and Date"><Input value="Assigned automatically" disabled /></Form.Item>
-        <Form.Item name="dueDate" label="Due Date"><Input type="date" /></Form.Item>
+        <Form.Item name="dueDate" label="Due Date" rules={[{ required: true }, { validator: (_, value) => {
+          const error = validateDueDate(value)
+          return error ? Promise.reject(new Error(error)) : Promise.resolve()
+        } }]}><Input type="date" min={documentDate()} /></Form.Item>
         <Form.Item name="notes" label="Notes" rules={[{ max: 20000 }]}><Input.TextArea rows={3} maxLength={20000} /></Form.Item>
         {error && <Alert type="error" showIcon title={error} />}
       </Form>
