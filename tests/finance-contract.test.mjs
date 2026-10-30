@@ -178,7 +178,7 @@ test('Marketing create payload still matches current Swagger and Jakarta date', 
   const root = new URL('../akura-marketing/src/modules/quotation/', import.meta.url)
   const access = await readFile(new URL('quotationAccess.js', root), 'utf8')
   const marketing = await load((await readFile(new URL('invoiceActionModel.js', root), 'utf8')).replace("import { canManageQuotations } from './quotationAccess'", access))
-  matches(marketing.financeDocumentPayload(id, { kind: 'INVOICE', dueDate: values.dueDate, location: 'Jakarta' }), spec.components.schemas.CreateFinanceDocumentFromQuotationRequest)
+  matches(marketing.financeDocumentPayload(id, { kind: 'INVOICE', dueDate: values.dueDate, location: 'Jakarta', purchaseOrderNumber: values.purchaseOrderNumber, purchaseOrderDate: values.purchaseOrderDate }), spec.components.schemas.CreateFinanceDocumentFromQuotationRequest)
   assert.equal(marketing.financeDocumentDate(new Date('2026-10-27T18:00:00Z')), '2026-10-28')
 })
 
@@ -224,4 +224,24 @@ test('canceling a document list request does not refresh the session or retry', 
     await assert.rejects(request, error => error.name === 'AbortError')
     assert.equal(calls, 1)
   } finally { globalThis.fetch = originalFetch }
+})
+
+
+test('Field Service creation matches live Swagger, section and branch restrictions', async () => {
+  const root = new URL('../akura-fieldservice/src/', import.meta.url)
+  const field = await load(await readFile(new URL('modules/work-order/invoiceActionModel.js', root), 'utf8'))
+  const service = await load((await readFile(new URL('services/workOrderService.js', root), 'utf8')).replace("import { apiRequest } from './api'", 'const apiRequest = (path, options = {}) => ({ path, ...options })'))
+  const user = { isActive: true, officeBranchId: id, section: 'MARKETING' }
+  const workOrder = { quotationId: id, status: 'COMPLETED', officeBranchId: id }
+  assert.equal(field.canCreateFinanceDocument(user, workOrder), true)
+  for (const changes of [{ section: 'FINANCE' }, { section: 'FIELD_SERVICE' }, { isActive: false }, { officeBranchId: null }]) assert.equal(field.canCreateFinanceDocument({ ...user, ...changes }, workOrder), false)
+  for (const changes of [{ status: 'DRAFT' }, { revoked: true }, { quotationId: null }, { officeBranchId: 'other' }]) assert.equal(field.canCreateFinanceDocument(user, { ...workOrder, ...changes }), false)
+  for (const kind of ['INVOICE', 'PROFORMA_INVOICE']) {
+    const payload = field.financeDocumentPayload(id, { ...values, kind })
+    const request = service.workOrderService.createInvoice({ ...payload, officeBranchId: 'ignored' })
+    assert.equal(request.method, 'POST')
+    matches(JSON.parse(request.body), spec.paths[`/api/v1${request.path}`].post.requestBody.content['application/json'].schema)
+    matches(payload, spec.components.schemas.MarketingDocumentReferenceCreate)
+  }
+  assert.throws(() => model.documentPayload({ ...values, notes: 'x'.repeat(20001) }))
 })

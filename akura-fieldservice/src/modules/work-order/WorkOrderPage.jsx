@@ -1,3 +1,4 @@
+import CreateInvoiceAction from './CreateInvoiceAction'
 import TableSearchFilter from '../../components/global/TableSearchFilter'
 import { useEffect, useRef, useState } from 'react'
 import { App, Button, Card, CheckOutlined, DeleteOutlined, EditOutlined, EyeOutlined, Modal, Popconfirm, Result, Table, Tag, Typography } from '../../components/global'
@@ -156,6 +157,7 @@ function WorkOrderDetail({ id, currentUser, onChanged, onClose }) {
     footer={<Button disabled={locked} onClick={() => setClosing(true)}>Close</Button>} afterClose={onClose} unmountOnClose>
     {error ? <div role="alert">{error} <Button onClick={reload}>Retry</Button></div> : !record ? <Typography.Text>Loading work order…</Typography.Text> : <div className="work-order-detail">
       <Card title="Work Order Information" extra={<div className="work-order-detail-actions">
+        <CreateInvoiceAction currentUser={currentUser} workOrder={record} onCreated={() => { reload(); onChanged() }} />
         {canEdit && <Button variant="primary" icon={<EditOutlined />} disabled={locked} onClick={() => setEditing(true)}>Edit Work Order</Button>}
         {canStart && <Popconfirm title="Start work order?" description="The work order moves from DRAFT to IN_PROGRESS and its inspectors and quotation are re-validated." onConfirm={start} okText="Start" cancelText="Cancel" disabled={locked}>
           <Button variant="primary" icon={<CheckOutlined />} busy={starting} disabled={locked}>Approve</Button>

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { App, Button, DollarOutlined, Form, Input, Popconfirm, Select, Tooltip, Typography } from '../../components/global'
 import { Modal } from '../../components/global'
 import { quotationService } from '../../services/quotationService'
-import { canCreateFinanceDocument, FINANCE_DOCUMENT_KINDS, financeDocumentDate, financeDocumentPayload, validateFinanceDocumentDate } from './invoiceActionModel'
+import { canCreateFinanceDocument, FINANCE_DOCUMENT_KINDS, financeDocumentDate, financeDocumentPayload, validateFinanceDocumentDate, validatePurchaseOrderDate } from './invoiceActionModel'
 
 export default function CreateInvoiceAction({ currentUser, quotation, onCreated }) {
   const { message } = App.useApp()
@@ -43,6 +43,11 @@ export default function CreateInvoiceAction({ currentUser, quotation, onCreated 
           return error ? Promise.reject(new Error(error)) : Promise.resolve()
         } }]}><Input type="date" min={financeDocumentDate()} /></Form.Item>
         <Form.Item name="location" label="Location" rules={[{ required: true, whitespace: true, transform: (value) => value?.trim(), max: 255, message: 'Location is required and must not exceed 255 characters.' }]}><Input maxLength={255} /></Form.Item>
+        <Form.Item name="purchaseOrderNumber" label="Purchase Order Number" rules={[{ required: true, whitespace: true, transform: (value) => value?.trim(), max: 100 }]}><Input maxLength={100} /></Form.Item>
+        <Form.Item name="purchaseOrderDate" label="Purchase Order Date" rules={[{ required: true }, { validator: (_, value) => {
+          const error = validatePurchaseOrderDate(value)
+          return error ? Promise.reject(new Error(error)) : Promise.resolve()
+        } }]}><Input type="date" /></Form.Item>
         {error && <Typography.Text tone="danger" role="alert">{error}</Typography.Text>}
       </Form>
     </Modal>

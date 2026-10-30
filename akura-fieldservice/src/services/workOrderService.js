@@ -13,6 +13,7 @@ export const workOrderService = {
   list: (params = {}) => apiRequest(`${PATH}?${withQuery(params)}`),
   get: (id) => apiRequest(`${PATH}/${id}`),
   create: (payload) => apiRequest(PATH, { method: 'POST', body: JSON.stringify(payload) }),
+  createInvoice: ({ quotationId, kind, dueDate, location, purchaseOrderNumber, purchaseOrderDate }) => apiRequest(`${PATH}/invoices/from-quotation`, { method: 'POST', body: JSON.stringify({ quotationId, kind, dueDate, location, purchaseOrderNumber, purchaseOrderDate }) }),
   quotations: () => apiRequest('/fieldservice/options/quotations'),
   quotationItems: (id) => apiRequest(`/fieldservice/options/quotations/${encodeURIComponent(id)}`),
   inspectors: () => apiRequest('/fieldservice/options/inspectors'),

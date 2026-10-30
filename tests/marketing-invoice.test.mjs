@@ -7,7 +7,7 @@ const read = path => readFile(new URL(`../akura-marketing/src/${path}`, import.m
 const access = await read('modules/quotation/quotationAccess.js')
 const model = await load((await read('modules/quotation/invoiceActionModel.js')).replace("import { canManageQuotations } from './quotationAccess'", access))
 const id = '00000000-0000-4000-8000-000000000001'
-const values = { kind: 'INVOICE', dueDate: '2099-12-31', location: ' Jakarta ', notes: 'excluded' }
+const values = { kind: 'INVOICE', dueDate: '2099-12-31', location: ' Jakarta ', purchaseOrderNumber: ' PO-001 ', purchaseOrderDate: '2026-10-01', notes: 'excluded' }
 const quotation = { id, isActive: true, status: 'APPROVED' }
 
 test('only Marketing can create documents from eligible quotations', () => {
@@ -25,8 +25,10 @@ test('only Marketing can create documents from eligible quotations', () => {
 
 test('payload matches both document kinds and validates required fields', () => {
   for (const kind of ['INVOICE', 'PROFORMA_INVOICE']) {
-    assert.deepEqual(model.financeDocumentPayload(id, { ...values, kind }), { quotationId: id, kind, dueDate: values.dueDate, location: 'Jakarta' })
+    assert.deepEqual(model.financeDocumentPayload(id, { ...values, kind }), { quotationId: id, kind, dueDate: values.dueDate, location: 'Jakarta', purchaseOrderNumber: 'PO-001', purchaseOrderDate: values.purchaseOrderDate })
   }
+  for (const purchaseOrderNumber of ['', ' ', undefined, 'x'.repeat(101)]) assert.throws(() => model.financeDocumentPayload(id, { ...values, purchaseOrderNumber }))
+  for (const purchaseOrderDate of ['', undefined, '2026-02-30', '2026-13-01']) assert.throws(() => model.financeDocumentPayload(id, { ...values, purchaseOrderDate }))
   for (const location of ['', '   ', undefined, 'x'.repeat(256)]) assert.throws(() => model.financeDocumentPayload(id, { ...values, location }))
   assert.equal(model.financeDocumentPayload(id, { ...values, location: 'x'.repeat(255) }).location.length, 255)
   for (const dueDate of ['', undefined, '2026-02-30', '2020-01-01']) assert.throws(() => model.financeDocumentPayload(id, { ...values, dueDate }))
@@ -36,7 +38,7 @@ test('payload matches both document kinds and validates required fields', () => 
   assert.equal(model.financeDocumentDate(new Date(2026, 0, 2)), '2026-01-02')
 })
 
-test('service posts four fields with URL ID through mocked fetch and propagates errors', async () => {
+test('service posts six fields with URL ID through mocked fetch and propagates errors', async () => {
   const requests = []
   const api = await read('services/api.js')
   const apiModule = await load(api.replaceAll('import.meta.env', '({ PROD: false })'))
@@ -51,7 +53,7 @@ test('service posts four fields with URL ID through mocked fetch and propagates 
     await quotationService.createInvoice(id, { ...values, quotationId: 'wrong' })
     assert.ok(requests[0].url.endsWith(`/marketing/quotations/${id}/invoices`))
     assert.equal(requests[0].options.method, 'POST')
-    assert.deepEqual(JSON.parse(requests[0].options.body), { quotationId: id, kind: values.kind, dueDate: values.dueDate, location: values.location })
+    assert.deepEqual(JSON.parse(requests[0].options.body), { quotationId: id, kind: values.kind, dueDate: values.dueDate, location: values.location, purchaseOrderNumber: values.purchaseOrderNumber, purchaseOrderDate: values.purchaseOrderDate })
     for (const status of [400, 403, 404, 409, 503]) {
       let calls = 0
       globalThis.fetch = async () => { calls++; return new Response(JSON.stringify({ message: 'Rejected' }), { status }) }
@@ -62,7 +64,7 @@ test('service posts four fields with URL ID through mocked fetch and propagates 
 })
 
 test('submit handler prevents concurrent requests and refreshes after success or stale access', async () => {
-  const source = await read('modules/quotation/CreateInvoiceAction.jsx')
+  const source = (await read('modules/quotation/CreateInvoiceAction.jsx')).replaceAll('\r\n', '\n')
   const body = source.match(/const save = async \(values\) => \{([\s\S]*?)\n  \}\n  if \(!allowed\)/)[1]
   const makeSave = new Function('allowed', 'lock', 'setBusy', 'setError', 'quotationService', 'quotation', 'financeDocumentPayload', 'setOpen', 'message', 'onCreated', `return async (values) => {${body}}`)
   for (const status of [201, 403, 404, 409, 503]) {

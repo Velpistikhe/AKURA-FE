@@ -28,6 +28,7 @@ export function documentPayload(values, original) {
   const quotationSource = original?.source === 'QUOTATION' || Boolean(original?.quotationId)
   const dateError = validateDueDate(values.dueDate, original ? dateValue(original.date) : documentDate(), quotationSource)
   if (dateError) throw new Error(dateError)
+  if ((values.notes?.trim().length || 0) > 20000) throw new Error('Notes must not exceed 20000 characters.')
   const common = { dueDate: dateValue(values.dueDate) || null, notes: values.notes?.trim() || null }
   if (!original) {
     const companyId = values.companyId?.trim()
