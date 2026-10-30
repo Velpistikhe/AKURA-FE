@@ -27,17 +27,17 @@ export default function QuotationItemDetails({ item, saving, blocked, onBack, on
   return <div>
     <Typography.Title level={5}>{item.itemName}</Typography.Title>
     <p><Typography.Text tone="secondary">{item.serviceName || 'Standalone'} · {item.size ?? 'Without size'}</Typography.Text></p>
-    <Form form={form} component="div" layout="vertical" disabled={disabled} initialValues={{ quantityInspection: item.quantityInspection || '1', quantityMaintenance: '0', discount: item.discount ?? '0', note: '' }}>
+    <Form form={form} component="div" layout="vertical" disabled={disabled} initialValues={{ quantityInspection: item.quantityInspection ?? '0', quantityMaintenance: '0', discount: item.discount ?? '0', note: '' }}>
       <div className="quotation-form-grid">
         <Form.Item name="quantityInspection" label="Inspection Quantity" dependencies={['quantityMaintenance']} rules={[...quantityRules, {
           validator: async (_, value) => {
             if (!(Number(value) > 0 || (maintenanceAvailable && Number(form.getFieldValue('quantityMaintenance')) > 0))) throw new Error('Enter a positive inspection or maintenance quantity.')
           },
         }]}>
-          <InputNumber aria-label="New item inspection quantity" stringMode min="0" max="999999999999.999" step="1" />
+          <InputNumber aria-label="New item inspection quantity" addonAfter={item.uom || '-'} stringMode min="0" max="999999999999.999" step="1" />
         </Form.Item>
         {maintenanceAvailable && <Form.Item name="quantityMaintenance" label="Maintenance Quantity" rules={quantityRules}>
-          <InputNumber aria-label="New item maintenance quantity" stringMode min="0" max="999999999999.999" step="1" />
+          <InputNumber aria-label="New item maintenance quantity" addonAfter={item.uom || '-'} stringMode min="0" max="999999999999.999" step="1" />
         </Form.Item>}
         <Form.Item name="discount" label="Discount" rules={[
           { required: true, message: 'Enter discount.' },

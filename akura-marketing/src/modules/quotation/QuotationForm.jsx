@@ -4,6 +4,7 @@ import QuotationItemPicker from './QuotationItemPicker'
 import QuotationSkeleton from './QuotationSkeleton'
 import { companyStaffService } from '../../services/companyStaffService'
 import { companyService } from '../../services/companyService'
+import { itemService } from '../../services/itemService'
 import { INQUIRY_METHODS, TEXT_FIELDS, QUANTITY_PATTERN, DISCOUNT_PATTERN, displayEnum, loadAll, money, quotationFormValues, quotationTextMaxLength } from './quotationModel'
 
 const options = (values) => values.map((value) => ({ value, label: displayEnum(value) }))
@@ -27,12 +28,22 @@ export default function QuotationForm({ form, record, copySource, saving, blocke
   const [retry, setRetry] = useState(0)
   const initialized = useRef(false)
   useEffect(() => {
-    if (!loading && !optionError) {
-      const values = quotationFormValues(defaults)
-      form.setFieldsValue(initialized.current ? { items: values.items } : values)
-      initialized.current = true
+    if (loading || optionError) return
+    let active = true
+    const values = quotationFormValues(defaults)
+    form.setFieldsValue(initialized.current ? { items: values.items } : values)
+    initialized.current = true
+    if (record) {
+      Promise.all(values.items.map(async (item) => {
+        if (item.uom) return item
+        try {
+          const response = await itemService.getSize(item.itemSizeId)
+          return { ...item, uom: response.data?.item?.uom ?? '' }
+        } catch { return item }
+      })).then((items) => { if (active) form.setFieldsValue({ items }) })
     }
-  }, [form, defaults, loading, optionError])
+    return () => { active = false }
+  }, [form, defaults, record, loading, optionError])
   useEffect(() => { onLoadingChange?.(loading || optionError) }, [loading, optionError, onLoadingChange])
   useEffect(() => {
     let active = true
@@ -105,7 +116,7 @@ export default function QuotationForm({ form, record, copySource, saving, blocke
                 { title: 'No.', width: 60, render: (_, field) => field.name + 1 },
                 { title: 'Service', width: 190, render: (_, field) => form.getFieldValue(['items', field.name, 'serviceName']) || 'Standalone' },
                 { title: 'Item', width: 230, render: (_, { name, key: _key, ...rest }) => <div className="quotation-selected-item">
-                  {['id', 'version', 'itemSizeId', 'itemName', 'serviceName', 'serviceType', 'size', 'priceInspection', 'priceMaintenance'].map((property) => <Form.Item {...rest} key={property} name={[name, property]} hidden><Input /></Form.Item>)}
+                  {['id', 'version', 'itemSizeId', 'itemName', 'serviceName', 'serviceType', 'size', 'uom', 'priceInspection', 'priceMaintenance'].map((property) => <Form.Item {...rest} key={property} name={[name, property]} hidden><Input /></Form.Item>)}
                   <Typography.Text strong>{form.getFieldValue(['items', name, 'itemName']) || '-'}</Typography.Text>
                 </div> },
                 { title: 'Size', width: 120, render: (_, field) => form.getFieldValue(['items', field.name, 'size']) ?? 'Without size' },
@@ -122,7 +133,7 @@ export default function QuotationForm({ form, record, copySource, saving, blocke
                       if (Number(value) > 0 && currentItems[name]?.[price] === null) throw new Error('This price is unavailable. Use zero quantity.')
                     } },
                   ]}>
-                    <InputNumber aria-label={`${label} item ${name + 1}`} disabled={Boolean(record) || saving || currentItems[name]?.[price] === null} stringMode min="0" max="999999999999.999" step="1" />
+                    <InputNumber aria-label={`${label} item ${name + 1}`} addonAfter={currentItems[name]?.uom || '-'} disabled={Boolean(record) || saving || currentItems[name]?.[price] === null} stringMode min="0" max="999999999999.999" step="1" />
                   </Form.Item>,
                 })),
                 { title: 'Discount', width: 150, render: (_, { name, key: _key, ...rest }) => (

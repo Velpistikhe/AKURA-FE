@@ -5,3 +5,4 @@ export { EyeOutlined, HistoryOutlined, DownloadOutlined, UploadOutlined, DeleteO
 export { useSaveConfirmation } from './useSaveConfirmation'
 export { FilePdfOutlined } from '@ant-design/icons'
 export { CopyOutlined } from '@ant-design/icons'
+export { DollarOutlined } from '@ant-design/icons'

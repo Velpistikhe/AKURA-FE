@@ -1,7 +1,6 @@
 import { useRef, useState } from 'react'
-import { App, Button, Form, Input, Popconfirm, Select, Tooltip, Typography } from '../../components/global'
+import { App, Button, DollarOutlined, Form, Input, Popconfirm, Select, Tooltip, Typography } from '../../components/global'
 import { Modal } from '../../components/global'
-import { FileAddOutlined } from '@ant-design/icons'
 import { quotationService } from '../../services/quotationService'
 import { canCreateFinanceDocument, FINANCE_DOCUMENT_KINDS, financeDocumentDate, financeDocumentPayload, validateFinanceDocumentDate } from './invoiceActionModel'
 
@@ -32,7 +31,7 @@ export default function CreateInvoiceAction({ currentUser, quotation, onCreated 
     <Popconfirm title="Create finance document?" description={`Create an invoice or proforma invoice from quotation ${quotation.no ?? ''}?`} okText="Continue" cancelText="Cancel" onConfirm={() => {
       form.resetFields(); form.setFieldsValue({ kind: 'INVOICE' }); setError(''); setOpen(true)
     }}>
-      <Tooltip title="Create Invoice / Proforma Invoice"><Button className="akura-button finance-button" type="text" icon={<FileAddOutlined />} aria-label={`Create invoice or proforma invoice for quotation ${quotation.no ?? ''}`} disabled={busy} /></Tooltip>
+      <Tooltip title="Create Invoice / Proforma Invoice"><Button className="akura-button finance-button" type="text" icon={<DollarOutlined />} aria-label={`Create invoice or proforma invoice for quotation ${quotation.no ?? ''}`} disabled={busy} /></Tooltip>
     </Popconfirm>
     <Modal rootClassName="finance-modal" title="Create Invoice / Proforma Invoice" open={open} onOk={() => form.submit()} okText="Create Document" confirmLoading={busy}
       onCancel={() => { if (!busy) setOpen(false) }} closable={!busy} mask={{ closable: !busy }} keyboard={!busy} cancelButtonProps={{ disabled: busy }} destroyOnHidden>

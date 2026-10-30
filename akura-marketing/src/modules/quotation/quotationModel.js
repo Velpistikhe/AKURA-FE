@@ -13,8 +13,8 @@ export function quotationOptionValues(size) {
   if (size.priceStatus !== 'AVAILABLE' || priceInspection == null || size.catalogActive === false || !['PRIMARY', 'SISTER_COMPANY', 'CONTRACT'].includes(size.priceSource)) return null
   const catalog = size.catalogSnapshot || { itemName: size.item?.name, serviceName: size.item?.service?.name, size: size.size }
   return {
-    itemSizeId: size.id, itemName: catalog.itemName, serviceName: catalog.serviceName, size: catalog.size,
-    quantityInspection: '1', quantityMaintenance: '0', discount: '0',
+    itemSizeId: size.id, itemName: catalog.itemName, serviceName: catalog.serviceName, size: catalog.size, uom: size.item?.uom ?? '',
+    quantityInspection: '0', quantityMaintenance: '0', discount: '0',
     priceInspection, priceMaintenance: size.priceMaintenance,
   }
 }
