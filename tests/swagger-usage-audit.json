@@ -1,12 +1,27 @@
 {
-  "checkedAt": "2026-10-28T01:17:36.406Z",
+  "checkedAt": "2026-11-02T13:51:28.081Z",
   "source": "http://localhost:5000/api-docs.json",
+  "apps": [
+    "akura-marketing",
+    "akura-finance",
+    "akura-fieldservice"
+  ],
   "note": "Static source audit, not runtime telemetry. Service references must be reviewed for dynamically selected methods and component reachability.",
-  "totalOperations": 156,
+  "totalOperations": 152,
   "unused": [
     {
       "method": "POST",
       "path": "/api/v1/marketing/internal/work-orders/events",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/quotations/{quotationId}/invoices",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/quotations/from-work-order",
       "callers": []
     },
     {
@@ -26,7 +41,47 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/finance/documents",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/finance/documents",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finance/documents/{id}",
+      "callers": []
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/finance/documents/{id}",
+      "callers": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/finance/documents/{id}",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/finance/documents/{id}/approve",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/finance/documents/{id}/history",
+      "callers": []
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/marketing/item-size-references/{itemSizeId}",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/marketing/billing-price-references",
       "callers": []
     },
     {
@@ -46,7 +101,17 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/fieldservice/work-orders/by-id/{id}",
+      "callers": []
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/fieldservice/work-orders/by-quotation/{quotationId}",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/fieldservice/work-orders/invoices/from-quotation",
       "callers": []
     },
     {
@@ -95,8 +160,43 @@
       "callers": []
     },
     {
+      "method": "POST",
+      "path": "/api/v1/auth/register",
+      "callers": []
+    },
+    {
       "method": "GET",
       "path": "/api/v1/auth/.well-known/jwks.json",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "callers": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/auth/profile",
+      "callers": []
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/auth/password",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/users",
       "callers": []
     },
     {
@@ -106,7 +206,127 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/auth/users/sync/deliveries",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/users/{userId}",
+      "callers": []
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/auth/users/{userId}",
+      "callers": []
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/auth/users/marketing-contacts",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menus/my-menus",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menus",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/app-manager/menus",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menus/{menuId}",
+      "callers": []
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/app-manager/menus/{menuId}",
+      "callers": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/app-manager/menus/{menuId}",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menu-accesses",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/app-manager/menu-accesses",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menu-accesses/{menuAccessId}",
+      "callers": []
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/app-manager/menu-accesses/{menuAccessId}",
+      "callers": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/app-manager/menu-accesses/{menuAccessId}",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menu-items",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/app-manager/menu-items",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/menu-items/{menuItemId}",
+      "callers": []
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/app-manager/menu-items/{menuItemId}",
+      "callers": []
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/app-manager/menu-items/{menuItemId}",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/office-branches",
+      "callers": []
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/app-manager/office-branches",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/office-branches/options",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/app-manager/office-branches/{officeBranchId}",
+      "callers": []
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/app-manager/office-branches/{officeBranchId}",
       "callers": []
     }
   ],
@@ -166,34 +386,9 @@
           "documented": true
         }
       ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/app-manager/office-branches/options",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/officeBranchService.js: officeBranchService.options",
-          "references": [],
-          "method": "GET",
-          "path": "/api/v1/app-manager/office-branches/options",
-          "documented": true
-        }
-      ]
     }
   ],
-  "undocumented": [
-    {
-      "app": "akura-app-manager",
-      "caller": "akura-app-manager/src/services/officeBranchService.js: officeBranchService.remove",
-      "references": [
-        "akura-app-manager/src/modules/office-branch/OfficeBranchPage.jsx"
-      ],
-      "method": "DELETE",
-      "path": "/api/v1/app-manager/office-branches/{id}",
-      "documented": false
-    }
-  ],
+  "undocumented": [],
   "operations": [
     {
       "method": "POST",
@@ -236,18 +431,7 @@
     {
       "method": "POST",
       "path": "/api/v1/marketing/quotations/{quotationId}/invoices",
-      "callers": [
-        {
-          "app": "akura-marketing",
-          "caller": "akura-marketing/src/services/quotationService.js: quotationService.createInvoice",
-          "references": [
-            "akura-marketing/src/modules/quotation/CreateInvoiceAction.jsx"
-          ],
-          "method": "POST",
-          "path": "/api/v1/marketing/quotations/{id}/invoices",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "POST",
@@ -322,6 +506,11 @@
       ]
     },
     {
+      "method": "POST",
+      "path": "/api/v1/marketing/quotations/from-work-order",
+      "callers": []
+    },
+    {
       "method": "GET",
       "path": "/api/v1/marketing/quotations",
       "callers": [
@@ -345,7 +534,6 @@
           "app": "akura-marketing",
           "caller": "akura-marketing/src/services/quotationService.js: quotationService.create",
           "references": [
-            "akura-marketing/src/modules/quotation/CreateInvoiceAction.jsx",
             "akura-marketing/src/modules/quotation/CreateWorkOrderAction.jsx",
             "akura-marketing/src/modules/quotation/QuotationCreatePage.jsx"
           ],
@@ -534,237 +722,38 @@
     },
     {
       "method": "GET",
-      "path": "/api/v1/finance/proforma-invoices",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.list",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/finance/proforma-invoices",
-          "documented": true
-        }
-      ]
+      "path": "/api/v1/finance/documents",
+      "callers": []
     },
     {
       "method": "POST",
-      "path": "/api/v1/finance/proforma-invoices",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.create",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "POST",
-          "path": "/api/v1/finance/proforma-invoices",
-          "documented": true
-        }
-      ]
+      "path": "/api/v1/finance/documents",
+      "callers": []
     },
     {
       "method": "GET",
-      "path": "/api/v1/finance/proforma-invoices/{id}",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.get",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/finance/proforma-invoices/{id}",
-          "documented": true
-        }
-      ]
+      "path": "/api/v1/finance/documents/{id}",
+      "callers": []
     },
     {
       "method": "PATCH",
-      "path": "/api/v1/finance/proforma-invoices/{id}",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.update",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "PATCH",
-          "path": "/api/v1/finance/proforma-invoices/{id}",
-          "documented": true
-        }
-      ]
+      "path": "/api/v1/finance/documents/{id}",
+      "callers": []
     },
     {
       "method": "DELETE",
-      "path": "/api/v1/finance/proforma-invoices/{id}",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.remove",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "DELETE",
-          "path": "/api/v1/finance/proforma-invoices/{id}",
-          "documented": true
-        }
-      ]
+      "path": "/api/v1/finance/documents/{id}",
+      "callers": []
     },
     {
       "method": "POST",
-      "path": "/api/v1/finance/proforma-invoices/{id}/approve",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.approve",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "POST",
-          "path": "/api/v1/finance/proforma-invoices/{id}/approve",
-          "documented": true
-        }
-      ]
+      "path": "/api/v1/finance/documents/{id}/approve",
+      "callers": []
     },
     {
       "method": "GET",
-      "path": "/api/v1/finance/proforma-invoices/{id}/history",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.history",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/finance/proforma-invoices/{id}/history",
-          "documented": true
-        }
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/finance/invoices",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.list",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/finance/invoices",
-          "documented": true
-        }
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/finance/invoices",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.create",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "POST",
-          "path": "/api/v1/finance/invoices",
-          "documented": true
-        },
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/modules/quotation/CreateInvoiceAction.jsx",
-          "references": [
-            "akura-finance/src/modules/quotation/CreateInvoiceAction.jsx"
-          ],
-          "method": "POST",
-          "path": "/api/v1/finance/invoices",
-          "documented": true
-        }
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/finance/invoices/{id}",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.get",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/finance/invoices/{id}",
-          "documented": true
-        }
-      ]
-    },
-    {
-      "method": "PATCH",
-      "path": "/api/v1/finance/invoices/{id}",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.update",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "PATCH",
-          "path": "/api/v1/finance/invoices/{id}",
-          "documented": true
-        }
-      ]
-    },
-    {
-      "method": "DELETE",
-      "path": "/api/v1/finance/invoices/{id}",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.remove",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "DELETE",
-          "path": "/api/v1/finance/invoices/{id}",
-          "documented": true
-        }
-      ]
-    },
-    {
-      "method": "POST",
-      "path": "/api/v1/finance/invoices/{id}/approve",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.approve",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "POST",
-          "path": "/api/v1/finance/invoices/{id}/approve",
-          "documented": true
-        }
-      ]
-    },
-    {
-      "method": "GET",
-      "path": "/api/v1/finance/invoices/{id}/history",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: documentService.history",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/finance/invoices/{id}/history",
-          "documented": true
-        }
-      ]
+      "path": "/api/v1/finance/documents/{id}/history",
+      "callers": []
     },
     {
       "method": "GET",
@@ -772,29 +761,9 @@
       "callers": [
         {
           "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: getQuotationReference",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/marketing/quotation-references/{id}",
-          "documented": true
-        },
-        {
-          "app": "akura-finance",
           "caller": "akura-finance/src/services/quotationService.js: quotationService.get",
           "references": [
             "akura-finance/src/modules/quotation/QuotationPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/marketing/quotation-references/{id}",
-          "documented": true
-        },
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/modules/quotation/CreateInvoiceAction.jsx",
-          "references": [
-            "akura-finance/src/modules/quotation/CreateInvoiceAction.jsx"
           ],
           "method": "GET",
           "path": "/api/v1/marketing/quotation-references/{id}",
@@ -810,18 +779,7 @@
     {
       "method": "POST",
       "path": "/api/v1/marketing/billing-price-references",
-      "callers": [
-        {
-          "app": "akura-finance",
-          "caller": "akura-finance/src/services/documentService.js: resolveBillingPrices",
-          "references": [
-            "akura-finance/src/modules/documents/DocumentPage.jsx"
-          ],
-          "method": "POST",
-          "path": "/api/v1/marketing/billing-price-references",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "POST",
@@ -836,6 +794,11 @@
     {
       "method": "GET",
       "path": "/api/v1/marketing/contract-references/{contractId}",
+      "callers": []
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/fieldservice/work-orders/by-id/{id}",
       "callers": []
     },
     {
@@ -858,6 +821,11 @@
           "documented": true
         }
       ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/fieldservice/work-orders/invoices/from-quotation",
+      "callers": []
     },
     {
       "method": "GET",
@@ -1188,7 +1156,8 @@
           "references": [
             "akura-marketing/src/modules/company/CompanyContractPriceEditor.jsx",
             "akura-marketing/src/modules/item/ItemDetail.jsx",
-            "akura-marketing/src/modules/item/ItemPage.jsx"
+            "akura-marketing/src/modules/item/ItemPage.jsx",
+            "akura-marketing/src/modules/quotation/QuotationForm.jsx"
           ],
           "method": "GET",
           "path": "/api/v1/marketing/items/{id}",
@@ -1302,7 +1271,8 @@
           "app": "akura-marketing",
           "caller": "akura-marketing/src/services/itemService.js: itemService.getSize",
           "references": [
-            "akura-marketing/src/modules/item/ItemDetail.jsx"
+            "akura-marketing/src/modules/item/ItemDetail.jsx",
+            "akura-marketing/src/modules/quotation/QuotationForm.jsx"
           ],
           "method": "GET",
           "path": "/api/v1/marketing/items/sizes/{id}",
@@ -1685,18 +1655,7 @@
     {
       "method": "POST",
       "path": "/api/v1/auth/register",
-      "callers": [
-        {
-          "app": "akura-shell",
-          "caller": "akura-shell/src/services/api.js",
-          "references": [
-            "akura-shell/src/services/api.js"
-          ],
-          "method": "POST",
-          "path": "/api/v1/auth/register",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
@@ -1706,43 +1665,12 @@
     {
       "method": "POST",
       "path": "/api/v1/auth/login",
-      "callers": [
-        {
-          "app": "akura-shell",
-          "caller": "akura-shell/src/services/api.js",
-          "references": [
-            "akura-shell/src/services/api.js"
-          ],
-          "method": "POST",
-          "path": "/api/v1/auth/login",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "POST",
       "path": "/api/v1/auth/refresh-token",
       "callers": [
-        {
-          "app": "akura-shell",
-          "caller": "akura-shell/src/services/api.js",
-          "references": [
-            "akura-shell/src/services/api.js"
-          ],
-          "method": "POST",
-          "path": "/api/v1/auth/refresh-token",
-          "documented": true
-        },
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/api.js",
-          "references": [
-            "akura-app-manager/src/services/api.js"
-          ],
-          "method": "POST",
-          "path": "/api/v1/auth/refresh-token",
-          "documented": true
-        },
         {
           "app": "akura-marketing",
           "caller": "akura-marketing/src/services/api.js",
@@ -1778,82 +1706,27 @@
     {
       "method": "POST",
       "path": "/api/v1/auth/logout",
-      "callers": [
-        {
-          "app": "akura-shell",
-          "caller": "akura-shell/src/services/api.js",
-          "references": [
-            "akura-shell/src/services/api.js"
-          ],
-          "method": "POST",
-          "path": "/api/v1/auth/logout",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
       "path": "/api/v1/auth/me",
-      "callers": [
-        {
-          "app": "akura-shell",
-          "caller": "akura-shell/src/services/api.js",
-          "references": [
-            "akura-shell/src/services/api.js"
-          ],
-          "method": "GET",
-          "path": "/api/v1/auth/me",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "PUT",
       "path": "/api/v1/auth/profile",
-      "callers": [
-        {
-          "app": "akura-shell",
-          "caller": "akura-shell/src/services/api.js",
-          "references": [
-            "akura-shell/src/services/api.js"
-          ],
-          "method": "PUT",
-          "path": "/api/v1/auth/profile",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "PUT",
       "path": "/api/v1/auth/password",
-      "callers": [
-        {
-          "app": "akura-shell",
-          "caller": "akura-shell/src/services/api.js",
-          "references": [
-            "akura-shell/src/services/api.js"
-          ],
-          "method": "PUT",
-          "path": "/api/v1/auth/password",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
       "path": "/api/v1/auth/users",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/userService.js: userService.list",
-          "references": [
-            "akura-app-manager/src/modules/user/UserPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/auth/users",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
@@ -1863,50 +1736,17 @@
     {
       "method": "GET",
       "path": "/api/v1/auth/users/sync/deliveries",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/userService.js: userService.syncDeliveries",
-          "references": [
-            "akura-app-manager/src/modules/user/UserSyncStatus.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/auth/users/sync/deliveries",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
       "path": "/api/v1/auth/users/{userId}",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/userService.js: userService.get",
-          "references": [
-            "akura-app-manager/src/modules/user/UserPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/auth/users/{id}",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "PATCH",
       "path": "/api/v1/auth/users/{userId}",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/userService.js: userService.update",
-          "references": [
-            "akura-app-manager/src/modules/user/UserPage.jsx"
-          ],
-          "method": "PATCH",
-          "path": "/api/v1/auth/users/{id}",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
@@ -1916,339 +1756,107 @@
     {
       "method": "GET",
       "path": "/api/v1/app-manager/menus/my-menus",
-      "callers": [
-        {
-          "app": "akura-shell",
-          "caller": "akura-shell/src/services/menuApi.js",
-          "references": [
-            "akura-shell/src/services/menuApi.js"
-          ],
-          "method": "GET",
-          "path": "/api/v1/app-manager/menus/my-menus",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
       "path": "/api/v1/app-manager/menus",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuService.js: menuService.list",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuItemPage.jsx",
-            "akura-app-manager/src/modules/menu/MenuPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/app-manager/menus",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "POST",
       "path": "/api/v1/app-manager/menus",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuService.js: menuService.create",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuPage.jsx"
-          ],
-          "method": "POST",
-          "path": "/api/v1/app-manager/menus",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
       "path": "/api/v1/app-manager/menus/{menuId}",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuService.js: menuService.get",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/app-manager/menus/{id}",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "PATCH",
       "path": "/api/v1/app-manager/menus/{menuId}",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuService.js: menuService.update",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuPage.jsx"
-          ],
-          "method": "PATCH",
-          "path": "/api/v1/app-manager/menus/{id}",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "DELETE",
       "path": "/api/v1/app-manager/menus/{menuId}",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuService.js: menuService.remove",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuPage.jsx"
-          ],
-          "method": "DELETE",
-          "path": "/api/v1/app-manager/menus/{id}",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
       "path": "/api/v1/app-manager/menu-accesses",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuAccessService.js: menuAccessService.list",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuAccessPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/app-manager/menu-accesses",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "POST",
       "path": "/api/v1/app-manager/menu-accesses",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuAccessService.js: menuAccessService.create",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuAccessPage.jsx"
-          ],
-          "method": "POST",
-          "path": "/api/v1/app-manager/menu-accesses",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
       "path": "/api/v1/app-manager/menu-accesses/{menuAccessId}",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuAccessService.js: menuAccessService.get",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuAccessPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/app-manager/menu-accesses/{id}",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "PATCH",
       "path": "/api/v1/app-manager/menu-accesses/{menuAccessId}",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuAccessService.js: menuAccessService.update",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuAccessPage.jsx"
-          ],
-          "method": "PATCH",
-          "path": "/api/v1/app-manager/menu-accesses/{id}",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "DELETE",
       "path": "/api/v1/app-manager/menu-accesses/{menuAccessId}",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuAccessService.js: menuAccessService.remove",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuAccessPage.jsx"
-          ],
-          "method": "DELETE",
-          "path": "/api/v1/app-manager/menu-accesses/{id}",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
       "path": "/api/v1/app-manager/menu-items",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuItemService.js: menuItemService.list",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuAccessPage.jsx",
-            "akura-app-manager/src/modules/menu/MenuItemPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/app-manager/menu-items",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "POST",
       "path": "/api/v1/app-manager/menu-items",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuItemService.js: menuItemService.create",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuItemPage.jsx"
-          ],
-          "method": "POST",
-          "path": "/api/v1/app-manager/menu-items",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
       "path": "/api/v1/app-manager/menu-items/{menuItemId}",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuItemService.js: menuItemService.get",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuItemPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/app-manager/menu-items/{id}",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "PATCH",
       "path": "/api/v1/app-manager/menu-items/{menuItemId}",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuItemService.js: menuItemService.update",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuItemPage.jsx"
-          ],
-          "method": "PATCH",
-          "path": "/api/v1/app-manager/menu-items/{id}",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "DELETE",
       "path": "/api/v1/app-manager/menu-items/{menuItemId}",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/menuItemService.js: menuItemService.remove",
-          "references": [
-            "akura-app-manager/src/modules/menu/MenuItemPage.jsx"
-          ],
-          "method": "DELETE",
-          "path": "/api/v1/app-manager/menu-items/{id}",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
       "path": "/api/v1/app-manager/office-branches",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/officeBranchService.js: officeBranchService.list",
-          "references": [
-            "akura-app-manager/src/modules/office-branch/OfficeBranchPage.jsx",
-            "akura-app-manager/src/modules/user/UserPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/app-manager/office-branches",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "POST",
       "path": "/api/v1/app-manager/office-branches",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/officeBranchService.js: officeBranchService.create",
-          "references": [
-            "akura-app-manager/src/modules/office-branch/OfficeBranchPage.jsx"
-          ],
-          "method": "POST",
-          "path": "/api/v1/app-manager/office-branches",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
       "path": "/api/v1/app-manager/office-branches/options",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/officeBranchService.js: officeBranchService.options",
-          "references": [],
-          "method": "GET",
-          "path": "/api/v1/app-manager/office-branches/options",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",
       "path": "/api/v1/app-manager/office-branches/{officeBranchId}",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/officeBranchService.js: officeBranchService.get",
-          "references": [
-            "akura-app-manager/src/modules/office-branch/OfficeBranchPage.jsx"
-          ],
-          "method": "GET",
-          "path": "/api/v1/app-manager/office-branches/{id}",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "PATCH",
       "path": "/api/v1/app-manager/office-branches/{officeBranchId}",
-      "callers": [
-        {
-          "app": "akura-app-manager",
-          "caller": "akura-app-manager/src/services/officeBranchService.js: officeBranchService.update",
-          "references": [
-            "akura-app-manager/src/modules/office-branch/OfficeBranchPage.jsx"
-          ],
-          "method": "PATCH",
-          "path": "/api/v1/app-manager/office-branches/{id}",
-          "documented": true
-        }
-      ]
+      "callers": []
     },
     {
       "method": "GET",

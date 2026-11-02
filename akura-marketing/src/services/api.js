@@ -7,7 +7,7 @@ const MARKETING_BASE_URL = (import.meta.env.VITE_MARKETING_BASE_URL
 // Field Service microservice; production uses the same-origin gateway.
 const FIELD_SERVICE_BASE_URL = (import.meta.env.VITE_FIELDSERVICE_BASE_URL
   || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5005')).replace(/\/+$/, '')
-// Auth and cross-module paths (e.g. Finance invoices) always run on the gateway
+// Auth and other cross-module paths always run on the gateway
 // that issued the HttpOnly session cookie in development, never on the directly
 // accessed Marketing or Field Service services.
 const GATEWAY_BASE_URL = (import.meta.env.VITE_AUTH_BASE_URL
@@ -34,7 +34,7 @@ async function executeRequest(path, options = {}) {
   const headers = new Headers(options.headers)
   if (!(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
   // Development direct access: Marketing owns /marketing/*, Field Service owns
-  // /fieldservice/*, and auth plus cross-module paths (e.g. Finance invoices)
+  // /fieldservice/*, and auth plus other cross-module paths
   // run on the issuing gateway. Production routes everything through the
   // same-origin gateway. Auth relies on the HttpOnly cookie only.
   const isAuthPath = path.startsWith('/auth/')

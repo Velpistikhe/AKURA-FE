@@ -4,7 +4,6 @@ import { quotationService } from '../../services/quotationService'
 import QuotationForm from './QuotationForm'
 import QuotationSkeleton from './QuotationSkeleton'
 import QuotationHistory from './QuotationHistory'
-import CreateInvoiceAction from './CreateInvoiceAction'
 import CreateWorkOrderAction from './CreateWorkOrderAction'
 import { loadQuotationPdf, quotationPdfBlob } from './quotationPdfPreview'
 import { canApproveQuotations, canManageQuotations } from './quotationAccess'
@@ -277,7 +276,6 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
       {!readOnly && canCopyQuotation(record) && <Button variant="text" icon={<CopyOutlined />} title="Copy Quotation" aria-label={`Copy quotation ${quotationNumber(record)}`} onClick={() => onCopy?.(record.id)} />}
       <Button variant="text" icon={<EyeOutlined />} title="View Quotation" aria-label={`View quotation ${quotationNumber(record)}`} busy={openingId === record.id} onClick={() => view(record)} />
       {record.isActive && <Button variant="text" icon={<FilePdfOutlined />} title="Preview PDF" aria-label={`Preview PDF for quotation ${quotationNumber(record)}`} busy={pdfLoading && pdfPreview?.record.id === record.id} onClick={() => openPdf(record)} />}
-      <CreateInvoiceAction currentUser={currentUser} quotation={record} onCreated={load} />
       <CreateWorkOrderAction currentUser={currentUser} quotation={record} onCreated={(workOrder) => {
         setRecords((current) => current.map((row) => row.id === record.id ? { ...row, hasWorkOrder: true, workOrderId: workOrder.id } : row))
       }} />

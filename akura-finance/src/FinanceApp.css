@@ -6,15 +6,10 @@
 .finance-heading .ant-typography-secondary { display: block; margin-top: 6px; line-height: 1.6; }
 .finance-heading .ant-btn-primary { min-width: 164px; box-shadow: 0 8px 22px rgba(26, 46, 94, .18); }
 .finance-eyebrow { display: block; color: #e02020; font-size: 12px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
-.finance-modules { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
-.finance-workspace .ant-card, .finance-detail .ant-card { min-width: 0; border-radius: 14px; }
-.finance-detail { display: grid; gap: 16px; min-width: 0; }
-.finance-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; margin: 0; }
-.finance-detail-grid dt { color: var(--text-secondary, #5c6c84); font-size: 12px; margin-bottom: 5px; }
-.finance-detail-grid dd { margin: 0; font-weight: 600; white-space: pre-wrap; overflow-wrap: anywhere; }
-.finance-totals { display: flex; justify-content: flex-end; gap: 24px; flex-wrap: wrap; }
+.finance-modules { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.finance-workspace .ant-card { min-width: 0; border-radius: 14px; }
 .finance-error { margin-bottom: 18px; }
-.finance-workspace .ant-table-cell, .finance-detail .ant-table-cell { overflow-wrap: anywhere; }
+.finance-workspace .ant-table-cell { overflow-wrap: anywhere; }
 .finance-page > .ant-card, .finance-modules > .ant-card {
   border: 1px solid var(--border, rgba(26, 46, 94, .08));
   border-radius: 16px;
@@ -28,7 +23,6 @@
 .finance-page .ant-table-cell-fix-right { background: var(--surface, #fff); }
 .finance-page .ant-pagination { margin: 18px 0 14px; flex-wrap: wrap; }
 .finance-workspace .ant-tag, .finance-modal .ant-tag { border-radius: 999px; padding-inline: 9px; font-weight: 600; }
-.finance-toolbar { margin-bottom: 16px; }
 .finance-pagination { display: flex; justify-content: flex-end; margin: 18px 0 14px; }
 
 .finance-button.ant-btn, .finance-modal .ant-modal-footer .ant-btn {
@@ -49,19 +43,12 @@
 .finance-modal .ant-form-item-label > label { color: var(--text-primary, #33476c); font-weight: 600; }
 .finance-modal .ant-modal-footer .ant-space { flex-wrap: wrap; justify-content: flex-end; }
 .finance-modal .ant-table-cell { overflow-wrap: anywhere; }
-.finance-detail-section { min-width: 0; padding: 22px; border: 1px solid var(--border, #e5eaf3); border-radius: 14px; background: var(--surface-subtle, #fafbfe); }
-.finance-detail-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
-.finance-detail-section-heading h3 { margin: 0; }
-.finance-detail-section-heading .ant-typography { display: block; margin-top: 4px; }
-.finance-item-note-cell { display: grid; gap: 6px; }
-.finance-totals { padding: 16px 0; }
 
 .finance-workspace .finance-overview-card { position: relative; min-height: 220px; display: flex; overflow: hidden; margin-bottom: 24px; border: 1px solid var(--border, rgba(26, 46, 94, .08)); border-radius: 20px; background: linear-gradient(135deg, var(--surface, #fff), var(--surface-subtle, #f6f8fd)); box-shadow: 0 14px 40px rgba(26, 46, 94, .09); animation: finance-enter 360ms cubic-bezier(.22, 1, .36, 1) both; }
 .finance-overview-card > .ant-card-body { align-self: center; position: relative; z-index: 1; padding: 38px; }
 .finance-overview-card h2.ant-typography { margin: 8px 0; color: var(--text-primary, #1a2e5e); font-size: clamp(26px, 3vw, 36px); letter-spacing: -.03em; }
 .finance-overview-decoration { position: absolute; width: 240px; height: 240px; right: -40px; top: -70px; border-radius: 50%; background: radial-gradient(circle, rgba(42, 64, 128, .18), transparent 68%); pointer-events: none; }
 @keyframes finance-enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-@media (max-width: 1100px) { .finance-modules { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 700px) {
   .finance-heading { align-items: stretch; flex-direction: column; gap: 18px; margin-bottom: 20px; }
   .finance-heading > .ant-space { flex-wrap: wrap; }
@@ -69,11 +56,9 @@
   .finance-page .ant-pagination, .finance-pagination { justify-content: center; }
 }
 @media (max-width: 600px) {
-  .finance-modules, .finance-detail-grid { grid-template-columns: 1fr; }
+  .finance-modules { grid-template-columns: 1fr; }
   .finance-workspace .finance-overview-card { min-height: 190px; border-radius: 16px; }
   .finance-overview-card > .ant-card-body { padding: 26px 22px; }
-  .finance-detail-section { padding: 16px; }
-  .finance-detail-section-heading { align-items: flex-start; flex-direction: column; }
 }
 @media (max-width: 480px) {
   .finance-heading h2.ant-typography { font-size: 23px; }
@@ -85,21 +70,4 @@
   .finance-page, .finance-workspace .finance-overview-card { animation: none; }
   .finance-button.ant-btn, .finance-modal .ant-modal-footer .ant-btn { transition: none; }
   .finance-button.ant-btn:hover:not(:disabled), .finance-modal .ant-modal-footer .ant-btn:hover:not(:disabled) { transform: none; }
-}
-
-.finance-document-modal .ant-modal { top: 32px; padding-bottom: 32px; }
-.finance-document-modal .ant-modal-body { max-height: calc(100dvh - 200px); overflow-y: auto; padding-right: 4px; }
-.finance-document-form { min-width: 0; }
-.finance-document-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 20px; }
-.finance-document-full-width { grid-column: 1 / -1; }
-.finance-document-form .ant-select { width: 100%; }
-.finance-document-form > .ant-alert { margin-bottom: 20px; }
-.finance-document-lines { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; min-width: 0; }
-.finance-document-lines-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-.finance-document-lines .ant-table-cell { vertical-align: top; }
-.finance-document-form .finance-document-help { margin: 20px 0 0; }
-@media (max-width: 700px) {
-  .finance-document-form-grid { grid-template-columns: minmax(0, 1fr); }
-  .finance-document-modal .ant-modal { top: 12px; padding-bottom: 12px; }
-  .finance-document-modal .ant-modal-body { max-height: calc(100dvh - 160px); }
 }

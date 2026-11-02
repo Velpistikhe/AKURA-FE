@@ -1,19 +1,30 @@
 # MFE API contract audit
 
-## Invoice/proforma invoice notes removal — 2026-11-02
+## Penghapusan fitur Invoice dan Proforma Invoice - 2026-11-02
 
-Local Swagger at `http://localhost:5000/api-docs.json` dropped `notes` from `FinanceDocumentCreate`, `FinanceDocumentUpdate` and the invoice response schemas. The Finance creation modal, the document detail view and the PATCH payload builder no longer show or send notes; only `title`, `dueDate` and `version` are editable, matching the current contract. The stored snapshot `tests/invoice-swagger-contract.json` was regenerated from the live document, so it now reflects the removal. Quotation and work-order invoice forms keep their purchase order number and date, which remain required by the live contract.
+Integrasi pembuatan Invoice dan Proforma Invoice telah dihapus dari Marketing, Finance, dan Field Service. Aksi quotation/work order, halaman dan alias route Finance, form, pemilih company/item, payload model, service dokumen, CSS khusus, dan test fitur lama telah dihapus.
+
+Endpoint berikut tidak lagi dikonsumsi oleh ketiga MFE:
+
+- `POST /api/v1/marketing/quotations/{quotationId}/invoices`.
+- `POST /api/v1/fieldservice/work-orders/invoices/from-quotation`.
+- Seluruh operasi `/api/v1/finance/documents`, `/api/v1/finance/documents/{id}`, `/{id}/approve`, dan `/{id}/history`.
+- Lookup company dan harga item di Finance yang sebelumnya dipakai form invoice.
+
+Snapshot kontrak khusus invoice telah dihapus bersama test konsumennya. Script audit tidak lagi memiliki perlakuan khusus service invoice. Inventaris pemakaian Swagger dapat diperbarui khusus ketiga MFE dengan perintah berikut; field `apps` pada JSON menyatakan cakupan audit:
+
+```powershell
+$env:AUDIT_APPS = 'akura-marketing,akura-finance,akura-fieldservice'
+node tests/swagger-usage-audit.mjs
+```
+
+Endpoint backend tetap mengikuti Swagger lokal. Data quotation (termasuk invoice status dan delivery invoice), work order, pajak, serta pembatasan branch tetap dipertahankan. Riwayat audit di bawah mendokumentasikan implementasi pada waktu pemeriksaan sebelumnya.
+
+Verifikasi perubahan: 8/8 test terarah lulus, lint file yang berubah dan production build ketiga MFE lulus. Audit memakai Swagger lokal dengan 152 operasi; endpoint invoice tidak memiliki pemanggil dalam cakupan ketiga MFE. Tidak ada mutasi data backend.
 
 ## Work order status editing — 2026-11-02
 
 The work order edit form now offers only DRAFT, COMPLETED and CANCELED because the backend rejects `status: IN_PROGRESS` on PATCH; the DRAFT to IN_PROGRESS transition stays on `POST /{id}/start`. A work order already in IN_PROGRESS still shows its stored status as a disabled option so the current state is never hidden. `WORK_ORDER_STATUSES` remains the full set used by the list filter, while `WORK_ORDER_PATCH_STATUSES` is the narrower set accepted by the update payload.
-
-## Work order creation and invoice from work order — 2026-11-02
-
-Work order creation validates the selected items against the quotation detail because the quotation option list carries no lines. Creating an invoice or proforma invoice from a completed quotation-backed work order posts to `POST /api/v1/fieldservice/work-orders/invoices/from-quotation` with `quotationId`, `kind`, `dueDate`, `location`, `purchaseOrderNumber` and `purchaseOrderDate`, and the action is shown only for section MARKETING in the same branch.
-
-Validation: 28 Finance, Marketing and Field Service contract tests passed against live local Swagger, including payload shape checks for both document kinds, the PATCH contract, work order update payloads and the concurrent submit guard. Finance and Field Service lint and production builds passed. No backend records were created and no browser verification was performed for this update.
-
 
 ## Contract price row deletion — 2026-09-21
 

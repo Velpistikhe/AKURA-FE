@@ -3,7 +3,8 @@ import path from 'node:path'
 
 // Read-only audit: service requests are captured locally, never sent to the API.
 const root = path.resolve(import.meta.dirname, '..')
-const apps = ['akura-shell', 'akura-app-manager', 'akura-marketing', 'akura-finance', 'akura-fieldservice']
+const apps = process.env.AUDIT_APPS?.split(',').map(app => app.trim()).filter(Boolean)
+  || ['akura-shell', 'akura-app-manager', 'akura-marketing', 'akura-finance', 'akura-fieldservice']
 const swagger = await fetch(process.env.SWAGGER_URL || 'http://localhost:5000/api-docs.json').then(r => {
   if (!r.ok) throw new Error(`Swagger HTTP ${r.status}`)
   return r.json()
@@ -33,13 +34,10 @@ for (const app of apps) {
     const code = source.text.replace("import { apiRequest } from './api'", 'const apiRequest = (path, options = {}) => ({ path, ...options })')
     const mod = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
     const name = path.basename(source.file, '.js')
-    const groups = name === 'documentService'
-      ? ['invoices', 'proforma-invoices'].map(kind => [name, mod.documentService(kind)])
-      : [[name, mod[name]]]
+    const groups = [[name, mod[name]]]
     for (const [object, service] of groups) {
       for (const [method, invoke] of Object.entries(service)) {
         const references = sources.filter(s => s.file !== source.file && (s.text.includes(`${object}.${method}`)
-          || (name === 'documentService' && s.text.includes(`service.${method}`))
           || (name === 'serviceService' && /\/modules\/service\//.test(s.file) && s.text.includes(`service.${method}`))
           || (name === 'contractService' && s.text.includes('contractService[action.key]') && s.text.includes(`key: '${method}'`))))
           .map(s => s.file)
@@ -53,8 +51,6 @@ for (const app of apps) {
         capture(request, app, `${source.file}: ${object}.${method}`, references)
       }
     }
-    if (mod.getQuotationReference) capture(mod.getQuotationReference(id), app, `${source.file}: getQuotationReference`, sources.filter(s => s.file !== source.file && s.text.includes('getQuotationReference')).map(s => s.file))
-    if (mod.resolveBillingPrices) capture(mod.resolveBillingPrices(id, [id]), app, `${source.file}: resolveBillingPrices`, sources.filter(s => s.file !== source.file && s.text.includes('resolveBillingPrices')).map(s => s.file))
   }
   // Direct request sites, shell auth/menu calls and automatic cookie refresh.
   for (const source of sources) {
@@ -69,6 +65,7 @@ for (const app of apps) {
 }
 const report = {
   checkedAt: new Date().toISOString(), source: process.env.SWAGGER_URL || 'http://localhost:5000/api-docs.json',
+  apps,
   note: 'Static source audit, not runtime telemetry. Service references must be reviewed for dynamically selected methods and component reachability.',
   totalOperations: operations.length,
   unused: operations.filter(op => !op.callers.length),

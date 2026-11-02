@@ -1,5 +1,12 @@
 # Audit pemakaian Swagger oleh seluruh MFE — 22 September 2026
 
+## Pembaruan cakupan - 2 November 2026
+
+Fitur Invoice dan Proforma Invoice telah dihapus dari Marketing, Finance, dan Field Service. Inventaris JSON terbaru mencakup ketiga MFE tersebut (lihat field `apps`): tidak ada lagi pemanggil endpoint pembuatan invoice dari quotation/work order maupun service dokumen Finance. Endpoint backend yang tetap didokumentasikan Swagger dapat tercatat sebagai tidak digunakan oleh cakupan MFE ini.
+
+Angka dan daftar pada bagian di bawah adalah snapshot historis. Detail perubahan tersedia di [audit kontrak MFE](./SWAGGER-AUDIT.md).
+
+
 ## Pemeriksaan terbaru — 23 September 2026, 07:42 WIB
 
 - GET `/api/v1/marketing/company-contract-prices/{contractPriceId}/history` sudah dipakai oleh fitur History baris harga kontrak yang ditambahkan setelah snapshot 22 September.

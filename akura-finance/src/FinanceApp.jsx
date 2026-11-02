@@ -2,15 +2,13 @@ import { App, Card, Result, Tag, Typography } from 'antd'
 import { Button } from './components/FinanceControls'
 import { ArrowRightOutlined } from '@ant-design/icons'
 import QuotationPage from './modules/quotation/QuotationPage'
-import ProformaInvoicePage from './modules/proforma-invoice/ProformaInvoicePage'
-import InvoicePage from './modules/invoice/InvoicePage'
 import TaxPage from './modules/tax/TaxPage'
 import { financeModules, resolveFinanceRoute } from './routes/financeRoutes'
 import { setAccessToken } from './services/api'
 import './FinanceApp.css'
 import './components/ModalMotion.css'
 
-const pages = { finance_quotations: QuotationPage, proforma_invoices: ProformaInvoicePage, invoices: InvoicePage, taxes: TaxPage }
+const pages = { finance_quotations: QuotationPage, taxes: TaxPage }
 export default function FinanceApp({ currentUser, accessToken = '', pathname = window.location.pathname, navigate = (path) => window.location.assign(path) }) {
   // Development direct access: the Shell passes the Vercel-issued access token so
   // this MFE can send Authorization: Bearer straight to the local service.
@@ -22,10 +20,10 @@ export default function FinanceApp({ currentUser, accessToken = '', pathname = w
     {Page ? <Page currentUser={currentUser} /> : route === 'overview' ? <>
       <Card className="finance-overview-card"><span className="finance-eyebrow">Finance workspace</span>
         <Typography.Title level={2}>Akura Finance</Typography.Title>
-        <Typography.Text type="secondary">Review quotations and manage financial documents.</Typography.Text>
+        <Typography.Text type="secondary">Review quotations and manage branch tax periods.</Typography.Text>
         <div className="finance-overview-decoration" aria-hidden="true" /></Card>
       <div className="finance-modules">{financeModules.map((module) => <Card key={module.key}>
-        <Tag>{module.key === 'finance_quotations' ? 'View only' : module.key === 'taxes' ? 'Branch tax periods' : 'Drafts and final documents'}</Tag>
+        <Tag>{module.key === 'finance_quotations' ? 'View only' : 'Branch tax periods'}</Tag>
         <Typography.Title level={3}>{module.label}</Typography.Title><Typography.Paragraph type="secondary">{module.description}</Typography.Paragraph>
         <Button icon={<ArrowRightOutlined />} onClick={() => navigate(module.path)}>Open {module.label}</Button>
       </Card>)}</div>
