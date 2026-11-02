@@ -76,7 +76,7 @@ function WorkOrderList({ currentUser }) {
       <Table rowKey="id" busy={loading} dataSource={data.workOrders} tableLayout="auto" scroll={{ x: 'max-content' }}
         columns={[
           { title: 'Number', dataIndex: 'number', key: 'search', filteredValue: query.search ? [query.search] : null,
-            filterDropdown: (props) => <TableSearchFilter {...props} placeholder="Search number or summary" /> },
+            filterDropdown: (props) => <TableSearchFilter {...props} placeholder="Search number" /> },
           { title: 'Company', render: (_, row) => companyName(row) },
           { title: 'Quotation Number', dataIndex: 'quotationNo', render: (value) => value ?? '-' },
           { title: 'Quotation Date', dataIndex: 'quotationDate', render: date },

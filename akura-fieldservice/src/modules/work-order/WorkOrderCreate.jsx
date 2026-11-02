@@ -85,7 +85,7 @@ export default function WorkOrderCreate({ currentUser, onCreated }) {
     setSaving(true)
     setError('')
     try {
-      const payload = workOrderCreatePayload(values, { quotation, items: itemRows, inspectors })
+      const payload = workOrderCreatePayload(values, { quotation, items: itemRows, inspectors, quotationItems: itemRows })
       const { data } = await workOrderService.create(payload)
       message.success(`Work order ${data.number} berhasil dibuat.`)
       setOpen(false)

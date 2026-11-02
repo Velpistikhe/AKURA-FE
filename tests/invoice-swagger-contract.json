@@ -519,12 +519,7 @@
                                                                                      "type":  "string",
                                                                                      "format":  "date",
                                                                                      "nullable":  true
-                                                                                 },
-                                                                     "notes":  {
-                                                                                   "type":  "string",
-                                                                                   "maxLength":  20000,
-                                                                                   "nullable":  true
-                                                                               }
+                                                                                 }
                                                                  },
                                                   "required":  [
                                                                    "kind",

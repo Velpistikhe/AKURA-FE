@@ -63,7 +63,6 @@ export default function DocumentForm({ form, record, busy, stale, onFinish }) {
         const error = validateDueDate(value, record ? dateValue(record.date) : documentDate(), requiredDueDate)
         return error ? Promise.reject(new Error(error)) : Promise.resolve()
       } }]}><Input type="date" min={record ? dateValue(record.date) : documentDate()} /></Form.Item>
-      <Form.Item name="notes" label="Notes" className="finance-document-full-width" rules={[{ max: 20000 }]}><Input.TextArea rows={3} maxLength={20000} placeholder="Enter notes (optional)" /></Form.Item>
     </div>
     {!record && <Form.List name="items" rules={[{ validator: async (_, items) => {
       if (!items?.length || items.length > 100 || new Set(items).size !== items.length) throw new Error('Select 1-100 unique items.')

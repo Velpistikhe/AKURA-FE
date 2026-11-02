@@ -1,5 +1,20 @@
 # MFE API contract audit
 
+## Invoice/proforma invoice notes removal — 2026-11-02
+
+Local Swagger at `http://localhost:5000/api-docs.json` dropped `notes` from `FinanceDocumentCreate`, `FinanceDocumentUpdate` and the invoice response schemas. The Finance creation modal, the document detail view and the PATCH payload builder no longer show or send notes; only `title`, `dueDate` and `version` are editable, matching the current contract. The stored snapshot `tests/invoice-swagger-contract.json` was regenerated from the live document, so it now reflects the removal. Quotation and work-order invoice forms keep their purchase order number and date, which remain required by the live contract.
+
+## Work order status editing — 2026-11-02
+
+The work order edit form now offers only DRAFT, COMPLETED and CANCELED because the backend rejects `status: IN_PROGRESS` on PATCH; the DRAFT to IN_PROGRESS transition stays on `POST /{id}/start`. A work order already in IN_PROGRESS still shows its stored status as a disabled option so the current state is never hidden. `WORK_ORDER_STATUSES` remains the full set used by the list filter, while `WORK_ORDER_PATCH_STATUSES` is the narrower set accepted by the update payload.
+
+## Work order creation and invoice from work order — 2026-11-02
+
+Work order creation validates the selected items against the quotation detail because the quotation option list carries no lines. Creating an invoice or proforma invoice from a completed quotation-backed work order posts to `POST /api/v1/fieldservice/work-orders/invoices/from-quotation` with `quotationId`, `kind`, `dueDate`, `location`, `purchaseOrderNumber` and `purchaseOrderDate`, and the action is shown only for section MARKETING in the same branch.
+
+Validation: 28 Finance, Marketing and Field Service contract tests passed against live local Swagger, including payload shape checks for both document kinds, the PATCH contract, work order update payloads and the concurrent submit guard. Finance and Field Service lint and production builds passed. No backend records were created and no browser verification was performed for this update.
+
+
 ## Contract price row deletion — 2026-09-21
 
 Active price rows now expose Delete beside Edit using the documented status/Marketing permissions. Confirmation identifies the item and size. DELETE `/marketing/items/contract-prices/{contractPriceId}` sends the price row's `version`; success refreshes contract detail and paginated prices, while 404/409 refreshes stale data without automatically retrying deletion. Inactive prices have no mutation actions. Request construction and the role/status matrix passed automated checks; no live deletion was performed.

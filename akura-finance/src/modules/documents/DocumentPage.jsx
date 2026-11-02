@@ -113,7 +113,7 @@ export default function DocumentPage({ kind, title }) {
     ['Date', dateValue(detail.date)], ['Due Date', dateValue(detail.dueDate)], ['Location', detail.location],
     ['Company', detail.companySnapshot?.name || detail.quotationSnapshot?.companySnapshot?.name],
     ...(['QUOTATION'].includes(detail.source) ? [['Quotation', detail.quotationSnapshot?.subject]] : []),
-    ['State', detail.isActive === false ? 'Inactive' : 'Active'], ['Notes', detail.notes],
+    ['State', detail.isActive === false ? 'Inactive' : 'Active'],
   ] : []
   return <section className="finance-page">
     <div className="finance-heading"><div><Typography.Title level={2}>{title}</Typography.Title><Typography.Text type="secondary">Manage invoices and proforma invoices from purchase orders.</Typography.Text></div>

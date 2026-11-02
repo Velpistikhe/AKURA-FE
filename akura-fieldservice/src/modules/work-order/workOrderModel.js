@@ -1,4 +1,8 @@
+// The list filter offers every stored status. PATCH accepts a narrower set:
+// the backend rejects IN_PROGRESS with 400 because the DRAFT to IN_PROGRESS
+// transition happens only through POST /{id}/start.
 export const WORK_ORDER_STATUSES = ['DRAFT', 'IN_PROGRESS', 'COMPLETED', 'CANCELED']
+export const WORK_ORDER_PATCH_STATUSES = ['DRAFT', 'COMPLETED', 'CANCELED']
 export const canAccessWorkOrders = (user) => Boolean(user?.isActive && user.officeBranchId
   && (['ADMIN', 'APP_MANAGER'].includes(user.role) || ['MARKETING', 'FIELD_SERVICE'].includes(user.section)))
 
@@ -25,7 +29,6 @@ export const workOrderFormValues = (record) => ({
   startDate: record.startDate?.slice(0, 10) || '',
   endDate: record.endDate?.slice(0, 10) || '',
   status: record.status,
-  summary: record.summary,
   inspectors: (record.inspectors || []).map((inspector) => inspector.name),
 })
 
@@ -49,7 +52,7 @@ export function normalizeQuantity(value) {
   return number
 }
 
-export function workOrderCreatePayload(values, { quotation, items, inspectors }) {
+export function workOrderCreatePayload(values, { quotation, items, inspectors, quotationItems = [] }) {
   if (!quotation?.id) throw new Error('Select an approved quotation.')
   if (!validDate(values.startDate)) throw new Error('Enter a valid start date.')
   if (!validDate(values.endDate)) throw new Error('Enter a valid end date.')
@@ -66,7 +69,12 @@ export function workOrderCreatePayload(values, { quotation, items, inspectors })
   const lines = (items || []).filter((item) => item.selected)
   if (lines.length < 1) throw new Error('Select at least one item for the work order.')
   if (lines.length > 100) throw new Error('A work order accepts at most 100 items.')
-  const quotationItemSizeIds = new Set((quotation.items || []).map((item) => item.itemSizeId?.toLowerCase()))
+  // The quotation option list carries no lines, so membership is checked against
+  // the quotation detail that produced the selectable items.
+  const quotationItemSizeIds = new Set(quotationItems
+    .map((item) => item?.itemSizeId)
+    .filter((itemSizeId) => typeof itemSizeId === 'string' && itemSizeId)
+    .map((itemSizeId) => itemSizeId.toLowerCase()))
   const payloadItems = lines.map((item) => {
     if (!quotationItemSizeIds.has(item.itemSizeId.toLowerCase())) {
       throw new Error('Every selected item must belong to the selected quotation. Reload the quotation items and try again.')
@@ -96,13 +104,19 @@ export function workOrderUpdatePayload(values, record) {
   if (!Number.isInteger(record.version) || record.version < 0 || record.version > 2147483646) throw new Error('Reload the work order before saving.')
   if (!validDate(values.startDate)) throw new Error('Enter a valid start date.')
   if (values.endDate && (!validDate(values.endDate) || values.endDate < values.startDate)) throw new Error('End date must be on or after start date.')
-  if (!WORK_ORDER_STATUSES.includes(values.status)) throw new Error('Select a valid status.')
-  const summary = values.summary?.trim()
-  if (!summary || summary.length > 20000) throw new Error('Enter a summary of up to 20,000 characters.')
+  // A quotation-backed Work Order always keeps an end date; the backend rejects
+  // a cleared endDate while the quotation basis is stored.
+  if (record.quotationId && !values.endDate) throw new Error('A quotation work order requires an end date.')
+  if (!WORK_ORDER_PATCH_STATUSES.includes(values.status)) throw new Error('Select a valid status.')
   const inspectors = (values.inspectors || []).map((name) => name.trim())
   if (inspectors.length > 100 || inspectors.some((name) => !name || name.length > 255)) throw new Error('Enter up to 100 inspector names, each with 1–255 characters.')
   if (new Set(inspectors.map((name) => name.toLowerCase())).size !== inspectors.length) throw new Error('Inspector names must be unique.')
-  const next = { startDate: values.startDate, endDate: values.endDate || null, status: values.status, summary, inspectors }
+  const next = {
+    startDate: values.startDate,
+    endDate: values.endDate || null,
+    ...(values.status !== record.status ? { status: values.status } : {}),
+    inspectors,
+  }
   const previous = { ...workOrderFormValues(record), endDate: record.endDate?.slice(0, 10) || null }
   const changes = Object.fromEntries(Object.entries(next).filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(previous[key])))
   return Object.keys(changes).length ? { ...changes, version: record.version } : null

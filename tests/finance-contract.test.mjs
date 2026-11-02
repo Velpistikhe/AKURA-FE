@@ -10,7 +10,7 @@ const spec = await fetch(process.env.SWAGGER_URL || 'http://localhost:5000/api-d
   return response.json()
 })
 const id = '00000000-0000-4000-8000-000000000001'
-const values = { companyId: id, title: ' Service ', purchaseOrderNumber: ' PO-001 ', purchaseOrderDate: '2026-10-01', items: [id], dueDate: '2099-12-31', notes: ' note ', location: ' Jakarta ' }
+const values = { companyId: id, title: ' Service ', purchaseOrderNumber: ' PO-001 ', purchaseOrderDate: '2026-10-01', items: [id], dueDate: '2099-12-31', location: ' Jakarta ' }
 
 // Validate emitted payload shape against the live contract, including nested refs.
 function matches(value, schema) {
@@ -37,11 +37,10 @@ function matches(value, schema) {
 test('purchase order payload matches live Swagger for both Finance document kinds', () => {
   const payload = model.documentPayload({ ...values, source: 'QUOTATION', quotation: {}, officeBranchId: id, date: '2020-01-01', priceInspection: '1', quantityInspection: '5' })
   for (const kind of ['INVOICE', 'PROFORMA_INVOICE']) matches({ ...payload, kind }, spec.components.schemas.FinanceDocumentCreate)
-  assert.deepEqual(payload, { companyId: id, title: 'Service', purchaseOrderNumber: 'PO-001', purchaseOrderDate: '2026-10-01', location: 'Jakarta', items: [id], dueDate: '2099-12-31', notes: 'note' })
-  const optional = model.documentPayload({ ...values, dueDate: '', notes: '', location: '' })
+  assert.deepEqual(payload, { companyId: id, title: 'Service', purchaseOrderNumber: 'PO-001', purchaseOrderDate: '2026-10-01', location: 'Jakarta', items: [id], dueDate: '2099-12-31' })
+  const optional = model.documentPayload({ ...values, dueDate: '', location: '' })
   assert.equal(optional.dueDate, null)
   assert.equal(optional.location, null)
-  assert.equal(optional.notes, null)
 })
 
 test('document picker uses available company prices for display and submits only item IDs', () => {
@@ -115,7 +114,7 @@ test('purchase order submission makes one request under concurrent submits and k
 })
 
 test('updates omit immutable dates and require approval before finalization', () => {
-  const original = { source: 'QUOTATION', date: '2026-01-01', dueDate: '2099-12-31', title: 'Original', notes: null, version: 3 }
+  const original = { source: 'QUOTATION', date: '2026-01-01', dueDate: '2099-12-31', title: 'Original', version: 3 }
   const payload = model.documentPayload({ ...model.formValues(original), title: 'Changed', date: '2030-01-01' }, original)
   assert.deepEqual(payload, { title: 'Changed', version: 3 })
   matches(payload, spec.components.schemas.FinanceDocumentUpdate)
@@ -243,5 +242,39 @@ test('Field Service creation matches live Swagger, section and branch restrictio
     matches(JSON.parse(request.body), spec.paths[`/api/v1${request.path}`].post.requestBody.content['application/json'].schema)
     matches(payload, spec.components.schemas.MarketingDocumentReferenceCreate)
   }
-  assert.throws(() => model.documentPayload({ ...values, notes: 'x'.repeat(20001) }))
+})
+
+test('Field Service work order payloads match live Swagger', async () => {
+  const root = new URL('../akura-fieldservice/src/', import.meta.url)
+  const field = await load(await readFile(new URL('modules/work-order/workOrderModel.js', root), 'utf8'))
+  const itemSizeId = '00000000-0000-4000-8000-000000000002'
+  const quotation = { id }
+  // The quotation option list carries no lines, so membership comes from the detail.
+  const quotationItems = [{ itemSizeId, itemName: 'Gauge' }]
+  const rows = [{ ...quotationItems[0], selected: true, quantityInspection: '1', quantityMaintenance: '0' }]
+  const create = field.workOrderCreatePayload(
+    { startDate: '2026-09-15', endDate: '2026-09-18', inspectors: [id] },
+    { quotation, items: rows, inspectors: [{ id, name: 'Budi Santoso' }], quotationItems },
+  )
+  matches(create, spec.components.schemas.WorkOrderCreate)
+
+  const record = {
+    id, version: 3, status: 'DRAFT', quotationId: id,
+    startDate: '2026-09-15T00:00:00.000Z', endDate: '2026-09-18T00:00:00.000Z',
+    inspectors: [{ name: 'Budi Santoso' }],
+  }
+  const patch = field.workOrderUpdatePayload(
+    { startDate: '2026-09-15', endDate: '2026-09-20', status: 'COMPLETED', inspectors: ['Budi Santoso'] },
+    record,
+  )
+  matches(patch, spec.components.schemas.WorkOrderUpdate)
+  // WorkOrderUpdate forbids extra properties and requires at least two of them.
+  assert.equal(Object.hasOwn(patch, 'summary'), false)
+  assert.ok(Object.keys(patch).length >= spec.components.schemas.WorkOrderUpdate.minProperties)
+  // PATCH rejects IN_PROGRESS; the transition belongs to POST /{id}/start.
+  assert.throws(() => field.workOrderUpdatePayload(
+    { startDate: '2026-09-15', endDate: '2026-09-18', status: 'IN_PROGRESS', inspectors: [] }, record,
+  ))
+  assert.equal(field.WORK_ORDER_PATCH_STATUSES.includes('IN_PROGRESS'), false)
+  assert.equal(field.WORK_ORDER_STATUSES.includes('IN_PROGRESS'), true)
 })

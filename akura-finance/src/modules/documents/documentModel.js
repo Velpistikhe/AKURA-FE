@@ -10,7 +10,7 @@ export function documentOptionValues(row) {
   return { serviceName: catalog.serviceName, itemName: catalog.itemName, size: catalog.size, priceInspection, priceMaintenance: row.priceMaintenance }
 }
 export function formValues(record = {}) {
-  return { title: record.title || '', dueDate: dateValue(record.dueDate), notes: record.notes || '', items: [] }
+  return { title: record.title || '', dueDate: dateValue(record.dueDate), items: [] }
 }
 export function validateDueDate(value, minimum = documentDate(), required = true) {
   if (!value) return required ? 'Due date is required.' : null
@@ -28,8 +28,7 @@ export function documentPayload(values, original) {
   const quotationSource = original?.source === 'QUOTATION' || Boolean(original?.quotationId)
   const dateError = validateDueDate(values.dueDate, original ? dateValue(original.date) : documentDate(), quotationSource)
   if (dateError) throw new Error(dateError)
-  if ((values.notes?.trim().length || 0) > 20000) throw new Error('Notes must not exceed 20000 characters.')
-  const common = { dueDate: dateValue(values.dueDate) || null, notes: values.notes?.trim() || null }
+  const common = { dueDate: dateValue(values.dueDate) || null }
   if (!original) {
     const companyId = values.companyId?.trim()
     const title = values.title?.trim()
@@ -45,7 +44,7 @@ export function documentPayload(values, original) {
     return { companyId, title, purchaseOrderNumber, purchaseOrderDate: values.purchaseOrderDate, location, items, ...common }
   }
   const current = { title: values.title.trim(), ...common }
-  const previous = { title: original.title, dueDate: dateValue(original.dueDate) || null, notes: original.notes || null }
+  const previous = { title: original.title, dueDate: dateValue(original.dueDate) || null }
   const changes = Object.fromEntries(Object.entries(current).filter(([key, value]) => value !== previous[key]))
   return Object.keys(changes).length ? { ...changes, version: original.version } : null
 }

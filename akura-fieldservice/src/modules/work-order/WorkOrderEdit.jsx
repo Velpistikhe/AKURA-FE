@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { App, Button, Form, Input, Modal, Select } from '../../components/global'
 import { workOrderService } from '../../services/workOrderService'
-import { WORK_ORDER_STATUSES, workOrderFormValues, workOrderUpdatePayload } from './workOrderModel'
+import { WORK_ORDER_PATCH_STATUSES, workOrderFormValues, workOrderUpdatePayload } from './workOrderModel'
 
 export default function WorkOrderEdit({ record, onClose, onSaved, onReload }) {
   const { message } = App.useApp()
@@ -38,10 +38,14 @@ export default function WorkOrderEdit({ record, onClose, onSaved, onReload }) {
       <div className="work-order-grid">
         <Form.Item name="startDate" label="Start Date" rules={[{ required: true, message: 'Start date is required.' }]}><Input type="date" /></Form.Item>
         <Form.Item name="endDate" label="End Date" dependencies={['startDate']} rules={[({ getFieldValue }) => ({ validator: (_, value) => !value || value >= getFieldValue('startDate') ? Promise.resolve() : Promise.reject(new Error('End date must be on or after start date.')) })]}><Input type="date" /></Form.Item>
-        <Form.Item name="status" label="Status" rules={[{ required: true }]}><Select options={WORK_ORDER_STATUSES.map((value) => ({ value, label: value.replaceAll('_', ' ') }))} /></Form.Item>
+        <Form.Item name="status" label="Status" rules={[{ required: true }]}><Select options={[
+          ...WORK_ORDER_PATCH_STATUSES.map((value) => ({ value, label: value.replaceAll('_', ' ') })),
+          // An IN_PROGRESS work order cannot keep that status through PATCH, but
+          // the stored value stays visible so the current state is never hidden.
+          ...(record.status === 'IN_PROGRESS' ? [{ value: 'IN_PROGRESS', label: 'IN PROGRESS (set by the start action)', disabled: true }] : []),
+        ]} /></Form.Item>
         <Form.Item name="inspectors" label="Inspectors" extra="Enter a name and press Enter. Maximum 100 unique names."><Select mode="tags" open={false} maxCount={100} placeholder="Enter inspector names" /></Form.Item>
       </div>
-      <Form.Item name="summary" label="Work Summary" rules={[{ required: true, whitespace: true, message: 'Work summary is required.' }, { max: 20000 }]}><Input.TextArea rows={5} maxLength={20000} showCount /></Form.Item>
     </Form>
     {error && <div role="alert">{error}</div>}
     {conflict && <div role="alert">This work order has changed or been revoked. Reload before editing again. Unsaved changes will be discarded. <Button onClick={onReload}>Reload Work Order</Button></div>}

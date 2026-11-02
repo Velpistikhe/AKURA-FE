@@ -7,7 +7,7 @@ const read = path => readFile(new URL(`../akura-marketing/src/${path}`, import.m
 const access = await read('modules/quotation/quotationAccess.js')
 const model = await load((await read('modules/quotation/invoiceActionModel.js')).replace("import { canManageQuotations } from './quotationAccess'", access))
 const id = '00000000-0000-4000-8000-000000000001'
-const values = { kind: 'INVOICE', dueDate: '2099-12-31', location: ' Jakarta ', purchaseOrderNumber: ' PO-001 ', purchaseOrderDate: '2026-10-01', notes: 'excluded' }
+const values = { kind: 'INVOICE', dueDate: '2099-12-31', location: ' Jakarta ', purchaseOrderNumber: ' PO-001 ', purchaseOrderDate: '2026-10-01' }
 const quotation = { id, isActive: true, status: 'APPROVED' }
 
 test('only Marketing can create documents from eligible quotations', () => {
