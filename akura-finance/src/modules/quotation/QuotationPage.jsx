@@ -62,7 +62,7 @@ export default function QuotationPage() {
     ['Number', detail.no ?? 'Draft'], ['Company', detail.companySnapshot?.name], ['Customer Contact', detail.customerSnapshot], ['Date', date(detail.date)],
     ['Inquiry Method', label(detail.inquiryMethod)], ['Inquiry Date', date(detail.inquiryDate)],
     ...terms.map(([key, title]) => [title, detail[key]]),
-    ['Status', label(detail.status)], ['Invoice Status', label(detail.invoiceStatus)],
+    ['Status', label(detail.status)],
     ['State', detail.isActive ? 'Active' : 'Inactive'],
     ['Company Type', detail.companySnapshot?.type], ['Company Address', detail.companySnapshot?.address], ['NPWP', detail.companySnapshot?.npwp],
   ] : []
@@ -79,7 +79,6 @@ export default function QuotationPage() {
       { title: 'Subject', dataIndex: 'subject', width: 240 },
       { title: 'Customer Contact', dataIndex: 'customerSnapshot', width: 190 },
       { title: 'Status', dataIndex: 'status', width: 190, render: (value) => <Tag>{label(value)}</Tag> },
-      { title: 'Invoice Status', dataIndex: 'invoiceStatus', width: 170, render: (value) => <Tag>{label(value)}</Tag> },
       { title: 'State', dataIndex: 'isActive', render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag> },
       { title: 'Total', dataIndex: 'total', width: 180, render: money },
       { title: 'Actions', key: 'actions', width: 140, fixed: 'right', render: (_, row) => <Space>

@@ -9,7 +9,7 @@ import { loadQuotationPdf, quotationPdfBlob } from './quotationPdfPreview'
 import { canApproveQuotations, canManageQuotations } from './quotationAccess'
 import { canViewInactiveCatalog } from '../catalogAccess'
 import { CopyOutlined, SendOutlined, TableSearchFilter } from '../../components/global'
-import { QuotationNumberFilter, QuotationDateFilter, QUOTATION_STATUSES, QUOTATION_INVOICE_STATUSES } from './QuotationTableFilters'
+import { QuotationNumberFilter, QuotationDateFilter, QUOTATION_STATUSES } from './QuotationTableFilters'
 import { canCopyQuotation, canSubmitQuotation, canRejectQuotation, canReviseQuotation } from './quotationModel'
 import { TEXT_FIELDS, canApproveQuotation, canUpdateQuotation, dateValue, displayEnum, money, quotationChanges, quotationNumber } from './quotationModel'
 import '../company/CompanyPage.css'
@@ -260,8 +260,6 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
     { title: 'State', dataIndex: 'isActive', width: 110, render: (value) => <Tag>{value ? 'Active' : 'Inactive'}</Tag>,
       filters: canViewInactive ? [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }] : undefined,
       filterMultiple: false, filteredValue: canViewInactive && activeFilter ? [activeFilter] : null },
-    { title: 'Invoice Status', dataIndex: 'invoiceStatus', width: 170, render: (value) => <Tag>{displayEnum(value)}</Tag>,
-      filters: [{ text: 'No Invoice', value: 'null' }, ...QUOTATION_INVOICE_STATUSES.map((value) => ({ text: displayEnum(value), value }))], filterMultiple: false, filteredValue: listFilters.invoiceStatus ? [listFilters.invoiceStatus] : null },
     { title: 'Work Order Status', dataIndex: 'workOrderStatus', width: 170, render: (value) => <Tag>{value ? displayEnum(value) : '-'}</Tag> },
     ...[['subTotal', 'Subtotal'], ['taxAmount', 'Tax Amount'], ['total', 'Total']].map(([dataIndex, title]) => ({
       title, dataIndex, width: 150, align: 'right', render: (value) => <span style={{ whiteSpace: 'nowrap' }}>{money(value)}</span>,
@@ -288,7 +286,7 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
     ['Number', quotationNumber(detail)], ['Company', detail.companySnapshot?.name], ['Customer Contact', detail.customerSnapshot], ['Date', dateValue(detail.date) || 'Draft'],
     ['Inquiry Method', displayEnum(detail.inquiryMethod)], ['Inquiry Date', dateValue(detail.inquiryDate)],
     ...TEXT_FIELDS.map(([key, label]) => [label, detail[key]]),
-    ['Status', displayEnum(detail.status)], ['Invoice Status', displayEnum(detail.invoiceStatus)],
+    ['Status', displayEnum(detail.status)],
     ['State', detail.isActive ? 'Active' : 'Inactive'],
   ] : []
 
@@ -313,7 +311,7 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
         setActiveFilter(filters.isActive?.[0] || '')
         setListFilters({ no: filters.no?.[0] || '', company: String(filters.company?.[0] || '').trim(),
           dateFrom: filters.date?.[0] || '', dateTo: filters.date?.[1] || '',
-          status: filters.status?.[0] || '', invoiceStatus: filters.invoiceStatus?.[0] || '' })
+          status: filters.status?.[0] || '' })
         setPage(1)
       }
     }} />}</Card>

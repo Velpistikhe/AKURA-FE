@@ -23,7 +23,7 @@ Sidebar Shell mengikuti API `my-menus`. Modul Finance menyediakan:
 
 Key `finance_quotations` berbeda dari Marketing karena menu item key unik secara global. Alias `/finance/quotations`, `/finance/quotation`, `/finance/taxes` dan `/finance/tax` tetap tersedia. Quotation hanya dapat dibaca.
 
-Fitur Invoice dan Proforma Invoice telah dihapus, termasuk halaman, route dan alias, form purchase order, pemilih item, service API, serta model payload. URL lama menampilkan halaman tidak tersedia. Konfigurasi menu backend tetap dikelola melalui App Manager; MFE tidak mengubah record menu secara otomatis.
+Fitur Invoice dan Proforma Invoice telah dihapus, termasuk halaman, route dan alias, form purchase order, pemilih item, service API, serta model payload. URL lama menampilkan halaman tidak tersedia. Kolom dan baris detail Invoice Status pada daftar quotation juga dihapus karena field `invoiceStatus` tidak lagi terdokumentasi Swagger. Konfigurasi menu backend tetap dikelola melalui App Manager; MFE tidak mengubah record menu secara otomatis.
 
 ## Kontrak API
 

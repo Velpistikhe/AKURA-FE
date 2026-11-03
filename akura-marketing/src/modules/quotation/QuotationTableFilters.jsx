@@ -1,7 +1,6 @@
 import { Button, Input, InputNumber, Space, Typography } from '../../components/global'
 
 export const QUOTATION_STATUSES = ['CREATED', 'SUBMITTED', 'REJECTED', 'APPROVED', 'REVISED', 'CONFIRMED', 'ON_PROGRESS', 'WORK_ORDER_COMPLETE', 'COMPLETE']
-export const QUOTATION_INVOICE_STATUSES = ['CREATED', 'SEND', 'APPROVED', 'COMPLETE', 'CANCELED', 'EXPIRED']
 
 export function QuotationNumberFilter({ selectedKeys, setSelectedKeys, confirm, clearFilters }) {
   const value = selectedKeys[0]

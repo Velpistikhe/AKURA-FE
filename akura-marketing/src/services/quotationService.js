@@ -2,8 +2,8 @@ import { apiRequest } from './api'
 
 const PATH = '/marketing/quotations'
 export const quotationService = {
-  list: ({ page = 1, limit = 20, isActive, dateFrom, dateTo, no, status, company, invoiceStatus } = {}) => apiRequest(`${PATH}?${new URLSearchParams(
-    Object.entries({ page, limit, isActive, dateFrom, dateTo, no, status, company: company?.trim(), invoiceStatus: invoiceStatus === null ? 'null' : invoiceStatus })
+  list: ({ page = 1, limit = 20, isActive, dateFrom, dateTo, no, status, company } = {}) => apiRequest(`${PATH}?${new URLSearchParams(
+    Object.entries({ page, limit, isActive, dateFrom, dateTo, no, status, company: company?.trim() })
       .filter(([, value]) => value !== '' && value != null),
   )}`),
   get: (id) => apiRequest(`${PATH}/${id}`),

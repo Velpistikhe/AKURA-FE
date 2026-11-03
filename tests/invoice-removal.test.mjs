@@ -32,7 +32,7 @@ test('Marketing retains quotation and work order requests without invoice creati
   assert.equal(service.createInvoice, undefined)
   const list = new URL(service.list({ page: 2, limit: 20, invoiceStatus: 'CREATED' }).path, 'http://localhost')
   assert.equal(list.pathname, '/marketing/quotations')
-  assert.equal(list.searchParams.get('invoiceStatus'), 'CREATED')
+  assert.equal(list.searchParams.get('invoiceStatus'), null, 'invoiceStatus query was removed with the invoice feature')
   assert.equal(service.get('quotation-id').path, '/marketing/quotations/quotation-id')
   const payload = { quotationId: 'quotation-id', startDate: '2026-11-02', endDate: '2026-11-03', inspectors: [], items: [] }
   const request = service.createWorkOrder('quotation-id', payload)

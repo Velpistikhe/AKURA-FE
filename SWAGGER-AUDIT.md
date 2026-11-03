@@ -1,5 +1,19 @@
 # MFE API contract audit
 
+## Pembersihan akhir sisa kode Invoice — 2026-11-03
+
+Pemeriksaan ulang Swagger lokal (`http://localhost:5000/api-docs.json`, Gateway 2.7.0) mengonfirmasi **139 operasi, 0 operasi invoice/proforma/performa** dan 0 schema Invoice. Field `invoiceStatus` sudah tidak ada pada schema quotation maupun parameter `GET /marketing/quotations`.
+
+Sisa integrasi tampilan berikut dihapus dari seluruh MFE:
+
+- Marketing: kolom, filter daftar, baris detail Invoice Status pada `QuotationPage.jsx`, konstanta `QUOTATION_INVOICE_STATUSES` pada `QuotationTableFilters.jsx`, dan parameter query `invoiceStatus` pada `quotationService.list`.
+- Finance: kolom dan baris detail Invoice Status pada `QuotationPage.jsx`.
+- `tests/invoice-removal.test.mjs` kini memverifikasi query `invoiceStatus` tidak lagi dikirim.
+
+Field `deliveryInvoice` dipertahankan karena masih terdokumentasi sebagai bagian form quotation di Swagger. Route Finance tidak memiliki alias invoice khusus; URL lama jatuh ke `not-found` secara generik. Inventaris `tests/swagger-usage-audit.json` sudah diregenerasi (139 operasi, tanpa path invoice).
+
+Verifikasi: 8/8 test kontrak lulus, lint dan production build Marketing serta Finance lulus. Tidak ada mutasi data backend.
+
 ## Penghapusan fitur Invoice dan Proforma Invoice - 2026-11-02
 
 Integrasi pembuatan Invoice dan Proforma Invoice telah dihapus dari Marketing, Finance, dan Field Service. Aksi quotation/work order, halaman dan alias route Finance, form, pemilih company/item, payload model, service dokumen, CSS khusus, dan test fitur lama telah dihapus.
@@ -18,9 +32,9 @@ $env:AUDIT_APPS = 'akura-marketing,akura-finance,akura-fieldservice'
 node tests/swagger-usage-audit.mjs
 ```
 
-Endpoint backend tetap mengikuti Swagger lokal. Data quotation (termasuk invoice status dan delivery invoice), work order, pajak, serta pembatasan branch tetap dipertahankan. Riwayat audit di bawah mendokumentasikan implementasi pada waktu pemeriksaan sebelumnya.
+Endpoint backend tetap mengikuti Swagger lokal. Data quotation (termasuk delivery invoice), work order, pajak, serta pembatasan branch tetap dipertahankan. Riwayat audit di bawah mendokumentasikan implementasi pada waktu pemeriksaan sebelumnya.
 
-Verifikasi perubahan: 8/8 test terarah lulus, lint file yang berubah dan production build ketiga MFE lulus. Audit memakai Swagger lokal dengan 152 operasi; endpoint invoice tidak memiliki pemanggil dalam cakupan ketiga MFE. Tidak ada mutasi data backend.
+Verifikasi perubahan: 8/8 test terarah lulus, lint file yang berubah dan production build ketiga MFE lulus. Audit memakai Swagger lokal; endpoint invoice tidak memiliki pemanggil dalam cakupan ketiga MFE. Tidak ada mutasi data backend.
 
 ## Work order status editing — 2026-11-02
 
