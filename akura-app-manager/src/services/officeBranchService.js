@@ -24,9 +24,6 @@ export const officeBranchService = {
     method: 'PATCH',
     body: JSON.stringify(data),
   }),
-  remove: (officeBranchId) => apiRequest(`${OFFICE_BRANCH_PATH}/${officeBranchId}`, {
-    method: 'DELETE',
-  }),
 }
 
 export default officeBranchService

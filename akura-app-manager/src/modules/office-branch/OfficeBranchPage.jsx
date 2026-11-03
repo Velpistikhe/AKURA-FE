@@ -4,13 +4,11 @@ import {
   App,
   Button,
   Card,
-  DeleteOutlined,
   EditOutlined,
   Form,
   Input,
   Modal,
   PlusOutlined,
-  Popconfirm,
   Space,
   Switch,
   Table,
@@ -147,17 +145,6 @@ function OfficeBranchPage() {
     }
   }
 
-  const deleteOfficeBranch = async (officeBranch) => {
-    try {
-      await officeBranchService.remove(officeBranch.id)
-      message.success('Office branch deleted successfully.')
-      if (officeBranches.length === 1 && page > 1) setPage((current) => current - 1)
-      else await loadOfficeBranches()
-    } catch (error) {
-      message.error(error.message)
-    }
-  }
-
   const handleTableChange = (tablePagination, filters, sorter) => {
     const nextPageSize = tablePagination.pageSize || pageSize
     setPageSize(nextPageSize)
@@ -223,7 +210,7 @@ function OfficeBranchPage() {
     {
       title: 'Actions',
       key: 'actions',
-      width: 130,
+      width: 90,
       fixed: 'right',
       render: (_, officeBranch) => (
         <Space>
@@ -234,16 +221,6 @@ function OfficeBranchPage() {
             onClick={() => openEdit(officeBranch)}
             aria-label={`Edit ${officeBranch.name}`}
           />
-          <Popconfirm
-            title="Delete office branch?"
-            description="This office branch will be permanently deleted."
-            okText="Delete"
-            cancelText="Cancel"
-            okButtonProps={{ danger: true }}
-            onConfirm={() => deleteOfficeBranch(officeBranch)}
-          >
-            <Button isDanger variant="text" icon={<DeleteOutlined />} aria-label={`Delete ${officeBranch.name}`} />
-          </Popconfirm>
         </Space>
       ),
     },

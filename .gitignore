@@ -6,6 +6,9 @@ dist/
 dist-ssr/
 coverage/
 
+# Documentation
+*.md
+
 # Environment files
 .env
 .env.*
