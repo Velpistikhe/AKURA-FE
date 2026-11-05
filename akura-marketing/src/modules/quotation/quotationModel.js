@@ -7,7 +7,7 @@ export const TEXT_FIELDS = [
 ]
 export const QUANTITY_PATTERN = /^\d{1,12}(\.\d{1,3})?$/
 export const DISCOUNT_PATTERN = /^\d{1,3}(\.\d{1,2})?$/
-export const quotationTextMaxLength = (key) => ['supplyAkura', 'supplyCustomer'].includes(key) ? 5000 : 255
+export const quotationTextMaxLength = (key) => ['supplyAkura', 'supplyCustomer', 'accomplished', 'deliveryReports', 'deliveryInvoice'].includes(key) ? 5000 : 255
 export function quotationOptionValues(size) {
   const priceInspection = size.priceInspection ?? size.priceService
   if (size.priceStatus !== 'AVAILABLE' || priceInspection == null || size.catalogActive === false || !['PRIMARY', 'SISTER_COMPANY', 'CONTRACT'].includes(size.priceSource)) return null

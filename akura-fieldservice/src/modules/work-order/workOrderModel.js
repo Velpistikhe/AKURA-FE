@@ -139,5 +139,9 @@ export const quotationNumber = (snapshot) => snapshot?.no == null || snapshot?.n
   ? snapshot?.no || 'Draft'
   : `${snapshot.no}/${snapshot.numberYear}`
 
+export const workOrderBasisLabel = (record) => record.quotationId
+  ? `Quotation ${record.quotationSnapshot ? quotationNumber(record.quotationSnapshot) : record.quotationId}`
+  : `Contract ${record.contractSnapshot?.contractNumber || record.contractId || '-'}`
+
 // Only active snapshot lines are part of the document the work order was built from.
 export const activeQuotationItems = (snapshot) => (snapshot?.items || []).filter((item) => item.isActive !== false)

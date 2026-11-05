@@ -4,17 +4,13 @@ import { Table } from '../../components/ResponsiveTable'
 import { Button, Modal } from '../../components/FinanceControls'
 import { EyeOutlined, ReloadOutlined } from '@ant-design/icons'
 import { quotationService } from '../../services/quotationService'
+import { quotationTerms } from './quotationModel'
 import './QuotationPage.css'
 
 const money = (value) => value == null ? '-' : new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(value)
 const date = (value) => value ? String(value).slice(0, 10) : '-'
 const label = (value) => value ? String(value).replaceAll('_', ' ') : '-'
 const number = (row) => `${row.no == null || row.numberYear == null ? 'Draft' : `${row.no}/${row.numberYear}`}${row.revision ? ` - Revision ${row.revision}` : ''}`
-const terms = [
-  ['subject', 'Subject'], ['termOfPayment', 'Term of Payment'], ['validity', 'Validity'],
-  ['supplyAkura', 'Akura Supply'], ['supplyCustomer', 'Customer Supply'], ['location', 'Location'],
-  ['accomplished', 'Completion Time'], ['deliveryReports', 'Delivery Reports'],
-]
 const errorText = (error) => error.status === 403
   ? 'Your account cannot read quotation references in the current branch.'
   : error.message
@@ -61,7 +57,7 @@ export default function QuotationPage() {
   const profile = detail ? [
     ['Number', detail.no ?? 'Draft'], ['Company', detail.companySnapshot?.name], ['Customer Contact', detail.customerSnapshot], ['Date', date(detail.date)],
     ['Inquiry Method', label(detail.inquiryMethod)], ['Inquiry Date', date(detail.inquiryDate)],
-    ...terms.map(([key, title]) => [title, detail[key]]),
+    ...quotationTerms(detail),
     ['Status', label(detail.status)],
     ['State', detail.isActive ? 'Active' : 'Inactive'],
     ['Company Type', detail.companySnapshot?.type], ['Company Address', detail.companySnapshot?.address], ['NPWP', detail.companySnapshot?.npwp],

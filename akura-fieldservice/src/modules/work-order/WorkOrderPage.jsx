@@ -2,7 +2,7 @@ import TableSearchFilter from '../../components/global/TableSearchFilter'
 import { useEffect, useRef, useState } from 'react'
 import { App, Button, Card, CheckOutlined, DeleteOutlined, EditOutlined, EyeOutlined, Modal, Popconfirm, Result, Table, Tag, Typography } from '../../components/global'
 import { workOrderService } from '../../services/workOrderService'
-import { canAccessWorkOrders, canCreateWorkOrders, canEditWorkOrders, canRevokeWorkOrder, canStartWorkOrder, WORK_ORDER_STATUSES, activeQuotationItems, quotationNumber } from './workOrderModel'
+import { canAccessWorkOrders, canCreateWorkOrders, canEditWorkOrders, canRevokeWorkOrder, canStartWorkOrder, WORK_ORDER_STATUSES, activeQuotationItems, quotationNumber, workOrderBasisLabel } from './workOrderModel'
 import WorkOrderCreate from './WorkOrderCreate'
 import WorkOrderEdit from './WorkOrderEdit'
 import WorkOrderHistory from './WorkOrderHistory'
@@ -164,7 +164,7 @@ function WorkOrderDetail({ id, currentUser, onChanged, onClose }) {
         <div><dt>Number</dt><dd>{record.number}</dd></div><div><dt>Date</dt><dd>{date(record.date)}</dd></div>
         <div><dt>Company</dt><dd>{companyName(record)}</dd></div><div><dt>Status</dt><dd><Tag>{displayEnum(record.status)}</Tag>{record.revoked && <Tag color="error">Revoked</Tag>}</dd></div>
         <div><dt>Start Date</dt><dd>{date(record.startDate)}</dd></div><div><dt>End Date</dt><dd>{date(record.endDate)}</dd></div>
-        <div><dt>Document Basis</dt><dd>{record.quotationId ? `Quotation ${record.quotationSnapshot ? quotationNumber(record.quotationSnapshot) : record.quotationId}` : `Contract ${record.contractSnapshot?.number || record.contractId || '-'}`}</dd></div>
+        <div><dt>Document Basis</dt><dd>{workOrderBasisLabel(record)}</dd></div>
         <div><dt>Created By</dt><dd>{record.createdByName || '-'}</dd></div>
         <div><dt>Inspectors</dt><dd>{record.inspectors?.length ? record.inspectors.map((inspector) => inspector.name).join(', ') : 'No inspectors assigned.'}</dd></div>
       </dl></Card>

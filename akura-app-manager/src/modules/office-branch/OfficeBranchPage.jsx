@@ -17,6 +17,7 @@ import {
   Typography,
 } from '../../components/global'
 import { officeBranchService } from '../../services/officeBranchService'
+import { officeBranchPayload } from './officeBranchModel'
 import '../menu/MenuPage.css'
 
 const DEFAULT_PAGE_SIZE = 20
@@ -118,13 +119,7 @@ function OfficeBranchPage() {
 
   const saveOfficeBranch = async () => {
     const values = await form.validateFields()
-    const payload = {
-      name: values.name.trim(),
-      address: values.address.trim(),
-      telp: values.telp.trim(),
-      email: values.email.trim(),
-      isHead,
-    }
+    const payload = officeBranchPayload({ ...values, isHead }, { create: !editingOfficeBranch })
 
     if (!await confirmSave('office branch')) return
     setSaving(true)
@@ -270,7 +265,7 @@ function OfficeBranchPage() {
       >
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item name="name" label="Name" rules={[{ required: true, message: 'Name is required.' }, { max: 200 }]}>
-            <Input placeholder="example: Jakarta Head Office" />
+            <Input readOnly={Boolean(editingOfficeBranch)} placeholder="example: Jakarta Head Office" />
           </Form.Item>
           <Form.Item name="address" label="Address" rules={[{ required: true, message: 'Address is required.' }, { max: 500 }]}>
             <Input.TextArea rows={3} placeholder="Enter the complete office address" />
