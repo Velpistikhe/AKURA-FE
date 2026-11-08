@@ -2,7 +2,7 @@
 // Marketing microservice (no local gateway); production uses the same-origin gateway.
 const MARKETING_BASE_URL = (import.meta.env.VITE_MARKETING_BASE_URL
   || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5003')).replace(/\/+$/, '')
-// Field Service endpoints (work orders, inspector options) are owned by the
+// Field Service endpoints (work orders) are owned by the
 // Field Service service. In development they are accessed directly on the local
 // Field Service microservice; production uses the same-origin gateway.
 const FIELD_SERVICE_BASE_URL = (import.meta.env.VITE_FIELDSERVICE_BASE_URL

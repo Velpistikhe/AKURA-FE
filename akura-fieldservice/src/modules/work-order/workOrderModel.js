@@ -7,10 +7,10 @@ export const canAccessWorkOrders = (user) => Boolean(user?.isActive && user.offi
   && (['ADMIN', 'APP_MANAGER'].includes(user.role) || ['MARKETING', 'FIELD_SERVICE'].includes(user.section)))
 
 export const canEditWorkOrders = (user) => Boolean(canAccessWorkOrders(user)
-  && ['MARKETING', 'FIELD_SERVICE'].includes(user.section))
+  && user.section === 'MARKETING')
 
 // Starting a work order (DRAFT -> IN_PROGRESS) is a Marketing section write the
-// backend re-validates against Auth and Marketing snapshots; only Marketing
+// backend re-validates against the Marketing quotation snapshot; only Marketing
 // admins own that transition in the UI. ADMIN/APP_MANAGER roles never bypass
 // the backend's write section restriction.
 export const canStartWorkOrders = (user) => Boolean(user?.isActive && user.officeBranchId
@@ -32,11 +32,20 @@ export const workOrderFormValues = (record) => ({
   inspectors: (record.inspectors || []).map((inspector) => inspector.name),
 })
 
-// Creating a Work Order is a MARKETING or FIELD_SERVICE write: the backend
+// Creating a Work Order is a MARKETING write: the backend
 // guards the section on the create route, so the button is hidden for the
 // read-only roles instead of failing after submission.
 export const canCreateWorkOrders = (user) => Boolean(canAccessWorkOrders(user)
-  && ['MARKETING', 'FIELD_SERVICE'].includes(user.section))
+  && user.section === 'MARKETING')
+
+export function inspectorOptions(users = []) {
+  const names = new Map()
+  for (const user of users) {
+    const name = [user.firstName, user.lastName].filter((part) => typeof part === 'string' && part.trim()).map((part) => part.trim()).join(' ')
+    if (name && name.length <= 255 && !names.has(name.toLowerCase())) names.set(name.toLowerCase(), { value: name, label: name })
+  }
+  return [...names.values()]
+}
 
 // The quantities sent to the backend are Decimal(15,3) values, so the client
 // keeps at most three decimals and never sends a negative amount.
@@ -52,20 +61,15 @@ export function normalizeQuantity(value) {
   return number
 }
 
-export function workOrderCreatePayload(values, { quotation, items, inspectors, quotationItems = [] }) {
+export function workOrderCreatePayload(values, { quotation, items, quotationItems = [] }) {
   if (!quotation?.id) throw new Error('Select an approved quotation.')
   if (!validDate(values.startDate)) throw new Error('Enter a valid start date.')
   if (!validDate(values.endDate)) throw new Error('Enter a valid end date.')
   if (values.endDate < values.startDate) throw new Error('End date must be on or after start date.')
-  const inspectorIds = (values.inspectors || []).map((id) => (typeof id === 'string' ? id.trim() : ''))
-  if (inspectorIds.length < 1 || inspectorIds.length > 100) throw new Error('Select at least one and up to 100 inspectors.')
-  if (new Set(inspectorIds.map((id) => id.toLowerCase())).size !== inspectorIds.length) throw new Error('Inspectors must be unique.')
-  const inspectorById = new Map((inspectors || []).map((inspector) => [inspector.id?.toLowerCase(), inspector]))
-  const inspectorPairs = inspectorIds.map((userId) => {
-    const snapshot = inspectorById.get(userId.toLowerCase())
-    if (!snapshot?.name) throw new Error('An inspector option is no longer available. Reload the inspector list and try again.')
-    return { userId, name: snapshot.name }
-  })
+  const inspectors = (Array.isArray(values.inspectors) ? values.inspectors : []).map((name) => typeof name === 'string' ? name.trim() : '')
+  if (inspectors.length < 1 || inspectors.length > 100) throw new Error('Select at least one and up to 100 inspectors.')
+  if (inspectors.some((name) => !name || name.length > 255)) throw new Error('Select inspector names with 1–255 characters.')
+  if (new Set(inspectors.map((name) => name.toLowerCase())).size !== inspectors.length) throw new Error('Inspector names must be unique.')
   const lines = (items || []).filter((item) => item.selected)
   if (lines.length < 1) throw new Error('Select at least one item for the work order.')
   if (lines.length > 100) throw new Error('A work order accepts at most 100 items.')
@@ -85,7 +89,7 @@ export function workOrderCreatePayload(values, { quotation, items, inspectors, q
     if (quantityMaintenance === null) throw new Error(`Enter a valid maintenance quantity for ${item.itemName || 'the item'}.`)
     return { itemSizeId: item.itemSizeId, quantityInspection, quantityMaintenance }
   })
-  return { quotationId: quotation.id, startDate: values.startDate, endDate: values.endDate, inspectors: inspectorPairs, items: payloadItems }
+  return { quotationId: quotation.id, startDate: values.startDate, endDate: values.endDate, inspectors, items: payloadItems }
 }
 
 export function workOrderCreateComplete(values = {}, itemCount = 0) {

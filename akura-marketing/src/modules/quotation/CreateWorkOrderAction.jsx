@@ -3,7 +3,7 @@ import { App, Button, Card, DeleteOutlined, Form, Input, Modal, Popconfirm, Sele
 import { PlusOutlined, ToolOutlined } from '@ant-design/icons'
 import { quotationService } from '../../services/quotationService'
 import { workOrderService } from '../../services/workOrderService'
-import { activeQuotationItems, canCreateWorkOrderFromQuotation, emptyItemFilters, filterQuotationItems, workOrderFormComplete, quotationWorkOrderPayload } from '../work-order/workOrderModel'
+import { activeQuotationItems, canCreateWorkOrderFromQuotation, emptyItemFilters, filterQuotationItems, inspectorOptions, workOrderFormComplete, quotationWorkOrderPayload } from '../work-order/workOrderModel'
 import { money } from './quotationModel'
 import { quotationPdfBlob } from './quotationPdfPreview'
 import QuotationWorkOrderItemPicker from './QuotationWorkOrderItemPicker'
@@ -111,12 +111,9 @@ export default function CreateWorkOrderAction({ currentUser, quotation, onCreate
     setInspectorsLoading(true)
     setInspectorsError('')
     setInspectors([])
-    workOrderService.inspectors()
-      .then(({ data }) => {
-        if (active) setInspectors((data?.inspectors || []).map((inspector) => ({
-          id: inspector.id,
-          name: [inspector.firstName, inspector.lastName].filter((part) => typeof part === 'string' && part.trim()).map((part) => part.trim()).join(' '),
-        })))
+    workOrderService.inspectors(currentUser?.officeBranchId)
+      .then((users) => {
+        if (active) setInspectors(inspectorOptions(users))
       })
       .catch((err) => {
         if (!active) return
@@ -125,7 +122,7 @@ export default function CreateWorkOrderAction({ currentUser, quotation, onCreate
       })
       .finally(() => { if (active) setInspectorsLoading(false) })
     return () => { active = false }
-  }, [open, inspectorsRetry, message])
+  }, [open, inspectorsRetry, message, currentUser?.officeBranchId])
 
   // The list response contains no quotation lines, so fetch detail before item selection.
   useEffect(() => {
@@ -195,7 +192,7 @@ export default function CreateWorkOrderAction({ currentUser, quotation, onCreate
       // item lines. The backend re-validates active state, APPROVED status, price
       // source and branch before creating the work order.
       if (!canCreateWorkOrderFromQuotation(currentUser, quotation)) throw new Error('This quotation is no longer eligible for a work order. Refresh the quotation list.')
-      const payload = quotationWorkOrderPayload(values, quotationDetail, inspectors)
+      const payload = quotationWorkOrderPayload(values, quotationDetail)
       if (!await confirmSave('work order')) return
       const { data } = await quotationService.createWorkOrder(quotation.id, payload)
       message.success(`Work order ${data.number} created successfully.`)
@@ -228,7 +225,7 @@ export default function CreateWorkOrderAction({ currentUser, quotation, onCreate
             <Form.Item name="items" rules={[{ required: true, type: 'array', min: 1, message: 'Select at least one quotation item.' }]} hidden>
               <Input type="hidden" />
             </Form.Item>
-            <Form.Item name="inspectors" label="Inspectors" extra="Select up to 100 Field Service users." rules={[{ required: true, type: 'array', min: 1, message: 'Select at least one inspector.' }]}><Select mode="multiple" maxCount={100} loading={inspectorsLoading} options={inspectors.map((inspector) => ({ value: inspector.id, label: inspector.name }))} placeholder="Select inspectors" /></Form.Item>
+            <Form.Item name="inspectors" label="Inspectors" extra="Select up to 100 Field Service inspector names." rules={[{ required: true, type: 'array', min: 1, message: 'Select at least one inspector.' }]}><Select mode="multiple" maxCount={100} loading={inspectorsLoading} options={inspectors} placeholder="Select inspectors" /></Form.Item>
             <Card className="work-order-modal-items" bordered variant="outlined">
               <div className="work-order-modal-items__heading">
                 <div>

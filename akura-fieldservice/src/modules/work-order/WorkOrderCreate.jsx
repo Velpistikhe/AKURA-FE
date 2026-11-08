@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { App, Button, Card, Form, Input, InputNumber, Modal, Select, Table, Typography } from '../../components/global'
 import { PlusOutlined } from '@ant-design/icons'
 import { workOrderService } from '../../services/workOrderService'
-import { canCreateWorkOrders, normalizeQuantity, workOrderCreateComplete, workOrderCreatePayload } from './workOrderModel'
+import { canCreateWorkOrders, inspectorOptions, normalizeQuantity, workOrderCreateComplete, workOrderCreatePayload } from './workOrderModel'
 
 const quotationLabel = (quotation) => `${quotation.number ?? 'Draft'}${quotation.numberYear ? `/${quotation.numberYear}` : ''} — ${quotation.subject || 'Quotation'}`
 const itemLabel = (item) => `${item.itemName || 'Item'}${item.size ? ` — ${item.size}` : ''}`
@@ -33,19 +33,17 @@ export default function WorkOrderCreate({ currentUser, onCreated }) {
     let active = true
     setLoadingOptions(true)
     setError('')
-    Promise.all([workOrderService.quotations(), workOrderService.inspectors()])
+    setInspectors([])
+    Promise.all([workOrderService.quotations(), workOrderService.inspectors(currentUser?.officeBranchId)])
       .then(([quotationResponse, inspectorResponse]) => {
         if (!active) return
         setQuotations(quotationResponse?.data?.quotations || [])
-        setInspectors((inspectorResponse?.data?.inspectors || []).map((user) => ({
-          id: user.id,
-          name: [user.firstName, user.lastName].filter((part) => typeof part === 'string' && part.trim()).map((part) => part.trim()).join(' '),
-        })).filter((user) => user.id && user.name))
+        setInspectors(inspectorOptions(inspectorResponse))
       })
       .catch((err) => { if (active) setError(err?.message || 'Gagal memuat quotation dan inspector.') })
       .finally(() => { if (active) setLoadingOptions(false) })
     return () => { active = false }
-  }, [open, retry])
+  }, [open, retry, currentUser?.officeBranchId])
 
   useEffect(() => {
     if (!open || !quotation?.id) {
@@ -85,7 +83,7 @@ export default function WorkOrderCreate({ currentUser, onCreated }) {
     setSaving(true)
     setError('')
     try {
-      const payload = workOrderCreatePayload(values, { quotation, items: itemRows, inspectors, quotationItems: itemRows })
+      const payload = workOrderCreatePayload(values, { quotation, items: itemRows, quotationItems: itemRows })
       const { data } = await workOrderService.create(payload)
       message.success(`Work order ${data.number} berhasil dibuat.`)
       setOpen(false)
@@ -120,7 +118,7 @@ export default function WorkOrderCreate({ currentUser, onCreated }) {
           ]}><Input type="date" /></Form.Item>
         </div>
         <Form.Item name="inspectors" label="Inspector" rules={[{ required: true, type: 'array', min: 1, message: 'Pilih minimal satu inspector.' }]}>
-          <Select mode="multiple" maxCount={100} loading={loadingOptions} options={inspectors.map((user) => ({ value: user.id, label: user.name }))} placeholder="Pilih inspector" />
+          <Select mode="multiple" maxCount={100} loading={loadingOptions} options={inspectors} placeholder="Pilih inspector" />
         </Form.Item>
 
         <Card title={`Item Work Order${itemRows.length ? ` (${selectedCount} dipilih)` : ''}`} bordered variant="outlined">

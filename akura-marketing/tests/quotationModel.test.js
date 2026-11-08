@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { quotationChanges, quotationFormValues, quotationPayload, quotationTextMaxLength } from '../src/modules/quotation/quotationModel.js'
-import { quotationWorkOrderPayload } from '../src/modules/work-order/workOrderModel.js'
+import { inspectorOptions, quotationWorkOrderPayload } from '../src/modules/work-order/workOrderModel.js'
 
 const longFields = ['supplyAkura', 'supplyCustomer', 'accomplished', 'deliveryReports', 'deliveryInvoice']
 const multiline = (length) => `First line\n${'x'.repeat(length - 11)}`
@@ -45,11 +45,32 @@ for (const length of [256, 5000]) {
 test('Marketing work order creation sends item selections without client quantities', () => {
   const quotationId = '00000000-0000-4000-8000-000000000001'
   const itemSizeId = '00000000-0000-4000-8000-000000000002'
-  const inspectorId = '00000000-0000-4000-8000-000000000003'
   const payload = quotationWorkOrderPayload({
-    startDate: '2026-11-05', endDate: '2026-11-06', inspectors: [inspectorId], items: [itemSizeId],
-  }, { id: quotationId, status: 'APPROVED', isActive: true, items: [{ itemSizeId, quantityInspection: '4' }] }, [{ id: inspectorId, name: 'Branch Inspector' }])
+    startDate: '2026-11-05', endDate: '2026-11-06', inspectors: [' Branch Inspector '], items: [itemSizeId],
+  }, { id: quotationId, status: 'APPROVED', isActive: true, items: [{ itemSizeId, quantityInspection: '4' }] })
   assert.deepEqual(payload.items, [{ itemSizeId }])
-  assert.deepEqual(payload.inspectors, [{ userId: inspectorId, name: 'Branch Inspector' }])
+  assert.deepEqual(payload.inspectors, ['Branch Inspector'])
   assert.equal(payload.quotationId, quotationId)
+})
+
+test('Marketing inspector options support reduced Auth users and deduplicate display names', () => {
+  assert.deepEqual(inspectorOptions([
+    { id: 'one', firstName: ' Budi ', lastName: ' Santoso ', branch: 'Jakarta' },
+    { id: 'two', firstName: 'budi', lastName: 'santoso' },
+    { id: 'three', firstName: 'Siti', lastName: null },
+    { id: 'four', firstName: '', lastName: null },
+    { id: 'five', firstName: 'x'.repeat(256) },
+  ]), [{ value: 'Budi Santoso', label: 'Budi Santoso' }, { value: 'Siti', label: 'Siti' }])
+})
+
+test('Marketing work order creation validates inspector names instead of user ID pairs', () => {
+  const itemSizeId = '00000000-0000-4000-8000-000000000002'
+  const quotation = { id: 'quotation-id', status: 'APPROVED', isActive: true, items: [{ itemSizeId }] }
+  const values = { startDate: '2026-11-05', endDate: '2026-11-06', items: [itemSizeId] }
+  const create = (inspectors) => quotationWorkOrderPayload({ ...values, inspectors }, quotation)
+  for (const inspectors of [undefined, [], [' '], ['x'.repeat(256)], ['Budi', ' budi '], Array(101).fill('Budi'), [{ userId: 'old-id', name: 'Budi' }]]) {
+    assert.throws(() => create(inspectors), /inspector/i)
+  }
+  const names = ['x'.repeat(255), ...Array.from({ length: 99 }, (_, index) => `Inspector ${index}`)]
+  assert.deepEqual(create(names).inspectors, names)
 })
