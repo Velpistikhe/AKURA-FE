@@ -1,19 +1,34 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL
-  || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5000/api/v1')).replace(/\/+$/, '')
+const GATEWAY_BASE_URL = (import.meta.env.VITE_AUTH_BASE_URL || import.meta.env.VITE_API_BASE_URL
+  || (import.meta.env.PROD ? '/api/v1' : 'https://akura-api-gateway.vercel.app/api/v1')).replace(/\/+$/, '')
+// Opt into the local App Manager with VITE_APP_MANAGER_BASE_URL=http://localhost:5002.
+const APP_MANAGER_BASE_URL = (import.meta.env.VITE_APP_MANAGER_BASE_URL
+  || import.meta.env.VITE_API_BASE_URL || GATEWAY_BASE_URL).replace(/\/+$/, '')
 const SHELL_URL = (import.meta.env.VITE_AKURA_SHELL_URL || 'http://localhost:4173').replace(/\/+$/, '')
 const REFRESH_PATH = '/auth/refresh-token'
 
 let refreshPromise = null
+let accessToken = ''
 
+export function setAccessToken(token) {
+  accessToken = typeof token === 'string' ? token : ''
+}
+
+export function getAccessToken() {
+  return accessToken
+}
 
 async function executeRequest(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const isAppManagerPath = path.startsWith('/app-manager/') && !/^\/app-manager\/internal(?:[/?]|$)/.test(path)
+  const baseUrl = isAppManagerPath ? APP_MANAGER_BASE_URL : GATEWAY_BASE_URL
+  const requestPath = isAppManagerPath && !/\/api\/v1(?:\/|$)/.test(baseUrl)
+    ? path.slice('/app-manager'.length) : path
+  const headers = new Headers(options.headers)
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+  if (!path.startsWith('/auth/') && accessToken && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${accessToken}`)
+  const response = await fetch(`${baseUrl}${requestPath}`, {
     ...options,
     credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+    headers,
   })
 
   const payload = await response.json().catch(() => null)
@@ -31,6 +46,7 @@ function refreshSession() {
           const error = createApiError(response, payload)
           throw error
         }
+        if (payload?.data?.accessToken) setAccessToken(payload.data.accessToken)
       })
       .finally(() => {
         refreshPromise = null
@@ -48,6 +64,7 @@ function createApiError(response, payload) {
 }
 
 function redirectToLogin() {
+  setAccessToken('')
   window.location.assign(`${SHELL_URL}/login`)
 }
 

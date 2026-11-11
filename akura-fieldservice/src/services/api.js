@@ -32,8 +32,12 @@ async function executeRequest(path, options = {}) {
   // run on the issuing gateway, which owns those routes. Auth relies on the
   // HttpOnly cookie only.
   const isAuthPath = path.startsWith('/auth/')
+  const isFieldServicePath = path.startsWith('/fieldservice/') && !/^\/fieldservice\/internal(?:[/?]|$)/.test(path)
+  const baseUrl = isFieldServicePath ? API_BASE_URL : AUTH_BASE_URL
+  const requestPath = isFieldServicePath && !/\/api\/v1(?:\/|$)/.test(baseUrl)
+    ? path.slice('/fieldservice'.length) : path
   if (!isAuthPath && accessToken && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${accessToken}`)
-  const response = await fetch(`${isAuthPath ? AUTH_BASE_URL : API_BASE_URL}${path}`, {
+  const response = await fetch(`${baseUrl}${requestPath}`, {
     ...requestOptions,
     credentials: 'include',
     headers,

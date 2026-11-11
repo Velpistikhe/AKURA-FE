@@ -1,8 +1,10 @@
 import axios from 'axios'
 import { clearRefreshToken, setRefreshToken } from './tokenStore'
 
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL
-  || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5000/api/v1')).replace(/\/+$/, '')
+const BASE_URL = (import.meta.env.VITE_AUTH_BASE_URL || import.meta.env.VITE_API_BASE_URL
+  || (import.meta.env.PROD ? '/api/v1' : 'https://akura-api-gateway.vercel.app/api/v1')).replace(/\/+$/, '')
+const APP_MANAGER_BASE_URL = (import.meta.env.VITE_APP_MANAGER_BASE_URL
+  || import.meta.env.VITE_API_BASE_URL || BASE_URL).replace(/\/+$/, '')
 
 // Development access token kept in memory only (never localStorage/sessionStorage).
 // Exposed as a getter so microfrontends can send Authorization: Bearer when they
@@ -26,6 +28,18 @@ const refreshApi = axios.create({
   headers: { 'Content-Type': 'application/json' },
   timeout: 15000,
   withCredentials: true,
+})
+
+api.interceptors.request.use((config) => {
+  // Retain the logical path so a 401 retry can recalculate the local URL once.
+  const path = config._akuraPath || config.url || ''
+  config._akuraPath = path
+  const isAppManagerPath = path.startsWith('/app-manager/') && !/^\/app-manager\/internal(?:[/?]|$)/.test(path)
+  config.baseURL = isAppManagerPath ? APP_MANAGER_BASE_URL : BASE_URL
+  config.url = isAppManagerPath && !/\/api\/v1(?:\/|$)/.test(config.baseURL)
+    ? path.slice('/app-manager'.length) : path
+  if (isAppManagerPath && accessToken) config.headers.set('Authorization', `Bearer ${accessToken}`)
+  return config
 })
 
 const AUTH_PATHS_WITHOUT_REFRESH = [

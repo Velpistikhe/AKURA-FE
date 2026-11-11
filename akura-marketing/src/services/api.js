@@ -38,13 +38,16 @@ async function executeRequest(path, options = {}) {
   // run on the issuing gateway. Production routes everything through the
   // same-origin gateway. Auth relies on the HttpOnly cookie only.
   const isAuthPath = path.startsWith('/auth/')
-  const isMarketingPath = path.startsWith('/marketing/')
-  const isFieldServicePath = path.startsWith('/fieldservice/')
+  const isInternalPath = /^\/(marketing|fieldservice)\/internal(?:[/?]|$)/.test(path)
+  const isMarketingPath = path.startsWith('/marketing/') && !isInternalPath
+  const isFieldServicePath = path.startsWith('/fieldservice/') && !isInternalPath
   const baseUrl = isMarketingPath ? MARKETING_BASE_URL
     : isFieldServicePath ? FIELD_SERVICE_BASE_URL
       : GATEWAY_BASE_URL
   if (!isAuthPath && accessToken && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${accessToken}`)
-  const response = await fetch(`${baseUrl}${path}`, {
+  const requestPath = (isMarketingPath || isFieldServicePath) && !/\/api\/v1(?:\/|$)/.test(baseUrl)
+    ? path.replace(/^\/(marketing|fieldservice)/, '') : path
+  const response = await fetch(`${baseUrl}${requestPath}`, {
     ...requestOptions,
     credentials: 'include',
     headers,

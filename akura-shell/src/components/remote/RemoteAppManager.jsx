@@ -3,6 +3,7 @@ import { Alert, Button } from '../global'
 import { useLocation } from 'react-router-dom'
 import { AppLoading } from '../ui'
 import { useAuth } from '../../context/AuthContext'
+import { getAccessToken } from '../../services/api'
 
 const FederatedAppManager = lazy(() => import('akuraAppManager/AppManager'))
 
@@ -37,7 +38,7 @@ function RemoteAppManager() {
   return (
     <RemoteErrorBoundary>
       <Suspense fallback={<AppLoading message="Loading Akura App Manager..." fullScreen={false} />}>
-        <FederatedAppManager currentUser={user} pathname={location.pathname} />
+        <FederatedAppManager currentUser={user} pathname={location.pathname} accessToken={getAccessToken()} />
       </Suspense>
     </RemoteErrorBoundary>
   )

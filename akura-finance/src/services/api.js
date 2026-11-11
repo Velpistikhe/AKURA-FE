@@ -27,9 +27,12 @@ async function executeRequest(path, options = {}) {
   const { responseType, ...requestOptions } = options
   const headers = new Headers(options.headers)
   if (!(options.body instanceof FormData) && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
-  const isGatewayPath = path.startsWith('/auth/') || path.startsWith('/marketing/')
+  const isFinancePath = path.startsWith('/finance/') && !/^\/finance\/internal(?:[/?]|$)/.test(path)
+  const baseUrl = isFinancePath ? API_BASE_URL : GATEWAY_BASE_URL
+  const requestPath = isFinancePath && !/\/api\/v1(?:\/|$)/.test(baseUrl)
+    ? path.slice('/finance'.length) : path
   if (!path.startsWith('/auth/') && accessToken && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${accessToken}`)
-  const response = await fetch(`${isGatewayPath ? GATEWAY_BASE_URL : API_BASE_URL}${path}`, {
+  const response = await fetch(`${baseUrl}${requestPath}`, {
     ...requestOptions,
     credentials: 'include',
     headers,
