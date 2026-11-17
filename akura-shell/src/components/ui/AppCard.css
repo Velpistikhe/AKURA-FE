@@ -1,7 +1,7 @@
 /* AppCard */
 .app-card {
-  border-radius: 16px !important;
-  font-family: 'Inter', sans-serif;
+  border-radius: var(--radius-md) !important;
+  font-family: var(--font-family);
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 

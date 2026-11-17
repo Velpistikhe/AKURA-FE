@@ -2,6 +2,8 @@
 // local microservice (no local gateway); production uses the same-origin gateway.
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL
   || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5005')).replace(/\/+$/, '')
+const MARKETING_BASE_URL = (import.meta.env.VITE_MARKETING_BASE_URL
+  || (import.meta.env.PROD ? '/api/v1' : 'http://localhost:5003')).replace(/\/+$/, '')
 // Auth endpoints (refresh/logout/profile) always run on the gateway that issued
 // the HttpOnly session cookie (the Vercel gateway in development), never on the
 // directly accessed Field Service.
@@ -33,9 +35,10 @@ async function executeRequest(path, options = {}) {
   // HttpOnly cookie only.
   const isAuthPath = path.startsWith('/auth/')
   const isFieldServicePath = path.startsWith('/fieldservice/') && !/^\/fieldservice\/internal(?:[/?]|$)/.test(path)
-  const baseUrl = isFieldServicePath ? API_BASE_URL : AUTH_BASE_URL
-  const requestPath = isFieldServicePath && !/\/api\/v1(?:\/|$)/.test(baseUrl)
-    ? path.slice('/fieldservice'.length) : path
+  const isMarketingPath = path.startsWith('/marketing/') && !/^\/marketing\/internal(?:[/?]|$)/.test(path)
+  const baseUrl = isFieldServicePath ? API_BASE_URL : isMarketingPath ? MARKETING_BASE_URL : AUTH_BASE_URL
+  const requestPath = (isFieldServicePath || isMarketingPath) && !/\/api\/v1(?:\/|$)/.test(baseUrl)
+    ? path.replace(/^\/(marketing|fieldservice)/, '') : path
   if (!isAuthPath && accessToken && !headers.has('Authorization')) headers.set('Authorization', `Bearer ${accessToken}`)
   const response = await fetch(`${baseUrl}${requestPath}`, {
     ...requestOptions,

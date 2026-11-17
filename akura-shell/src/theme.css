@@ -7,21 +7,26 @@
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg-light: #0b1120;
-  --bg-card: #121b2e;
-  --surface: #121b2e;
-  --surface-subtle: #172033;
-  --surface-muted: #1e2a42;
-  --text-primary: #e6edf8;
-  --text-secondary: #afbed3;
-  --text-muted: #91a3bd;
-  --border: #24304a;
-  --header-bg: rgba(18, 27, 46, 0.92);
-  --primary: #4d72be;
-  --primary-light: #5d83cc;
-  --primary-lighter: #829fe0;
-  --gradient-primary: linear-gradient(135deg, #4d72be 0%, #5d83cc 100%);
-  --gradient-primary-hover: linear-gradient(135deg, #4064ad 0%, #5275bd 100%);
+  --bg-light: #101b29;
+  --bg-card: #172639;
+  --surface: #172639;
+  --surface-subtle: #1c2e42;
+  --surface-muted: #24394e;
+  --text-primary: #e8eff6;
+  --text-secondary: #a6b7c7;
+  --text-muted: #a6b7c7;
+  --border: #34465b;
+  --header-bg: #172639;
+  --primary: #a3c2ef;
+  --primary-light: #bad3f5;
+  --primary-lighter: #c7ddf8;
+  --accent: #ff9ca5;
+  --link: #a3c2ef;
+  --action-bg: #a3c2ef;
+  --action-hover: #bad3f5;
+  --action-text: #13233a;
+  --gradient-primary: var(--action-bg);
+  --gradient-primary-hover: var(--action-hover);
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 20%), 0 2px 8px rgb(0 0 0 / 16%);
   --shadow-md: 0 2px 4px rgb(0 0 0 / 22%), 0 8px 24px rgb(0 0 0 / 24%);
   --shadow-lg: 0 4px 8px rgb(0 0 0 / 26%), 0 18px 44px rgb(0 0 0 / 32%);
@@ -41,21 +46,16 @@
 html .dashboard-root, html .dashboard-main {
   background: var(--bg-light) !important;
 }
-html .dashboard-content {
-  background:
-    radial-gradient(circle at 100% 0, rgba(61, 90, 158, 0.10), transparent 36%),
-    radial-gradient(circle at 0 100%, rgba(224, 32, 32, 0.05), transparent 32%),
-    var(--bg-light) !important;
-}
+html .dashboard-content { background: var(--bg-light) !important; }
 html .dashboard-header {
-  background: var(--header-bg) !important;
+  background: var(--header-bg, var(--surface)) !important;
   border-bottom: 1px solid var(--border) !important;
   box-shadow: none !important;
   height: var(--header-height) !important;
   line-height: var(--header-height) !important;
 }
 html .dashboard-sider {
-  background: linear-gradient(180deg, #172957, #101d38) !important;
+  background: #182b49 !important;
   box-shadow: none;
   border-right: 1px solid rgb(255 255 255 / 6%);
 }
@@ -67,8 +67,8 @@ html .sider-logo {
   box-sizing: border-box;
 }
 html .sider-menu .ant-menu-item-selected {
-  background: linear-gradient(135deg, rgba(224, 32, 32, 0.92), rgba(255, 68, 68, 0.82)) !important;
-  box-shadow: 0 4px 14px rgb(224 32 32 / 32%), inset 3px 0 rgb(255 255 255 / 55%) !important;
+  background: #2b4260 !important;
+  box-shadow: inset 3px 0 var(--gold) !important;
 }
 /* Netralkan overlay background dari Ant Design dark agar gradient brand tampil */
 html .sider-menu .ant-menu-item-selected::before,
@@ -76,7 +76,7 @@ html .sider-menu .ant-menu-item-selected::after {
   background: transparent !important;
   border-color: transparent !important;
 }
-html .sider-menu .ant-menu-item, html .sider-menu .ant-menu-submenu-title { border-radius: 10px !important; }
+html .sider-menu .ant-menu-item, html .sider-menu .ant-menu-submenu-title { border-radius: var(--radius-sm) !important; }
 html .sider-user { background: transparent; }
 html .header-toggle-btn, html .header-icon-btn,
 html .header-user-name, html .header-breadcrumb .ant-breadcrumb-link,
@@ -88,8 +88,8 @@ html .header-divider { background: var(--border); margin-inline: 10px; }
 
 .theme-toggle {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  min-width: 40px; height: 40px; padding: 0 12px; flex-shrink: 0;
-  border: 1px solid var(--border); border-radius: 12px;
+  min-width: 44px; height: 44px; padding: 0 12px; flex-shrink: 0;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface); color: var(--text-primary);
   font-size: 12px; font-weight: 600; line-height: 1; cursor: pointer;
   transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
@@ -100,15 +100,6 @@ html .header-divider { background: var(--border); margin-inline: 10px; }
 html :focus-visible { outline: 3px solid #739de6; outline-offset: 3px; }
 .auth-theme-toggle { position: absolute; top: 20px; right: 24px; z-index: 5; }
 
-html .welcome-banner {
-  background: linear-gradient(115deg, #14224a 0%, #1e3468 55%, #2a4080 100%);
-  box-shadow: 0 10px 28px rgb(15 30 61 / 16%);
-  border-radius: 20px;
-}
-html .welcome-name { font-weight: 800; letter-spacing: -.035em; }
-html .welcome-desc { color: #c6d4e7; line-height: 1.7; }
-html .welcome-greeting { color: #b9cae2; letter-spacing: .1em; }
-html .ws-1, html .ws-2, html .marketing-overview-decoration { animation: none; }
 html .app-card--default, html .app-card--outlined { border-color: var(--border) !important; box-shadow: var(--shadow-sm) !important; }
 html .app-card .ant-card-head { border-color: var(--border) !important; }
 html .app-card--hover:hover { transform: translateY(-3px) !important; box-shadow: var(--shadow-lg) !important; }

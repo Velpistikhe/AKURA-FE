@@ -52,6 +52,29 @@ for (const [name, env, baseUrl, direct] of [
   })
 }
 
+for (const [name, env, expected] of [
+  ['local Marketing', localEnv, 'http://localhost:5003/companies?page=1'],
+  ['configured Marketing gateway', { ...gatewayEnv, VITE_MARKETING_BASE_URL: 'https://gateway.example/api/v1' }, 'https://gateway.example/api/v1/marketing/companies?page=1'],
+  ['production Marketing', { PROD: true }, '/api/v1/marketing/companies?page=1'],
+]) {
+  test(name + ' routes company/catalog reads with the session token and keeps internal calls on the gateway', async (context) => {
+    const { apiRequest, setAccessToken } = await loadApi(context, env)
+    setAccessToken('shell-token')
+    const calls = []
+    const fetchMock = mock.method(globalThis, 'fetch', async (url, options) => {
+      calls.push({ url, options })
+      return { ok: true, status: 200, json: async () => ({ data: {} }) }
+    })
+    context.after(() => fetchMock.mock.restore())
+    await apiRequest('/marketing/companies?page=1')
+    await apiRequest('/marketing/internal/events')
+    assert.equal(calls[0].url, expected)
+    assert.equal(calls[0].options.headers.get('Authorization'), 'Bearer shell-token')
+    assert.equal(calls[0].options.credentials, 'include')
+    assert.equal(calls[1].url, (env.PROD ? '/api/v1' : 'https://gateway.example/api/v1') + '/marketing/internal/events')
+  })
+}
+
 test('concurrent direct-service 401 responses share a gateway refresh and retry with the rotated token', async (context) => {
   const { apiRequest, setAccessToken, getAccessToken } = await loadApi(context, localEnv)
   setAccessToken('expired-token')

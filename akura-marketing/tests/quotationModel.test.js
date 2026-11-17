@@ -1,10 +1,19 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { quotationChanges, quotationFormValues, quotationPayload, quotationTextMaxLength } from '../src/modules/quotation/quotationModel.js'
+import { money, quotationChanges, quotationFormValues, quotationPayload, quotationTextMaxLength } from '../src/modules/quotation/quotationModel.js'
 import { inspectorOptions, quotationWorkOrderPayload } from '../src/modules/work-order/workOrderModel.js'
 
 const longFields = ['supplyAkura', 'supplyCustomer', 'accomplished', 'deliveryReports', 'deliveryInvoice']
 const multiline = (length) => `First line\n${'x'.repeat(length - 11)}`
+
+test('quotation preview formats stored item discounts, including zero and missing historical values', () => {
+  for (const [discount, expected] of [
+    [0, '0.00'], ['0.00', '0.00'], ['10.50', '10.50'], ['100', '100.00'],
+    [null, '-'], [undefined, '-'],
+  ]) {
+    assert.equal(money(discount), expected)
+  }
+})
 
 test('quotation form limits accept 256 and 5000 characters and exclude 5001 for long terms', () => {
   for (const key of longFields) {
@@ -42,15 +51,26 @@ for (const length of [256, 5000]) {
   })
 }
 
-test('Marketing work order creation sends item selections without client quantities', () => {
+test('Marketing work order creation preserves selected quotation quantities without prices or server-owned fields', () => {
   const quotationId = '00000000-0000-4000-8000-000000000001'
   const itemSizeId = '00000000-0000-4000-8000-000000000002'
+  const maintenanceSizeId = '00000000-0000-4000-8000-000000000003'
+  const quotationItems = [
+    { itemSizeId, quantityInspection: '2.125', quantityMaintenance: '0', priceInspection: '500', isActive: true },
+    { itemSizeId: maintenanceSizeId, quantityInspection: '0', quantityMaintenance: '0.750', priceMaintenance: '250', isActive: true },
+  ]
   const payload = quotationWorkOrderPayload({
-    startDate: '2026-11-05', endDate: '2026-11-06', inspectors: [' Branch Inspector '], items: [itemSizeId],
-  }, { id: quotationId, status: 'APPROVED', isActive: true, items: [{ itemSizeId, quantityInspection: '4' }] })
-  assert.deepEqual(payload.items, [{ itemSizeId }])
+    startDate: '2026-11-05', endDate: '2026-11-06', inspectors: [' Branch Inspector '],
+    companyId: 'untrusted-company', officeBranchId: 'untrusted-branch', status: 'IN_PROGRESS',
+    items: quotationItems,
+  }, { id: quotationId, status: 'APPROVED', isActive: true, items: quotationItems })
+  assert.deepEqual(payload.items, [
+    { itemSizeId, quantityInspection: 2.125, quantityMaintenance: 0 },
+    { itemSizeId: maintenanceSizeId, quantityInspection: 0, quantityMaintenance: 0.75 },
+  ])
   assert.deepEqual(payload.inspectors, ['Branch Inspector'])
   assert.equal(payload.quotationId, quotationId)
+  assert.deepEqual(Object.keys(payload).sort(), ['endDate', 'inspectors', 'items', 'quotationId', 'startDate'])
 })
 
 test('Marketing inspector options support reduced Auth users and deduplicate display names', () => {
@@ -66,7 +86,7 @@ test('Marketing inspector options support reduced Auth users and deduplicate dis
 test('Marketing work order creation validates inspector names instead of user ID pairs', () => {
   const itemSizeId = '00000000-0000-4000-8000-000000000002'
   const quotation = { id: 'quotation-id', status: 'APPROVED', isActive: true, items: [{ itemSizeId }] }
-  const values = { startDate: '2026-11-05', endDate: '2026-11-06', items: [itemSizeId] }
+  const values = { startDate: '2026-11-05', endDate: '2026-11-06', items: [{ itemSizeId, quantityInspection: '1', quantityMaintenance: '0' }] }
   const create = (inspectors) => quotationWorkOrderPayload({ ...values, inspectors }, quotation)
   for (const inspectors of [undefined, [], [' '], ['x'.repeat(256)], ['Budi', ' budi '], Array(101).fill('Budi'), [{ userId: 'old-id', name: 'Budi' }]]) {
     assert.throws(() => create(inspectors), /inspector/i)

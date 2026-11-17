@@ -1,18 +1,22 @@
-import { App, Card, Typography } from "./components/global";
+import { App, Typography } from "./components/global";
 import AppRoute from "./routes/AppRoute";
 import "./MarketingApp.css";
 
 function MarketingOverview() {
   return (
     <section className="marketing-overview">
-      <Card className="marketing-overview-card">
-        <span className="marketing-overview-eyebrow">Marketing workspace</span>
-        <Typography.Title level={2}>Akura Marketing</Typography.Title>
+      <header className="marketing-overview-heading">
+        <Typography.Title level={1}>Marketing</Typography.Title>
         <Typography.Text tone="secondary">
-          Select a Marketing module from the navigation to start managing data.
+          From customer requirements to an inspection ready quotation.
         </Typography.Text>
-        <div className="marketing-overview-decoration" aria-hidden="true" />
-      </Card>
+      </header>
+      <ol className="marketing-process">
+        <li><h2>Prepare the quotation</h2><p>Bring together customer details, inspection items, quantities, and prices.</p></li>
+        <li><h2>Review and approve</h2><p>Follow the quotation status and review changes before approval.</p></li>
+        <li><h2>Coordinate the work</h2><p>Use the approved quotation to prepare a work order for inspection.</p></li>
+      </ol>
+      <p className="marketing-overview-hint">Open your assigned Marketing module from the navigation to begin.</p>
     </section>
   );
 }

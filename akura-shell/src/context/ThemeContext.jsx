@@ -30,15 +30,26 @@ export function ThemeProvider({ children }) {
   const config = useMemo(() => ({
     algorithm: mode === 'dark' ? antdTheme.darkAlgorithm : antdTheme.defaultAlgorithm,
     token: {
-      colorPrimary: mode === 'dark' ? '#8ba9f4' : '#284b8f',
-      colorLink: mode === 'dark' ? '#a8bfff' : '#284b8f',
-      colorBgBase: mode === 'dark' ? '#111925' : '#ffffff',
-      colorTextBase: mode === 'dark' ? '#e6edf8' : '#20304b',
-      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      borderRadius: 10, borderRadiusLG: 16, controlHeight: 42, fontSize: 14,
+      colorPrimary: mode === 'dark' ? '#a3c2ef' : '#25456c',
+      colorLink: mode === 'dark' ? '#a3c2ef' : '#254f7b',
+      colorError: mode === 'dark' ? '#ff9ca5' : '#bb303e',
+      colorBgBase: mode === 'dark' ? '#172639' : '#ffffff',
+      colorBgContainer: mode === 'dark' ? '#172639' : '#ffffff',
+      colorBgElevated: mode === 'dark' ? '#172639' : '#ffffff',
+      colorText: mode === 'dark' ? '#e8eff6' : '#213449',
+      colorTextSecondary: mode === 'dark' ? '#a6b7c7' : '#536679',
+      colorTextDescription: mode === 'dark' ? '#a6b7c7' : '#536679',
+      colorTextPlaceholder: mode === 'dark' ? '#a6b7c7' : '#637487',
+      colorBorder: mode === 'dark' ? '#34465b' : '#d7dfe5',
+      fontFamily: "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      borderRadius: 6, borderRadiusLG: 10, controlHeight: 44, fontSize: 14,
       motion: true,
     },
-    components: { Button: { fontWeight: 600 }, Menu: { itemHeight: 44 } },
+    components: {
+      Button: { fontWeight: 500, primaryColor: mode === 'dark' ? '#13233a' : '#ffffff' },
+      Menu: { itemHeight: 44 },
+      Table: { headerBg: mode === 'dark' ? '#1c2e42' : '#f5f7f8', headerColor: mode === 'dark' ? '#a6b7c7' : '#536679', cellPaddingBlock: 14 },
+    },
   }), [mode])
 
   return (

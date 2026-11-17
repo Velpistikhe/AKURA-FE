@@ -12,7 +12,10 @@ export default function QuotationWorkOrderItemPicker({ visible, items = [], excl
   const [selectedKeys, setSelectedKeys] = useState([])
 
   // Lines already added to the work order never appear in this picker.
-  const available = useMemo(() => items.filter((item) => !excludedIds.includes(item.itemSizeId)), [items, excludedIds])
+  const available = useMemo(() => {
+    const excluded = new Set(excludedIds)
+    return items.filter((item) => !excluded.has(item.itemSizeId))
+  }, [items, excludedIds])
   const filtered = useMemo(() => filterQuotationItems(available, filters), [available, filters])
 
   // Reset the selection whenever the modal opens so a cancelled pick leaves nothing behind.
@@ -49,14 +52,15 @@ export default function QuotationWorkOrderItemPicker({ visible, items = [], excl
       <Button onClick={close} disabled={saving}>Cancel</Button>
       <Button variant="primary" disabled={saving || selectedKeys.length === 0}
         onClick={() => {
-          const chosen = available.filter((item) => selectedKeys.includes(item.itemSizeId))
+          const selected = new Set(selectedKeys)
+          const chosen = available.filter((item) => selected.has(item.itemSizeId))
           setSelectedKeys([])
           setFilters(emptyItemFilters())
           setPage(1)
           onAdd(chosen)
         }}>Add Items{selectedKeys.length ? ` (${selectedKeys.length})` : ''}</Button>
     </Space>}>
-    <p><Typography.Text tone="secondary">Select the quotation items that become work order lines. Quantities are taken from the quotation and cannot be changed here.</Typography.Text></p>
+    <p><Typography.Text tone="secondary">Select quotation items for the work order. Inspection and maintenance quantities follow the quotation and cannot be changed.</Typography.Text></p>
     <Table rowKey="itemSizeId" columns={columns} dataSource={filtered} scroll={{ x: 1100 }}
       locale={{ emptyText: Object.values(filters).some(Boolean) ? 'No quotation items match the filters.' : 'All quotation items are already selected.' }}
       rowSelection={{ selectedRowKeys: selectedKeys, onChange: setSelectedKeys, preserveSelectedRowKeys: true }}

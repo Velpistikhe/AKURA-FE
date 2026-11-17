@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Empty,
+  Drawer,
   Layout,
   Menu,
   ApiOutlined,
@@ -27,6 +28,7 @@ import AkuraLogo from '../components/brand/AkuraLogo'
 import { useAuth } from '../context/AuthContext'
 import { useMenu } from '../context/MenuContext'
 import { useNotification } from '../context/NotificationContext'
+import { branchLabel } from '../modules/dashboard/workspaceModel'
 import {
   AppAvatar,
   AppDropdown,
@@ -62,6 +64,17 @@ const MENU_ICONS = {
   teams: TeamOutlined,
   user: UserOutlined,
   users: TeamOutlined,
+  'app-manager': TeamOutlined,
+  marketing: FileTextOutlined,
+  'field-service': SafetyOutlined,
+  finance: BarChartOutlined,
+  referensi: DatabaseOutlined,
+  'work-orders': ProfileOutlined,
+  quotations: FileTextOutlined,
+  companies: TeamOutlined,
+  services: SafetyOutlined,
+  items: FolderOutlined,
+  taxes: BarChartOutlined,
 }
 
 function resolveMenuIcon(name) {
@@ -158,11 +171,11 @@ function mapMenus(menus) {
 
 function findActiveMenu(menuItems, pathname) {
   for (const group of menuItems) {
-    if (!group.children && group.key === pathname) {
-      return { groupKey: null, label: group.label }
+    if (!group.children && (group.key === pathname || pathname.startsWith(`${group.key}/`))) {
+      return { groupKey: null, label: group.label, key: group.key }
     }
-    const activeItem = group.children?.find((item) => item.key === pathname)
-    if (activeItem) return { groupKey: group.key, label: activeItem.label }
+    const activeItem = group.children?.find((item) => item.key === pathname || pathname.startsWith(`${item.key}/`))
+    if (activeItem) return { groupKey: group.key, label: activeItem.label, key: activeItem.key }
   }
   return null
 }
@@ -221,8 +234,11 @@ function DashboardLayout() {
     '/dashboard/profile': 'My Profile',
     '/dashboard/settings': 'Account Settings',
   }
-  const currentLabel = activeMenu?.label
-    || staticLabels[location.pathname]
+  const currentLabel = staticLabels[location.pathname]
+    || (/^\/marketing\/(quotation|quotations)\/create$/.test(location.pathname) ? 'Create Quotation' : null)
+    || (location.pathname.startsWith('/dashboard/user/') ? 'My Profile' : null)
+    || activeMenu?.label
+    || menuItems.find((item) => item.key === `group:${location.pathname.split('/')[1]}`)?.label
     || (location.pathname.startsWith('/dashboard/user/') ? 'My Profile' : 'Dashboard')
   const visibleOpenMenuKeys = activeMenu?.groupKey && !openMenuKeys.includes(activeMenu.groupKey)
     ? [...openMenuKeys, activeMenu.groupKey]
@@ -243,29 +259,16 @@ function DashboardLayout() {
 
   if (loggingOut) return <AppLoading message="Signing out..." />
 
-  return (
-    <Layout className="dashboard-root">
-      {mobileOpen && (
-        <div className="mobile-overlay" onClick={() => setMobileOpen(false)} />
-      )}
-
-      <Sider
-        collapsed={collapsed}
-        collapsedWidth={isMobile ? 0 : 80}
-        width={isMobile ? 240 : siderWidth}
-        className={`dashboard-sider ${mobileOpen ? 'mobile-sider-open' : ''}`}
-        breakpoint="md"
-        onBreakpoint={(broken) => { if (broken) { setCollapsed(false); setMobileOpen(false) } }}
-      >
-        <div className={`sider-logo ${collapsed && !isMobile ? 'sider-logo-collapsed' : ''}`}>
+  const navigation = <>
+        <div className={`sider-logo ${isCollapsedMenu ? 'sider-logo-collapsed' : ''}`}>
           <AkuraLogo
             inverse
             size={48}
-            showWordmark={!collapsed || isMobile}
+            showWordmark={!isCollapsedMenu}
           />
         </div>
 
-        <div className="sider-menu-wrapper">
+        <nav className="sider-menu-wrapper" aria-label="Main navigation">
           {menuError ? (
             <div className="sider-menu-state">
               <span>Unable to load the menu.</span>
@@ -287,7 +290,7 @@ function DashboardLayout() {
             <Menu
               theme="dark"
               mode="inline"
-              selectedKeys={[location.pathname]}
+              selectedKeys={[activeMenu?.key || location.pathname]}
               openKeys={isCollapsedMenu ? popupMenuKeys : visibleOpenMenuKeys}
               items={menuItems}
               onOpenChange={isCollapsedMenu ? setPopupMenuKeys : setOpenMenuKeys}
@@ -299,9 +302,9 @@ function DashboardLayout() {
               inlineCollapsed={isCollapsedMenu}
             />
           )}
-        </div>
+        </nav>
 
-        <div className={`sider-user ${collapsed && !isMobile ? 'sider-user-collapsed' : ''}`}>
+        <div className={`sider-user ${isCollapsedMenu ? 'sider-user-collapsed' : ''}`}>
           <AppAvatar name={displayName} size={36} colorScheme="neutral" />
           {(!collapsed || isMobile) && (
             <div className="sider-user-info">
@@ -310,7 +313,24 @@ function DashboardLayout() {
             </div>
           )}
         </div>
-      </Sider>
+  </>
+
+  return (
+    <Layout className="dashboard-root">
+      <a className="workspace-skip-link" href="#workspace-main">Skip to content</a>
+      {isMobile ? <Drawer
+        title="Navigation"
+        placement="left"
+        size={280}
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        rootClassName="workspace-navigation-drawer"
+      >{navigation}</Drawer> : <Sider
+        collapsed={collapsed}
+        collapsedWidth={80}
+        width={siderWidth}
+        className="dashboard-sider"
+      >{navigation}</Sider>}
 
       <Layout
         className="dashboard-main"
@@ -331,6 +351,7 @@ function DashboardLayout() {
               onClick={() => isMobile ? setMobileOpen(!mobileOpen) : setCollapsed(!collapsed)}
               className="header-toggle-btn"
             />
+            <span className="header-mobile-location"><span>{currentLabel}</span><small>{branchLabel(user)}</small></span>
             <AppBreadcrumb
               className="header-breadcrumb"
               items={[
@@ -341,6 +362,9 @@ function DashboardLayout() {
           </div>
 
           <div className="header-right">
+            <div className="header-branch" aria-label={`Office branch: ${branchLabel(user)}`} title={branchLabel(user)}>
+              <HomeOutlined aria-hidden="true" /><span>{branchLabel(user)}</span>
+            </div>
             <ThemeToggle />
 
             <div className="header-divider" />
@@ -357,7 +381,7 @@ function DashboardLayout() {
           </div>
         </Header>
 
-        <Content className="dashboard-content">
+        <Content id="workspace-main" tabIndex={-1} className="dashboard-content">
           <Outlet />
         </Content>
       </Layout>

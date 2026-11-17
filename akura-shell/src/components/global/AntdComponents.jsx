@@ -12,6 +12,7 @@ import {
   ConfigProvider as AntConfigProvider,
   Divider as AntDivider,
   Dropdown as AntDropdown,
+  Drawer as AntDrawer,
   Empty as AntEmpty,
   Form as AntForm,
   Input as AntInput,
@@ -34,7 +35,7 @@ function createAdapter(Component, displayName, mapProps = (props) => props) {
 }
 
 function disableAutocomplete(props) {
-  return { ...props, autoComplete: 'off' }
+  return { ...props, autoComplete: props.autoComplete ?? 'off' }
 }
 
 function nonNegativeInputEvents({ onKeyDown, onBeforeInput, onPaste }) {
@@ -116,6 +117,7 @@ export const ConfigProvider = createAdapter(AntConfigProvider, 'GlobalConfigProv
 ConfigProvider.useConfig = AntConfigProvider.useConfig
 export const Divider = createAdapter(AntDivider, 'GlobalDivider')
 export const Dropdown = createAdapter(AntDropdown, 'GlobalDropdown')
+export const Drawer = createAdapter(AntDrawer, 'GlobalDrawer')
 export const Empty = createAdapter(AntEmpty, 'GlobalEmpty')
 export const Form = createAdapter(AntForm, 'GlobalForm', disableAutocomplete)
 Form.Item = createAdapter(AntForm.Item, 'GlobalFormItem')

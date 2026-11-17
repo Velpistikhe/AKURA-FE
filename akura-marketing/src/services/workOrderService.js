@@ -3,6 +3,8 @@ import { apiRequest } from './api'
 // Work Orders are served by the Field Service MFE; Marketing only creates one
 // from an approved quotation. Inspector names come from the branch Auth directory.
 export const workOrderService = {
+  sync: (id, { page = 1, limit = 20 } = {}, options = {}) => apiRequest(`/fieldservice/work-orders/${encodeURIComponent(id)}/sync?${new URLSearchParams({ page, limit })}`, options),
+  createFromQuotation: (payload) => apiRequest('/fieldservice/work-orders/from-quotation', { method: 'POST', body: JSON.stringify(payload) }),
   inspectors: async (officeBranchId) => {
     if (!officeBranchId) throw new Error('An assigned branch is required to load inspectors.')
     const users = []

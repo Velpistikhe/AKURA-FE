@@ -2,16 +2,17 @@ import TableSearchFilter from '../../components/global/TableSearchFilter'
 import { useEffect, useRef, useState } from 'react'
 import { App, Button, Card, CheckOutlined, DeleteOutlined, EditOutlined, EyeOutlined, Modal, Popconfirm, Result, Table, Tag, Typography } from '../../components/global'
 import { workOrderService } from '../../services/workOrderService'
-import { canAccessWorkOrders, canCreateWorkOrders, canEditWorkOrders, canRevokeWorkOrder, canStartWorkOrder, WORK_ORDER_STATUSES, activeQuotationItems, quotationNumber, workOrderBasisLabel } from './workOrderModel'
+import { canAccessWorkOrders, canCreateWorkOrders, canEditWorkOrders, canRevokeWorkOrder, canStartWorkOrder, WORK_ORDER_STATUSES, workOrderBasisLabel } from './workOrderModel'
 import WorkOrderCreate from './WorkOrderCreate'
 import WorkOrderEdit from './WorkOrderEdit'
 import WorkOrderHistory from './WorkOrderHistory'
+import WorkOrderSync from './WorkOrderSync'
 import './CompanyPage.css'
 import './WorkOrderPage.css'
 
 const displayEnum = (value) => value ? value.replaceAll('_', ' ') : '-'
 const date = (value) => value ? String(value).slice(0, 10) : '-'
-const companyName = (record) => record.quotationSnapshot?.companySnapshot?.name || record.contractSnapshot?.company?.name || '-'
+const companyName = (record) => record.company || record.quotationSnapshot?.companySnapshot?.name || record.contractSnapshot?.companyName || '-'
 const quotationItemColumns = [
   { title: 'Service', dataIndex: 'serviceName', render: (value) => value || 'Standalone' },
   { title: 'Item', dataIndex: 'itemName', render: (value) => value || '-' },
@@ -22,7 +23,7 @@ const quotationItemColumns = [
 
 export default function WorkOrderPage({ currentUser }) {
   if (!canAccessWorkOrders(currentUser)) return <Result status="403" title="Access denied" subTitle="Work orders require an active ADMIN, APP_MANAGER, Marketing, or Field Service user with an assigned branch." />
-  return <WorkOrderList currentUser={currentUser} />
+  return <WorkOrderList key={currentUser.officeBranchId} currentUser={currentUser} />
 }
 
 function WorkOrderList({ currentUser }) {
@@ -68,7 +69,7 @@ function WorkOrderList({ currentUser }) {
   }
   return <section className="company-page work-order-page">
     <div className="company-page-heading"><div><Typography.Title level={2}>Work Orders</Typography.Title><Typography.Text tone="secondary">View work orders for your branch.</Typography.Text></div>
-      {canCreateWorkOrders(currentUser) && <WorkOrderCreate currentUser={currentUser} onCreated={() => setRetry((value) => value + 1)} />}
+      {canCreateWorkOrders(currentUser) && <WorkOrderCreate key={currentUser.officeBranchId} currentUser={currentUser} onCreated={(created) => { setRetry((value) => value + 1); setSelectedId(created.id) }} />}
     </div>
     <Card>
       {error && <div role="alert">{error} <Button onClick={() => setRetry((value) => value + 1)}>Retry</Button></div>}
@@ -165,25 +166,20 @@ function WorkOrderDetail({ id, currentUser, onChanged, onClose }) {
         <div><dt>Company</dt><dd>{companyName(record)}</dd></div><div><dt>Status</dt><dd><Tag>{displayEnum(record.status)}</Tag>{record.revoked && <Tag color="error">Revoked</Tag>}</dd></div>
         <div><dt>Start Date</dt><dd>{date(record.startDate)}</dd></div><div><dt>End Date</dt><dd>{date(record.endDate)}</dd></div>
         <div><dt>Document Basis</dt><dd>{workOrderBasisLabel(record)}</dd></div>
+        <div><dt>Subject</dt><dd>{record.subject || '-'}</dd></div>
+        <div><dt>Official Report</dt><dd>{record.officialReport ? 'Required' : 'Not required'}</dd></div>
+        <div><dt>Daily Report</dt><dd>{date(record.dailyReport)}</dd></div>
+        <div><dt>Official Report Delivery</dt><dd>{date(record.officialReportDelivery)}</dd></div>
+        <div><dt>Daily Report Delivery</dt><dd>{date(record.dailyReportDelivery)}</dd></div>
+        <div><dt>PO Number</dt><dd>{record.poNumber || '-'}</dd></div>
+        <div><dt>PO Date</dt><dd>{date(record.poDate)}</dd></div>
         <div><dt>Created By</dt><dd>{record.createdByName || '-'}</dd></div>
         <div><dt>Inspectors</dt><dd>{record.inspectors?.length ? record.inspectors.map((inspector) => inspector.name).join(', ') : 'No inspectors assigned.'}</dd></div>
       </dl></Card>
-      {record.quotationSnapshot && <Card title="Quotation Snapshot">
-        <dl className="company-detail-grid">
-          <div><dt>Quotation</dt><dd>{quotationNumber(record.quotationSnapshot)}</dd></div>
-          <div><dt>Subject</dt><dd>{record.quotationSnapshot.subject || '-'}</dd></div>
-          <div><dt>Company</dt><dd>{record.quotationSnapshot.companySnapshot?.name || '-'}</dd></div>
-          <div><dt>Customer Contact</dt><dd>{record.quotationSnapshot.customerSnapshot || '-'}</dd></div>
-          <div><dt>Date</dt><dd>{date(record.quotationSnapshot.date)}</dd></div>
-          <div><dt>Status</dt><dd>{displayEnum(record.quotationSnapshot.status)}</dd></div>
-        </dl>
-        <div className="work-order-quotation-items">
-          <Typography.Title level={5}>Quotation Items</Typography.Title>
-          <Table rowKey={(item) => item.id || `${item.itemName}-${item.size}`} dataSource={activeQuotationItems(record.quotationSnapshot)}
-            columns={quotationItemColumns} pagination={false} tableLayout="auto" scroll={{ x: 'max-content' }} locale={{ emptyText: 'No quotation items in this snapshot.' }} />
-        </div>
-      </Card>}
+      <Card title="Work Order Items"><Table rowKey="id" dataSource={(record.items || []).map((row) => ({ ...row.item, ...row }))}
+        columns={quotationItemColumns} pagination={false} scroll={{ x: 'max-content' }} /></Card>
       <WorkOrderHistory id={id} version={record.version} />
+      <WorkOrderSync id={id} version={record.version} />
       {editing && canEdit && <WorkOrderEdit record={record} onClose={() => setEditing(false)}
         onSaved={(updated) => { setRecord(updated); setEditing(false); onChanged() }}
         onReload={() => { setEditing(false); setRetry((value) => value + 1); onChanged() }} />}

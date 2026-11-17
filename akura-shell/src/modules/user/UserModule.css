@@ -1,7 +1,6 @@
 .user-module-page {
   width: min(100%, 980px);
   margin-inline: auto;
-  animation: akura-enter 360ms var(--ease-standard) both;
 }
 
 .user-module-heading { margin-bottom: 24px; }
@@ -9,36 +8,26 @@
 .user-module-heading p { margin: 7px 0 0; color: var(--text-secondary, #6f7f9f); line-height: 1.6; }
 
 .profile-card { overflow: hidden; }
-.profile-card .ant-card-body { padding: 0; }
+.profile-card.app-card > .ant-card-body { padding: 0 !important; }
 
 .profile-hero {
   display: flex;
   align-items: center;
   gap: 18px;
   padding: 28px 30px;
-  color: white;
-  background: linear-gradient(125deg, #14224a 0%, #1e3468 55%, #2a4080 100%);
+  color: var(--text-primary);
+  background: var(--surface-subtle);
+  border-bottom: 1px solid var(--border);
   position: relative;
   overflow: hidden;
 }
 
-.profile-hero::after {
-  content: '';
-  position: absolute;
-  top: -60px;
-  right: -40px;
-  width: 180px;
-  height: 180px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(224, 32, 32, 0.3), transparent 70%);
-  pointer-events: none;
-}
 
 .profile-hero > * { position: relative; z-index: 1; }
 
 .profile-identity { flex: 1; min-width: 0; }
-.profile-identity h2 { margin: 0 0 4px; overflow: hidden; color: white; font-size: 23px; text-overflow: ellipsis; white-space: nowrap; }
-.profile-identity span { color: rgba(255, 255, 255, 0.68); }
+.profile-identity h2 { margin: 0 0 4px; color: var(--text-primary); font-size: 23px; overflow-wrap: anywhere; }
+.profile-identity span { color: var(--text-secondary); overflow-wrap: anywhere; }
 .profile-hero .ant-tag { margin: 0; border-radius: 999px; padding-inline: 10px; }
 
 .profile-details {
@@ -54,12 +43,12 @@
   flex-direction: column;
   gap: 5px;
   padding: 20px 0;
-  border-bottom: 1px solid rgba(26, 46, 94, 0.08);
+  border-bottom: 1px solid var(--border);
 }
 
 .profile-detail:nth-child(odd) { padding-right: 24px; }
-.profile-detail:nth-child(even) { padding-left: 24px; border-left: 1px solid rgba(26, 46, 94, 0.08); }
-.profile-detail span { color: var(--text-muted, #8795af); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.profile-detail:nth-child(even) { padding-left: 24px; border-left: 1px solid var(--border); }
+.profile-detail span { color: var(--text-secondary); font-size: 13px; font-weight: 500; }
 .profile-detail strong { overflow-wrap: anywhere; color: var(--text-primary, #253759); font-size: 15px; }
 .profile-detail small { color: var(--text-muted, #9aa6bb); font-size: 11px; }
 

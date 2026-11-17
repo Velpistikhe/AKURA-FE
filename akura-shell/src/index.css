@@ -13,51 +13,56 @@
 
 :root {
   /* Brand Colors */
-  --primary: #1a2e5e;
+  --font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --primary: #182b49;
   --primary-dark: #0f1e3d;
   --primary-light: #2a4080;
   --primary-lighter: #3d5a9e;
-  --accent: #e02020;
+  --accent: #bb303e;
   --accent-dark: #b01818;
   --accent-light: #ff3333;
-  --gold: #ffaa00;
+  --gold: #e5b64b;
+  --link: #254f7b;
+  --action-bg: #25456c;
+  --action-hover: #183452;
+  --action-text: #ffffff;
 
   /* Neutral */
   --white: #ffffff;
-  --bg-light: #eef2f9;
+  --bg-light: #f3f5f6;
   --bg-card: #ffffff;
-  --border: #e3e9f4;
-  --text-primary: #1b2b4e;
-  --text-secondary: #56678a;
-  --text-muted: #8695b5;
+  --border: #d7dfe5;
+  --text-primary: #213449;
+  --text-secondary: #536679;
+  --text-muted: #637487;
 
   /* Surfaces */
   --surface: #ffffff;
-  --surface-subtle: #f7f9fe;
-  --surface-muted: #edf1fa;
+  --surface-subtle: #f5f7f8;
+  --surface-muted: #eaf0f3;
 
   /* Shadows — layered agar terasa ringan & modern */
-  --shadow-sm: 0 1px 2px rgba(26, 46, 94, 0.05), 0 2px 8px rgba(26, 46, 94, 0.05);
-  --shadow-md: 0 2px 4px rgba(26, 46, 94, 0.05), 0 8px 24px rgba(26, 46, 94, 0.08);
+  --shadow-sm: 0 1px 3px rgba(24, 43, 73, 0.04);
+  --shadow-md: 0 4px 16px rgba(24, 43, 73, 0.08);
   --shadow-lg: 0 4px 8px rgba(26, 46, 94, 0.06), 0 18px 44px rgba(26, 46, 94, 0.12);
   --shadow-xl: 0 8px 16px rgba(15, 30, 61, 0.08), 0 32px 72px rgba(15, 30, 61, 0.16);
   --shadow-primary: 0 6px 18px rgba(26, 46, 94, 0.28);
   --shadow-accent: 0 6px 18px rgba(224, 32, 32, 0.28);
 
   /* Gradients */
-  --gradient-primary: linear-gradient(135deg, #1a2e5e 0%, #2a4080 100%);
-  --gradient-primary-hover: linear-gradient(135deg, #152650 0%, #22356a 100%);
-  --gradient-accent: linear-gradient(135deg, #e02020 0%, #ff4444 100%);
+  --gradient-primary: var(--action-bg);
+  --gradient-primary-hover: var(--action-hover);
+  --gradient-accent: var(--accent);
 
   /* Transitions */
   --transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-fast: all 0.16s ease;
 
   /* Border Radius */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 9999px;
 
   --content-max: 1680px;
@@ -71,7 +76,7 @@
 
 html, body {
   height: 100%;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: var(--font-family);
   color: var(--text-primary);
   background: var(--bg-light);
   -webkit-font-smoothing: antialiased;
@@ -112,14 +117,14 @@ button, input, textarea, select { font: inherit; }
 .ant-btn-primary {
   background: var(--gradient-primary) !important;
   border-color: transparent !important;
-  box-shadow: var(--shadow-primary);
+  color: var(--action-text);
+  box-shadow: var(--shadow-sm);
 }
 
 .ant-btn-primary:hover {
   background: var(--gradient-primary-hover) !important;
   border-color: transparent !important;
-  box-shadow: 0 8px 22px rgba(26, 46, 94, 0.34);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .ant-btn-primary:active {
@@ -129,7 +134,7 @@ button, input, textarea, select { font: inherit; }
 .ant-input, .ant-input-affix-wrapper,
 .ant-select-selector, .ant-input-number,
 .ant-picker {
-  border-radius: 10px !important;
+  border-radius: var(--radius-sm) !important;
   transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease !important;
 }
 
@@ -156,7 +161,7 @@ button, input, textarea, select { font: inherit; }
 
 .ant-modal .ant-modal-content {
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-xl);
   overflow: hidden;
 }
@@ -180,6 +185,7 @@ button, input, textarea, select { font: inherit; }
 
 .ant-table-wrapper .ant-table-tbody > tr > td {
   transition: background-color var(--motion-fast) ease;
+  font-variant-numeric: tabular-nums;
 }
 
 .ant-table-wrapper .ant-table-tbody > tr:hover > td {
@@ -187,6 +193,10 @@ button, input, textarea, select { font: inherit; }
 }
 
 .ant-pagination { align-items: center; }
+@media (pointer: coarse) {
+  .ant-btn-sm, .ant-pagination .ant-pagination-item, .ant-pagination .ant-pagination-prev, .ant-pagination .ant-pagination-next { min-width: 44px; min-height: 44px; }
+  .ant-pagination .ant-pagination-item { line-height: 42px; }
+}
 
 /* Empty state di dalam table lebih ringkas */
 .ant-table .ant-empty {

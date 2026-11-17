@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { App, Button, Card, DeleteOutlined, Form, Input, Modal, Popconfirm, Select, Table, TableSearchFilter, Typography, useSaveConfirmation } from '../../components/global'
+import { App, Button, Card, DeleteOutlined, Form, Input, Modal, Popconfirm, Select, Switch, Table, TableSearchFilter, Typography, useSaveConfirmation } from '../../components/global'
 import { PlusOutlined, ToolOutlined } from '@ant-design/icons'
 import { quotationService } from '../../services/quotationService'
 import { workOrderService } from '../../services/workOrderService'
-import { activeQuotationItems, canCreateWorkOrderFromQuotation, emptyItemFilters, filterQuotationItems, inspectorOptions, workOrderFormComplete, quotationWorkOrderPayload } from '../work-order/workOrderModel'
-import { money } from './quotationModel'
+import { activeQuotationItems, canCreateWorkOrderFromQuotation, emptyItemFilters, filterQuotationItems, inspectorOptions, WORK_ORDER_REPORT_DATES, workOrderFormComplete, quotationWorkOrderPayload } from '../work-order/workOrderModel'
 import { quotationPdfBlob } from './quotationPdfPreview'
 import QuotationWorkOrderItemPicker from './QuotationWorkOrderItemPicker'
 import './CreateWorkOrderAction.css'
@@ -137,8 +136,8 @@ export default function CreateWorkOrderAction({ currentUser, quotation, onCreate
         if (!active) return
         const detail = data?.quotation || data
         if (!detail?.id || detail.id !== quotation.id) throw new Error('Invalid quotation detail response.')
-                setQuotationDetail(detail)
-                setQuotationItems((detail?.items || []).filter((item) => item.isActive !== false))
+        setQuotationDetail(detail)
+        setQuotationItems((detail?.items || []).filter((item) => item.isActive !== false))
       })
       .catch((err) => {
         if (!active) return
@@ -192,9 +191,11 @@ export default function CreateWorkOrderAction({ currentUser, quotation, onCreate
       // item lines. The backend re-validates active state, APPROVED status, price
       // source and branch before creating the work order.
       if (!canCreateWorkOrderFromQuotation(currentUser, quotation)) throw new Error('This quotation is no longer eligible for a work order. Refresh the quotation list.')
-      const payload = quotationWorkOrderPayload(values, quotationDetail)
+      const payload = quotationWorkOrderPayload({ ...values, items: selectedItems }, quotationDetail)
+      const inspectorNames = new Set(inspectors.map((option) => option.value))
+      if (payload.inspectors.some((name) => !inspectorNames.has(name))) throw new Error('Select inspectors from the current branch directory.')
       if (!await confirmSave('work order')) return
-      const { data } = await quotationService.createWorkOrder(quotation.id, payload)
+      const { data } = await workOrderService.createFromQuotation(payload)
       message.success(`Work order ${data.number} created successfully.`)
       closePdfPreview()
       setOpen(false)
@@ -226,6 +227,13 @@ export default function CreateWorkOrderAction({ currentUser, quotation, onCreate
               <Input type="hidden" />
             </Form.Item>
             <Form.Item name="inspectors" label="Inspectors" extra="Select up to 100 Field Service inspector names." rules={[{ required: true, type: 'array', min: 1, message: 'Select at least one inspector.' }]}><Select mode="multiple" maxCount={100} loading={inspectorsLoading} options={inspectors} placeholder="Select inspectors" /></Form.Item>
+            <Typography.Text tone="secondary">Optional header fields use the server defaults when left empty.</Typography.Text>
+            <Form.Item name="subject" label="Subject" rules={[{ whitespace: true, max: 255 }]}><Input maxLength={255} placeholder={quotationDetail?.subject} /></Form.Item>
+            <div className="work-order-modal-form__row">
+              <Form.Item name="officialReport" label="Official Report" valuePropName="checked"><Switch aria-label="Official report required" activeLabel="Required" inactiveLabel="Not required" /></Form.Item>
+              <Form.Item name="poNumber" label="PO Number" rules={[{ whitespace: true, max: 100 }]}><Input maxLength={100} placeholder="Pending" /></Form.Item>
+              {WORK_ORDER_REPORT_DATES.map(([key, label]) => <Form.Item key={key} name={key} label={label}><Input type="date" /></Form.Item>)}
+            </div>
             <Card className="work-order-modal-items" bordered variant="outlined">
               <div className="work-order-modal-items__heading">
                 <div>
@@ -239,9 +247,8 @@ export default function CreateWorkOrderAction({ currentUser, quotation, onCreate
                 { title: 'Item', width: 210, ...itemSearchColumn('itemName', 'item name'), render: (_, row) => row.itemName || '-' },
                 { title: 'Size', width: 120, ...itemSearchColumn('size', 'size', 100), render: (_, row) => row.size ?? 'Without size' },
                 { title: 'Type', dataIndex: 'serviceType', width: 100, render: (value) => value || '-' },
-                { title: 'Inspection Qty', dataIndex: 'quantityInspection', width: 130, align: 'right' },
-                { title: 'Maintenance Qty', dataIndex: 'quantityMaintenance', width: 150, align: 'right' },
-                { title: 'Subtotal', dataIndex: 'subTotal', width: 130, align: 'right', render: money },
+                { title: 'Inspection Qty', dataIndex: 'quantityInspection', width: 160, align: 'right' },
+                { title: 'Maintenance Qty', dataIndex: 'quantityMaintenance', width: 160, align: 'right' },
                 { title: 'Action', key: 'actions', width: 80, render: (_, row) => <Popconfirm title="Remove item?" description="Remove this quotation item from the work order?" okText="Remove" cancelText="Keep" onConfirm={() => removeSelectedItem(row.itemSizeId)}>
                   <Button variant="text" isDanger icon={<DeleteOutlined />} aria-label={`Remove ${row.itemName || 'quotation item'}`} disabled={saving} />
                 </Popconfirm> },

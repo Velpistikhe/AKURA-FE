@@ -2,15 +2,14 @@
   border-width: 1px;
   border-style: solid;
   border-color: var(--button-border, rgba(26, 46, 94, 0.26));
-  border-radius: 9px;
+  border-radius: var(--radius-sm, 6px);
   box-shadow: 0 1px 2px rgba(15, 30, 61, 0.05);
   transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
 .akura-button.ant-btn:hover:not(:disabled) {
   border-color: var(--primary, #1a2e5e);
-  box-shadow: 0 4px 12px rgba(15, 30, 61, 0.12);
-  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm, none);
 }
 
 .akura-button.ant-btn-primary {

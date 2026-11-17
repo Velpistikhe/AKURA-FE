@@ -65,3 +65,10 @@ storybook-static/
 scripts/
 docs/
 .codex-search.json
+
+# Keep the reviewed UI specification; browser captures remain local artifacts.
+!/docs/
+/docs/*
+!/docs/design/
+/docs/design/*
+!/docs/design/ui-ux.md

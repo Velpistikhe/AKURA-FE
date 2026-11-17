@@ -13,7 +13,7 @@
   overflow-x: hidden;
   background: #fff;
   color: var(--akura-ink);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-family);
 }
 
 .landing-container {

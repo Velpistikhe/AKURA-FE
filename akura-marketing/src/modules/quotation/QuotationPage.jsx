@@ -5,6 +5,7 @@ import QuotationForm from './QuotationForm'
 import QuotationSkeleton from './QuotationSkeleton'
 import QuotationHistory from './QuotationHistory'
 import CreateWorkOrderAction from './CreateWorkOrderAction'
+import WorkOrderSync from '../work-order/WorkOrderSync'
 import { loadQuotationPdf, quotationPdfBlob } from './quotationPdfPreview'
 import { canApproveQuotations, canManageQuotations } from './quotationAccess'
 import { canViewInactiveCatalog } from '../catalogAccess'
@@ -25,6 +26,7 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
   const [confirmSave, saveConfirmation] = useSaveConfirmation()
   const [form] = Form.useForm()
   const [records, setRecords] = useState([])
+  const [syncWorkOrder, setSyncWorkOrder] = useState(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [total, setTotal] = useState(0)
@@ -242,6 +244,7 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
     { title: 'Maintenance Quantity', dataIndex: 'quantityMaintenance', width: 170 },
     { title: 'Inspection Price', dataIndex: 'priceInspection', width: 150, align: 'right', render: money },
     { title: 'Maintenance Price', dataIndex: 'priceMaintenance', width: 160, align: 'right', render: money },
+    { title: 'Discount', dataIndex: 'discount', width: 150, align: 'right', render: money },
     { title: 'Subtotal', dataIndex: 'subTotal', width: 150, align: 'right', render: money },
   ]
   const columns = [
@@ -261,11 +264,6 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
       filters: canViewInactive ? [{ text: 'Active', value: 'true' }, { text: 'Inactive', value: 'false' }] : undefined,
       filterMultiple: false, filteredValue: canViewInactive && activeFilter ? [activeFilter] : null },
     { title: 'Work Order Status', dataIndex: 'workOrderStatus', width: 170, render: (value) => <Tag>{value ? displayEnum(value) : '-'}</Tag> },
-    ...[['subTotal', 'Subtotal'], ['taxAmount', 'Tax Amount'], ['total', 'Total']].map(([dataIndex, title]) => ({
-      title, dataIndex, width: 150, align: 'right', render: (value) => <span style={{ whiteSpace: 'nowrap' }}>{money(value)}</span>,
-    })),
-    { title: 'Created At', dataIndex: 'createdAt', width: 150, render: (value) => dateValue(value) || '-' },
-    { title: 'Updated At', dataIndex: 'updatedAt', width: 150, render: (value) => dateValue(value) || '-' },
     { title: 'Actions', key: 'actions', width: 220, fixed: 'right', render: (_, record) => <Space>
       {!readOnly && canUpdateQuotation(record, currentUser) && <Button variant="text" icon={<EditOutlined />} title="Edit Quotation" aria-label={`Edit quotation ${quotationNumber(record)}`} busy={openingId === record.id} disabled={approving || deletingId === record.id} onClick={() => view(record, true)} />}
       {!readOnly && canSubmitQuotation(record) && <Popconfirm title="Submit quotation?" description={record.status === 'REJECTED' ? 'Resubmit this quotation for approval.' : 'Submit this quotation for approval.'} onConfirm={() => transition('submit', record)} okText="Submit" cancelText="Cancel" disabled={approving}>
@@ -274,9 +272,11 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
       {!readOnly && canCopyQuotation(record) && <Button variant="text" icon={<CopyOutlined />} title="Copy Quotation" aria-label={`Copy quotation ${quotationNumber(record)}`} onClick={() => onCopy?.(record.id)} />}
       <Button variant="text" icon={<EyeOutlined />} title="View Quotation" aria-label={`View quotation ${quotationNumber(record)}`} busy={openingId === record.id} onClick={() => view(record)} />
       {record.isActive && <Button variant="text" icon={<FilePdfOutlined />} title="Preview PDF" aria-label={`Preview PDF for quotation ${quotationNumber(record)}`} busy={pdfLoading && pdfPreview?.record.id === record.id} onClick={() => openPdf(record)} />}
-      <CreateWorkOrderAction currentUser={currentUser} quotation={record} onCreated={(workOrder) => {
-        setRecords((current) => current.map((row) => row.id === record.id ? { ...row, hasWorkOrder: true, workOrderId: workOrder.id } : row))
+      <CreateWorkOrderAction key={currentUser?.officeBranchId} currentUser={currentUser} quotation={record} onCreated={(workOrder) => {
+        setRecords((current) => current.map((row) => row.id === record.id ? { ...row, hasWorkOrder: true, workOrderId: workOrder.id, workOrderStatus: workOrder.status } : row))
+        setSyncWorkOrder({ ...workOrder, officeBranchId: currentUser.officeBranchId })
       }} />
+      {record.workOrderId && <Button variant="text" title="Monitor quotation sync" onClick={() => setSyncWorkOrder({ id: record.workOrderId, officeBranchId: currentUser.officeBranchId })}>Sync</Button>}
       {record.status === 'CREATED' && <Popconfirm title="Delete quotation?" description="The quotation and its items will be deactivated." okText="Delete" cancelText="Cancel" onConfirm={() => remove(record)}>
         <Button variant="text" isDanger icon={<DeleteOutlined />} busy={deletingId === record.id} aria-label={`Delete quotation ${record.no}`} />
       </Popconfirm>}
@@ -291,6 +291,10 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
   ] : []
 
   return <section className="company-page quotation-page">
+    <Modal title={syncWorkOrder?.number ? `Quotation Sync — ${syncWorkOrder.number}` : 'Quotation Sync'} visible={Boolean(syncWorkOrder && syncWorkOrder.officeBranchId === currentUser?.officeBranchId)}
+      onCancel={() => setSyncWorkOrder(null)} width={1150} unmountOnClose footer={<Button onClick={() => setSyncWorkOrder(null)}>Close</Button>}>
+      {syncWorkOrder && syncWorkOrder.officeBranchId === currentUser?.officeBranchId && <WorkOrderSync key={`${syncWorkOrder.officeBranchId}:${syncWorkOrder.id}`} id={syncWorkOrder.id} onDelivered={() => load({ background: true })} />}
+    </Modal>
     <Modal title={pdfPreview?.title || 'Quotation PDF'} visible={Boolean(pdfPreview)} onCancel={closePdf} width={1100} unmountOnClose footer={<Space>{pdfPreview?.url && <Button href={pdfPreview.url} download={`Quotation-${pdfPreview.record.no ?? 'Draft'}-R${pdfPreview.record.revision ?? 0}.pdf`}>Download PDF</Button>}<Button onClick={closePdf}>Close</Button></Space>}>
       {pdfLoading && <Typography.Text>Loading PDF preview...</Typography.Text>}
       {pdfError && <div role="alert"><Typography.Text tone="danger">{pdfError}</Typography.Text><Button onClick={() => openPdf(pdfPreview.record, pdfPreview.stored)}>Retry</Button></div>}
@@ -346,7 +350,7 @@ export default function QuotationPage({ onCreate, onCopy, currentUser }) {
         </section>
         <section className="company-view-section">
           <div className="company-view-section-heading"><div><h3>Quotation Items</h3><Typography.Text tone="secondary">Items include historical inactive lines. Stored totals belong to this document.</Typography.Text></div></div>
-        <Table rowKey="id" columns={itemColumns} dataSource={detail.items || []} pagination={false} scroll={{ x: 1580 }} />
+        <Table rowKey="id" columns={itemColumns} dataSource={detail.items || []} pagination={false} scroll={{ x: 1730 }} />
         </section>
         <section className="company-view-section">
         <div className="company-view-section-heading"><h3>Quotation Totals</h3></div>

@@ -12,9 +12,9 @@ export default function FieldServiceApp({ currentUser, accessToken = '', pathnam
   const route = resolveFieldServiceRoute(pathname)
   return <App><main className="fieldservice-workspace">
     {route === 'work-orders' ? <WorkOrderPage currentUser={currentUser} /> : route === 'overview' ? <Card className="fieldservice-overview-card">
-      <span className="fieldservice-eyebrow">Field Service workspace</span>
-      <Typography.Title level={2}>Akura Field Service</Typography.Title>
-      <p><Typography.Text tone="secondary">View work orders, schedules, and assigned inspectors for your branch.</Typography.Text></p>
+      <Typography.Title level={1}>Field Service</Typography.Title>
+      <p><Typography.Text tone="secondary">Keep branch inspection work organized, from planning to execution.</Typography.Text></p>
+      <ul className="fieldservice-overview-scope"><li>Work orders and inspection requirements</li><li>Schedules and assigned inspectors</li><li>Record details, changes, and synchronization</li></ul>
       <Button variant="primary" onClick={() => navigate('/field-service/work-orders')}>Open Work Orders</Button>
     </Card> : <Result status="404" title="Page not available" subTitle="Open Work Orders to view schedules, update work, and review change history." extra={<Button onClick={() => navigate('/field-service/work-orders')}>Back to Work Orders</Button>} />}
   </main></App>

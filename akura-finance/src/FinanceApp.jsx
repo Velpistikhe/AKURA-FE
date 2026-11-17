@@ -18,10 +18,10 @@ export default function FinanceApp({ currentUser, accessToken = '', pathname = w
   const Page = pages[route]
   return <App><main className="finance-workspace">
     {Page ? <Page currentUser={currentUser} /> : route === 'overview' ? <>
-      <Card className="finance-overview-card"><span className="finance-eyebrow">Finance workspace</span>
-        <Typography.Title level={2}>Akura Finance</Typography.Title>
-        <Typography.Text type="secondary">Review quotations and manage branch tax periods.</Typography.Text>
-        <div className="finance-overview-decoration" aria-hidden="true" /></Card>
+      <header className="finance-overview-heading">
+        <Typography.Title level={1}>Finance</Typography.Title>
+        <Typography.Text type="secondary">Commercial clarity for your branch. Review quotations and manage tax periods.</Typography.Text>
+      </header>
       <div className="finance-modules">{financeModules.map((module) => <Card key={module.key}>
         <Tag>{module.key === 'finance_quotations' ? 'View only' : 'Branch tax periods'}</Tag>
         <Typography.Title level={3}>{module.label}</Typography.Title><Typography.Paragraph type="secondary">{module.description}</Typography.Paragraph>

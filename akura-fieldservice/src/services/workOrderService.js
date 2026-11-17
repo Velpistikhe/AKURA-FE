@@ -13,6 +13,9 @@ export const workOrderService = {
   list: (params = {}) => apiRequest(`${PATH}?${withQuery(params)}`),
   get: (id) => apiRequest(`${PATH}/${id}`),
   create: (payload) => apiRequest(PATH, { method: 'POST', body: JSON.stringify(payload) }),
+  createFromQuotation: (payload) => apiRequest(`${PATH}/from-quotation`, { method: 'POST', body: JSON.stringify(payload) }),
+  companies: (params = {}) => apiRequest(`/marketing/companies?${withQuery({ page: 1, limit: 20, ...params })}`),
+  itemSizes: (params = {}) => apiRequest(`/marketing/items/sizes?${withQuery({ page: 1, limit: 20, ...params })}`),
   quotations: () => apiRequest('/fieldservice/options/quotations'),
   quotationItems: (id) => apiRequest(`/fieldservice/options/quotations/${encodeURIComponent(id)}`),
   inspectors: async (officeBranchId) => {
@@ -38,6 +41,7 @@ export const workOrderService = {
   revoke: (id, version) => apiRequest(`${PATH}/${id}`, { method: 'DELETE', body: JSON.stringify({ version }) }),
   update: (id, payload) => apiRequest(`${PATH}/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
   history: (id, params = {}) => apiRequest(`${PATH}/${id}/history?${withQuery(params)}`),
+  sync: (id, { page = 1, limit = 20 } = {}, options = {}) => apiRequest(`${PATH}/${encodeURIComponent(id)}/sync?${withQuery({ page, limit })}`, options),
   // DRAFT -> IN_PROGRESS is a version-locked transition that re-validates
   // the Marketing quotation snapshot before committing.
   start: (id, version) => apiRequest(`${PATH}/${id}/start`, { method: 'POST', body: JSON.stringify({ version }) }),

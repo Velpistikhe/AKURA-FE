@@ -65,26 +65,21 @@ function RegisterPage() {
           <div className="auth-brand">
             <AkuraLogo inverse size={60} />
           </div>
-          <h2 className="auth-left-title">Join Us Today!</h2>
+          <h2 className="auth-left-title">A shared workspace for inspection work.</h2>
           <p className="auth-left-desc">
-            Create your account and begin your digital journey with Akura Bina
-            Citra today.
+            Create your account to get started. Your administrator manages your role, section, and branch assignment.
           </p>
           <div className="auth-features">
             {[
-              '✓  30-day free trial',
-              '✓  No credit card required',
-              '✓  Set up in five minutes',
-              '✓  Full support from our team',
+              'Quotations and customer coordination',
+              'Inspection services and work orders',
+              'Access managed by your administrator',
             ].map((f) => (
               <div key={f} className="auth-feature-item">{f}</div>
             ))}
           </div>
-          <div className="auth-decoration">
-            <div className="deco-circle deco-c1" />
-            <div className="deco-circle deco-c2" />
-            <div className="deco-circle deco-c3" />
-          </div>
+          <div className="auth-inspection" aria-hidden="true" />
+          <p className="auth-image-caption">Independent inspection since 2001</p>
         </div>
       </div>
 
@@ -118,6 +113,7 @@ function RegisterPage() {
                   id="input-firstname"
                   prefixIcon={<UserOutlined />}
                   placeholder="John"
+                  autoComplete="given-name"
                 />
               </AppForm.Item>
 
@@ -130,6 +126,7 @@ function RegisterPage() {
                   id="input-lastname"
                   prefixIcon={<UserOutlined />}
                   placeholder="Doe"
+                  autoComplete="family-name"
                 />
               </AppForm.Item>
             </div>
@@ -171,6 +168,7 @@ function RegisterPage() {
                 id="input-username"
                 prefixIcon={<UserOutlined />}
                 placeholder="johndoe"
+                autoComplete="username"
               />
             </AppForm.Item>
 
@@ -189,6 +187,7 @@ function RegisterPage() {
                   inputType="password"
                   prefixIcon={<LockOutlined />}
                   placeholder="At least 6 characters"
+                  autoComplete="new-password"
                 />
               </AppForm.Item>
 
@@ -212,6 +211,7 @@ function RegisterPage() {
                   inputType="password"
                   prefixIcon={<LockOutlined />}
                   placeholder="Re-enter your password"
+                  autoComplete="new-password"
                 />
               </AppForm.Item>
             </div>
@@ -246,9 +246,7 @@ function RegisterPage() {
           </AppForm>
 
           <p className="auth-footer-note">
-            By registering, you agree to our{' '}
-            <a href="#" className="auth-link">Terms &amp; Conditions</a> and{' '}
-            <a href="#" className="auth-link">Privacy Policy</a>.
+            Your administrator manages module access and branch assignment after registration.
           </p>
         </div>
       </div>

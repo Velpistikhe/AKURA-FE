@@ -65,27 +65,23 @@ function LoginPage() {
           <div className="auth-brand">
             <AkuraLogo inverse size={60} />
           </div>
-          <h2 className="auth-left-title">Welcome Back!</h2>
+          <h2 className="auth-left-title">Precision in the field. Clarity at your desk.</h2>
           <p className="auth-left-desc">
-            Sign in to your account and manage your business more efficiently
-            with our platform.
+            Your workspace for customer quotations, inspection work, and branch operations.
           </p>
           <div className="auth-features">
             {[
-              "✓  Real-time analytics dashboard",
-              "✓  Reliable data security",
-              "✓  24/7 support",
+              "Customer quotations and reference catalogs",
+              "Inspection planning and work orders",
+              "Branch operations and account access",
             ].map((f) => (
               <div key={f} className="auth-feature-item">
                 {f}
               </div>
             ))}
           </div>
-          <div className="auth-decoration">
-            <div className="deco-circle deco-c1" />
-            <div className="deco-circle deco-c2" />
-            <div className="deco-circle deco-c3" />
-          </div>
+          <div className="auth-inspection" aria-hidden="true" />
+          <p className="auth-image-caption">Independent inspection since 2001</p>
         </div>
       </div>
 
@@ -117,6 +113,7 @@ function LoginPage() {
                 id="input-username"
                 prefixIcon={<UserOutlined />}
                 placeholder="Enter your username"
+                autoComplete="username"
               />
             </AppForm.Item>
 
@@ -130,6 +127,7 @@ function LoginPage() {
                 inputType="password"
                 prefixIcon={<LockOutlined />}
                 placeholder="Enter your password"
+                autoComplete="current-password"
               />
             </AppForm.Item>
 
@@ -137,9 +135,6 @@ function LoginPage() {
               <AppForm.Item name="remember" valuePropName="checked" noStyle>
                 <AppCheckbox id="checkbox-remember">Remember me</AppCheckbox>
               </AppForm.Item>
-              <a href="#" className="forgot-link">
-                Forgot password?
-              </a>
             </div>
 
             <AppForm.Item>
@@ -171,15 +166,7 @@ function LoginPage() {
           </AppForm>
 
           <p className="auth-footer-note">
-            By signing in, you agree to our{" "}
-            <a href="#" className="auth-link">
-              Terms &amp; Conditions
-            </a>{" "}
-            and{" "}
-            <a href="#" className="auth-link">
-              Privacy Policy
-            </a>{" "}
-            .
+            Need help with account access? Contact your administrator.
           </p>
         </div>
       </div>
