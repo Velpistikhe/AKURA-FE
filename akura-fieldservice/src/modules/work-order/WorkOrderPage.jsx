@@ -69,7 +69,7 @@ function WorkOrderList({ currentUser }) {
   }
   return <section className="company-page work-order-page">
     <div className="company-page-heading"><div><Typography.Title level={2}>Work Orders</Typography.Title><Typography.Text tone="secondary">View work orders for your branch.</Typography.Text></div>
-      {canCreateWorkOrders(currentUser) && <WorkOrderCreate key={currentUser.officeBranchId} currentUser={currentUser} onCreated={(created) => { setRetry((value) => value + 1); setSelectedId(created.id) }} />}
+      {canCreateWorkOrders(currentUser, 'quotation') && <WorkOrderCreate key={`${currentUser.officeBranchId}:${currentUser.role}`} currentUser={currentUser} onCreated={(created) => { setRetry((value) => value + 1); setSelectedId(created.id) }} />}
     </div>
     <Card>
       {error && <div role="alert">{error} <Button onClick={() => setRetry((value) => value + 1)}>Retry</Button></div>}

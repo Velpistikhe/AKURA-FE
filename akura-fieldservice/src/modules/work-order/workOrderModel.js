@@ -32,11 +32,11 @@ export const workOrderFormValues = (record) => ({
   inspectors: (record.inspectors || []).map((inspector) => inspector.name),
 })
 
-// Creating a Work Order is a MARKETING write: the backend
-// guards the section on the create route, so the button is hidden for the
-// read-only roles instead of failing after submission.
-export const canCreateWorkOrders = (user) => Boolean(canAccessWorkOrders(user)
-  && user.section === 'MARKETING' && user.role === 'USER')
+// Quotation creation admits Marketing USER and ADMIN. Company creation keeps
+// the USER restriction; neither route permits another section or APP_MANAGER.
+export const canCreateWorkOrders = (user, basis = 'company') => Boolean(canAccessWorkOrders(user)
+  && user.section === 'MARKETING' && ['company', 'quotation'].includes(basis)
+  && (user.role === 'USER' || basis === 'quotation' && user.role === 'ADMIN'))
 
 export function inspectorOptions(users = []) {
   const names = new Map()

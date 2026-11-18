@@ -2,7 +2,7 @@
 // quotation table action; list, detail, editing and starting live in the
 // Field Service MFE. Company basis creation has no Marketing UI.
 export const canCreateWorkOrders = (user) => Boolean(user?.isActive && user.officeBranchId && user.section === 'MARKETING'
-  && user.role === 'USER')
+  && ['USER', 'ADMIN'].includes(user.role))
 
 export const canCreateWorkOrderFromQuotation = (user, quotation) => Boolean(canCreateWorkOrders(user)
   && quotation?.id && quotation.isActive && quotation.status === 'APPROVED'

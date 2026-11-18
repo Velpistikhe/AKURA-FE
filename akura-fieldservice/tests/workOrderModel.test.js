@@ -70,6 +70,19 @@ test('work order creation and editing require the branch-scoped Marketing USER r
   }
 })
 
+test('quotation creation additionally allows Marketing ADMIN without allowing company creation or editing', () => {
+  for (const role of ['USER', 'ADMIN', 'APP_MANAGER', undefined, 'UNKNOWN']) {
+    const user = { role, isActive: true, officeBranchId: 'branch-id', section: 'MARKETING' }
+    assert.equal(canCreateWorkOrders(user, 'quotation'), ['USER', 'ADMIN'].includes(role))
+    assert.equal(canCreateWorkOrders(user, 'company'), role === 'USER')
+    assert.equal(canEditWorkOrders(user), role === 'USER')
+    assert.equal(canCreateWorkOrders(user, 'unknown'), false)
+    for (const other of [{ ...user, section: 'FIELD_SERVICE' }, { ...user, section: 'FINANCE' }, { ...user, isActive: false }, { ...user, officeBranchId: null }]) {
+      assert.equal(canCreateWorkOrders(other, 'quotation'), false)
+    }
+  }
+})
+
 const companyValues = {
   basis: 'company', startDate: '2026-11-05', subject: ' Site inspection ', officialReport: false,
   dailyReport: '2026-11-05', officialReportDelivery: '2026-11-07', dailyReportDelivery: '2026-11-06',

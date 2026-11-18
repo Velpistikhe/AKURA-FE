@@ -7,14 +7,23 @@ const item = { itemSizeId, quantityInspection: '2.125', quantityMaintenance: '0'
 const quotation = { id: '00000000-0000-4000-8000-000000000001', isActive: true, status: 'APPROVED', items: [item] }
 const values = { startDate: '2026-11-05', endDate: '2026-11-06', inspectors: ['Branch Inspector'], items: [item] }
 
-test('Marketing creation requires the branch-scoped Marketing USER role and an eligible quotation', () => {
+test('quotation creation allows branch-scoped Marketing USER and ADMIN with an eligible quotation', () => {
   const user = { isActive: true, officeBranchId: 'branch-id', section: 'MARKETING', role: 'USER' }
-  assert.equal(canCreateWorkOrderFromQuotation(user, quotation), true)
-  for (const other of [{ ...user, role: 'ADMIN' }, { ...user, role: 'APP_MANAGER' }, { ...user, role: undefined }, { ...user, section: 'FIELD_SERVICE' }, { ...user, officeBranchId: null }, { ...user, isActive: false }]) {
-    assert.equal(canCreateWorkOrders(other), false)
+  for (const role of ['USER', 'ADMIN']) {
+    const actor = { ...user, role }
+    assert.equal(canCreateWorkOrders(actor), true)
+    assert.equal(canCreateWorkOrderFromQuotation(actor, quotation), true)
+    for (const other of [{ ...actor, section: 'FIELD_SERVICE' }, { ...actor, section: 'FINANCE' }, { ...actor, officeBranchId: null }, { ...actor, isActive: false }]) {
+      assert.equal(canCreateWorkOrders(other), false)
+      assert.equal(canCreateWorkOrderFromQuotation(other, quotation), false)
+    }
+    for (const other of [{ ...quotation, status: 'CREATED' }, { ...quotation, isActive: false }, { ...quotation, hasWorkOrder: true }, { ...quotation, workOrderId: 'existing-id' }]) {
+      assert.equal(canCreateWorkOrderFromQuotation(actor, other), false)
+    }
   }
-  for (const other of [{ ...quotation, status: 'CREATED' }, { ...quotation, isActive: false }, { ...quotation, hasWorkOrder: true }, { ...quotation, workOrderId: 'existing-id' }]) {
-    assert.equal(canCreateWorkOrderFromQuotation(user, other), false)
+  for (const role of ['APP_MANAGER', undefined, 'UNKNOWN']) {
+    assert.equal(canCreateWorkOrders({ ...user, role }), false)
+    assert.equal(canCreateWorkOrderFromQuotation({ ...user, role }, quotation), false)
   }
 })
 

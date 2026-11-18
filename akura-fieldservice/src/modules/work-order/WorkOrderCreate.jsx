@@ -6,7 +6,7 @@ import { canCreateWorkOrders, inspectorOptions, MAX_QUANTITY, WORK_ORDER_REPORT_
 import WorkOrderCompanySelect from './WorkOrderCompanySelect'
 import WorkOrderCatalogPicker from './WorkOrderCatalogPicker'
 
-const quotationLabel = (quotation) => `${quotation.number ?? 'Draft'}${quotation.numberYear ? `/${quotation.numberYear}` : ''} — ${quotation.subject || 'Quotation'}`
+const quotationLabel = (quotation) => `${quotation.no ?? 'Draft'}${quotation.numberYear ? `/${quotation.numberYear}` : ''} — ${quotation.subject || 'Quotation'}`
 const itemLabel = (item) => `${item.itemName || 'Item'}${item.size ? ` — ${item.size}` : ''}`
 
 export default function WorkOrderCreate({ currentUser, onCreated }) {
@@ -14,7 +14,8 @@ export default function WorkOrderCreate({ currentUser, onCreated }) {
   const [form] = Form.useForm()
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [basis, setBasis] = useState('company')
+  const defaultBasis = canCreateWorkOrders(currentUser) ? 'company' : 'quotation'
+  const [basis, setBasis] = useState(defaultBasis)
   const [company, setCompany] = useState(null)
   const [catalogOpen, setCatalogOpen] = useState(false)
   const [quotations, setQuotations] = useState([])
@@ -29,7 +30,7 @@ export default function WorkOrderCreate({ currentUser, onCreated }) {
   const [submitError, setSubmitError] = useState('')
   const [retry, setRetry] = useState(0)
   const lock = useRef(false)
-  const canCreate = canCreateWorkOrders(currentUser)
+  const canCreate = canCreateWorkOrders(currentUser, basis)
   const watchedStartDate = Form.useWatch('startDate', form)
   const watchedEndDate = Form.useWatch('endDate', form)
   const watchedInspectors = Form.useWatch('inspectors', form) || []
@@ -69,8 +70,9 @@ export default function WorkOrderCreate({ currentUser, onCreated }) {
     workOrderService.quotationItems(quotation.id)
       .then(({ data }) => {
         if (!active) return
-        const detail = data?.quotation
+        const detail = data
         if (!detail?.id || detail.id !== quotation.id) throw new Error('Data quotation tidak valid.')
+        if (!detail.isActive || detail.status !== 'APPROVED' || detail.hasWorkOrder || detail.workOrderId) throw new Error('Quotation is no longer available for a work order. Reload the quotations and try again.')
         setQuotationDetail(detail)
         setItemRows((detail.items || []).filter((item) => item.isActive !== false).map((item) => ({ ...item, selected: false,
           quantityInspection: item.quantityInspection ?? '0', quantityMaintenance: item.quantityMaintenance ?? '0' })))
@@ -82,7 +84,7 @@ export default function WorkOrderCreate({ currentUser, onCreated }) {
 
   const openModal = () => {
     form.resetFields()
-    setBasis('company')
+    setBasis(defaultBasis)
     setCompany(null)
     setCatalogOpen(false)
     setQuotation(null)
@@ -124,7 +126,7 @@ export default function WorkOrderCreate({ currentUser, onCreated }) {
       onCancel={closeModal} closable={!saving} maskClosable={!saving} keyboard={!saving} cancelButtonProps={{ disabled: saving }} unmountOnClose>
       <Form form={form} layout="vertical" initialValues={{ officialReport: false }} onFinish={submit} disabled={saving || loadingOptions || loadingQuotation}>
         <div className="work-order-grid">
-          <Form.Item label="Work Order Basis"><Select value={basis} options={[{ value: 'company', label: 'Standalone (Company)' }, { value: 'quotation', label: 'Quotation' }]}
+          <Form.Item label="Work Order Basis"><Select value={basis} options={[{ value: 'company', label: 'Standalone (Company)' }, { value: 'quotation', label: 'Quotation' }].filter((option) => canCreateWorkOrders(currentUser, option.value))}
             onChange={(value) => { setBasis(value); setQuotation(null); setQuotationDetail(null); setCompany(null); setItemRows([]); setError(''); setSubmitError(''); form.resetFields() }} /></Form.Item>
           <Form.Item label="Status"><Input value="DRAFT" disabled /></Form.Item>
           {basis === 'quotation' ? <Form.Item label="Quotation" required>

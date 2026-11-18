@@ -16,8 +16,24 @@ export const workOrderService = {
   createFromQuotation: (payload) => apiRequest(`${PATH}/from-quotation`, { method: 'POST', body: JSON.stringify(payload) }),
   companies: (params = {}) => apiRequest(`/marketing/companies?${withQuery({ page: 1, limit: 20, ...params })}`),
   itemSizes: (params = {}) => apiRequest(`/marketing/items/sizes?${withQuery({ page: 1, limit: 20, ...params })}`),
-  quotations: () => apiRequest('/fieldservice/options/quotations'),
-  quotationItems: (id) => apiRequest(`/fieldservice/options/quotations/${encodeURIComponent(id)}`),
+  quotations: async () => {
+    const quotations = []
+    let page = 1
+    let totalPages = 1
+    do {
+      const query = withQuery({ page, limit: 100, status: 'APPROVED', isActive: true })
+      const { data } = await apiRequest(`/marketing/quotations?${query}`)
+      if (!Array.isArray(data?.quotations) || !Number.isInteger(data?.pagination?.totalPages)) {
+        throw new Error('Invalid quotation directory response.')
+      }
+      quotations.push(...data.quotations.filter((quotation) => quotation.isActive && quotation.status === 'APPROVED'
+        && !quotation.hasWorkOrder && !quotation.workOrderId))
+      totalPages = data.pagination.totalPages
+      page += 1
+    } while (page <= totalPages)
+    return { data: { quotations } }
+  },
+  quotationItems: (id) => apiRequest(`/marketing/quotations/${encodeURIComponent(id)}`),
   inspectors: async (officeBranchId) => {
     if (!officeBranchId) throw new Error('An assigned branch is required to load inspectors.')
     const users = []

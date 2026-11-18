@@ -144,6 +144,53 @@ test('standalone and quotation creation post to their separate Field Service end
   assert.ok(calls.every(({ options }) => options.method === 'POST' && options.credentials === 'include'))
 })
 
+test('quotation options read every approved Marketing page and exclude existing work orders', async (context) => {
+  const calls = []
+  const eligible = { id: branchId, no: 12, isActive: true, status: 'APPROVED', hasWorkOrder: false }
+  const next = { ...eligible, id: 'next-quotation' }
+  const fetchMock = mock.method(globalThis, 'fetch', async (url) => {
+    calls.push(new URL(url))
+    const quotations = calls.length === 1 ? [eligible, { ...eligible, hasWorkOrder: true },
+      { ...eligible, workOrderId: 'existing-work-order' }, { ...eligible, isActive: false }, { ...eligible, status: 'REVISED' }] : [next]
+    return { ok: true, status: 200, json: async () => ({ data: { quotations, pagination: { totalPages: 2 } } }) }
+  })
+  context.after(() => fetchMock.mock.restore())
+  assert.deepEqual(await workOrderService.quotations(), { data: { quotations: [eligible, next] } })
+  assert.equal(calls.length, 2)
+  calls.forEach((url, index) => {
+    assert.equal(url.origin + url.pathname, 'http://localhost:5003/quotations')
+    assert.deepEqual(Object.fromEntries(url.searchParams), { page: String(index + 1), limit: '100', status: 'APPROVED', isActive: 'true' })
+  })
+})
+
+test('quotation options reject malformed responses and later-page failures without returning partial options', async (context) => {
+  let calls = 0
+  let malformed = true
+  const fetchMock = mock.method(globalThis, 'fetch', async () => {
+    calls += 1
+    if (malformed) return { ok: true, status: 200, json: async () => ({ data: {} }) }
+    if (calls === 1) return { ok: true, status: 200, json: async () => ({ data: { quotations: [], pagination: { totalPages: 2 } } }) }
+    return { ok: false, status: 503, json: async () => ({ message: 'Marketing unavailable' }) }
+  })
+  context.after(() => fetchMock.mock.restore())
+  await assert.rejects(workOrderService.quotations(), /Invalid quotation directory/)
+  assert.equal(calls, 1)
+  malformed = false
+  calls = 0
+  await assert.rejects(workOrderService.quotations(), /Marketing unavailable/)
+  assert.equal(calls, 2)
+})
+
+test('quotation items use the Marketing detail endpoint and preserve its response envelope', async (context) => {
+  const response = { data: { id: branchId, isActive: true, status: 'APPROVED', items: [{ itemSizeId: 'item-size-id' }] } }
+  const fetchMock = mock.method(globalThis, 'fetch', async (url) => {
+    assert.equal(url, `http://localhost:5003/quotations/${branchId}`)
+    return { ok: true, status: 200, json: async () => response }
+  })
+  context.after(() => fetchMock.mock.restore())
+  assert.deepEqual(await workOrderService.quotationItems(branchId), response)
+})
+
 test('standalone options use bounded company search and catalog pagination without branch overrides', async (context) => {
   const urls = []
   const fetchMock = mock.method(globalThis, 'fetch', async (url) => {
